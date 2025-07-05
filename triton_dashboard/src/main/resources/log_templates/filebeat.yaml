@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: filebeat
+  namespace: logging
+spec:
+  selector:
+    matchLabels:
+      app: filebeat
+  template:
+    metadata:
+      labels:
+        app: filebeat
+    spec:
+      containers:
+        - name: filebeat
+          image: docker.elastic.co/beats/filebeat:7.17.9
+          args: [
+            "-c", "/etc/filebeat.yaml",
+            "-e"
+          ]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/filebeat.yaml
+              subPath: filebeat-config.yaml
+            - name: shared-logs
+              mountPath: /var/log
+          securityContext:
+            runAsUser: 0
+      volumes:
+        - name: config
+          configMap:
+            name: filebeat-config
+        - name: shared-logs
+          hostPath:
+            path: /var/log

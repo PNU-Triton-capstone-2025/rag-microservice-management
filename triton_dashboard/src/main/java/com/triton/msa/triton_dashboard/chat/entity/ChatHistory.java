@@ -1,5 +1,6 @@
-package com.triton.msa.triton_dashboard.project.entity;
+package com.triton.msa.triton_dashboard.chat.entity;
 
+import com.triton.msa.triton_dashboard.project.entity.Project;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

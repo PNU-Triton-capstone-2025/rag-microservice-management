@@ -39,7 +39,7 @@ public class SecurityConfig {
                 .permitAll()
         )
         .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console"))
+                .ignoringRequestMatchers("/h2-console/**"))
         .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
 
         return http.build();

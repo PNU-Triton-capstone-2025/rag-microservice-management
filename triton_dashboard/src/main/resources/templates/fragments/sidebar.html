@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="sidebar(project)" class="bg-light border-end" id="sidebar-wrapper">
+    <div class="sidebar-heading border-bottom bg-light">
+        <a th:href="${project != null} ? @{/projects/{id}/chat(id=${project.id})} : @{/projects}"
+           class="text-decoration-none text-dark fw-bold"
+           th:text="${project != null} ? ${project.name} : 'Triton MSA'">
+            Triton MSA
+        </a>
+    </div>
+    <div class="list-group list-group-flush">
+        <div th:if="${project != null}">
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
+               th:href="@{/projects/{id}/chat(id=${project.id})}">
+                <i class="bi bi-chat-dots me-2"></i>배포 명세 관리
+            </a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
+               th:href="@{/projects/{id}/deploy/download-config(id=${project.id})}">
+                <i class="bi bi-gear me-2"></i>시스템 초기화
+            </a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
+               th:href="@{/projects/{id}/history(id=${project.id})}">
+                <i class="bi bi-clock-history me-2"></i>작업 이력 조회
+            </a>
+            <hr class="my-2"/>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
+               th:href="@{/projects}">
+                <i class="bi bi-arrow-left-square me-2"></i>프로젝트 목록으로
+            </a>
+        </div>
+
+        <div th:unless="${project != null}">
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
+               th:href="@{/projects}">
+                <i class="bi bi-collection me-2"></i>프로젝트 목록
+            </a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
+               th:href="@{/profile}">
+                <i class="bi bi-person-circle me-2"></i>프로필
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+
+<html lang="ko" layout:decorate="~{layout/layout}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf.layout">
+
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${project.name} + ' - Deployment Management'">Deployment Management</title>
+</head>
+<body>
+
+<section layout:fragment="page-content">
+    <div class="container-fluid p-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="mt-4">서비스 배포 관리</h1>
+                <p>배포 명세 생성을 요청하세요.</p>
+            </div>
+            <a th:href="@{/projects/{id}/deploy/download-config(id=${project.id})}" class="btn btn-info">
+                Log Deployer 다운로드
+            </a>
+        </div>
+
+        <div id="chat-window" class="border rounded p-3 mb-3" style="height: 500px; overflow-y: auto;">
+            <div th:if="${query}" class="mb-3">
+                <div class="d-flex justify-content-end">
+                    <div class="card bg-primary text-white p-2" style="max-width:70%;">
+                        <p class="mb-0" th:text="${query}"></p>
+                    </div>
+                </div>
+            </div>
+            <div th:if="${response}" class="mb-3">
+                <div class="d-flex justify-content-start">
+                    <div class="card bg-light p-2" style="max-width: 70%">
+                        <h6 class="card-title">응답</h6>
+                        <p class="mb-1" th:text="${response.explanation}"></p>
+                        <pre><code class="yaml" th:text="${response.annotatedSpec}"></code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form th:action="@{/projects/{id}/chat/send(id=${project.id})}" method="post">
+            <div class="input-group">
+                <input type="text" name="query" class="forn-control"
+                       placeholder="e.g. 'Create a redis deployment with 3 replicas'" required>
+                <button class="btn btn-primary" type="submit">Send</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+</body>
+</html>

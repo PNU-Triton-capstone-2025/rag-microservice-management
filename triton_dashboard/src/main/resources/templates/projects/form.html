@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ko" layout:decorate="~{layout/layout}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+
+<head>
+    <title>새 프로젝트</title>
+</head>
+
+<body>
+<section layout:fragment="page-content">
+    <div class="container-fluid p-4">
+        <h1 class="mt-4">새 프로젝트</h1>
+        <div class="card">
+            <div class="card-body">
+                <form th:action="@{/projects}" th:object="${project}" method="post">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Project Name</label>
+                        <input type="text" class="form-control" th:field="*{name}" required>
+                    </div>
+
+                    <h5 class="mt-4">SSH 접속 정보</h5>
+                    <div class="mb-3">
+                        <label for="sshIpAddress" class="form-label">IP 주소</label>
+                        <input type="text" class="form-control" th:field="*{sshInfo.sshIpAddress}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="sshAuthKey" class="form-label">인증 키</label>
+                        <textarea class="form-control" rows="3" th:field="*{sshInfo.sshAuthKey}"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">프로젝트 저장</button>
+                    <a th:href="@{/projects}" class="btn btn-secondary">취소</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

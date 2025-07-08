@@ -34,6 +34,9 @@ dependencies {
 	// thymeleaf layout
 	implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:3.4.0'
 
+	// SSH 연결 - Apache MINA SSHD Core
+	implementation 'org.apache.sshd:sshd-core:2.12.1'
+
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.h2database:h2'
 	annotationProcessor 'org.projectlombok:lombok'

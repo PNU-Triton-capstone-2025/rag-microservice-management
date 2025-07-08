@@ -1,4 +1,4 @@
-package com.triton.msa.triton_dashboard.project.entity;
+package com.triton.msa.triton_dashboard.ssh;
 
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Lob;

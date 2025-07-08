@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko" layout:decorate="~{layout/layout}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+
+<head>
+    <title>내 프로젝트 목록</title>
+</head>
+
+<body>
+<section layout:fragment="page-content">
+    <div class="container-fluid p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mt-4">내 프로젝트 목록</h1>
+            <a th:href="@{/projects/new}" class="btn btn-primary">Create New Project</a>
+        </div>
+
+        <div class="row">
+            <div th:if="${projects.isEmpty()}" class="col">
+                <p>기존 프로젝트가 없습니다. 새 프로젝트를 생성해 보세요!</p>
+            </div>
+            <div th:each="project : ${projects}" class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${project.name}">프로젝트 이름</h5>
+                        <p class="card-text">Manage your microservice deployments.</p>
+                        <!--각 프로젝트 채팅 페이지 이동 링크-->
+                        <a th:href="@{/projects/{id}/chat(id=${project.id})}" class="btn btn-outline-primary">Enter Project</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

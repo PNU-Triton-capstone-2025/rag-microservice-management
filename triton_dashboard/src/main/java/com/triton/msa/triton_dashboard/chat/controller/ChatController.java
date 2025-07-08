@@ -28,7 +28,7 @@ public class ChatController {
         model.addAttribute("project", project);
         model.addAttribute("history", chatHistoryService.getHistoryForProject(project));
 
-        return "chat";
+        return "projects/chat";
     }
 
     @PostMapping("/send")
@@ -43,6 +43,6 @@ public class ChatController {
 
         model.addAttribute("history", chatHistoryService.getHistoryForProject(project));
 
-        return "chat";
+        return "projects/chat";
     }
 }

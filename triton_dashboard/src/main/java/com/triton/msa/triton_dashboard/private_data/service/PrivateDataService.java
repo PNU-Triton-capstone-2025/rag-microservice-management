@@ -32,6 +32,7 @@ public class PrivateDataService {
         }
 
         try {
+            // 압축 해제를 위한 임시 디렉토리 생성
             Path tempDir = Files.createTempDirectory("upload-zip");
             List<ExtractedFile> extractedFiles = unzipToFileList(file.getInputStream(), tempDir);
 
@@ -71,7 +72,7 @@ public class PrivateDataService {
                 Files.createDirectories(newFile.getParent());
                 Files.copy(zis, newFile, StandardCopyOption.REPLACE_EXISTING);
 
-                // 파일 내용 읽기
+                // Elasticsearch 저장을 위해 파일 내용을 하나의 문자열로 합침
                 String content = Files.readAllLines(newFile).stream().collect(Collectors.joining("\n"));
                 files.add(new ExtractedFile(entry.getName(), content, Instant.now()));
             }
@@ -85,7 +86,7 @@ public class PrivateDataService {
     }
 
     private void saveToElasticsearch(Long projectId, ExtractedFile file) {
-        // String indexUrl = "http://54.253.214.14:9200/project-" + projectId + "/doc";
+        // String indexUrl = "http://54.253.214.14:9200/project-" + projectId + "/_doc";
         String indexUrl = "http://localhost:30920/project-" + projectId + "/_doc";
 
         Map<String, Object> documnet = Map.of(

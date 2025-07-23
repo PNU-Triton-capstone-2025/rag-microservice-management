@@ -48,6 +48,38 @@
             </div>
         </form>
     </div>
+
+    <!-- ZIP 업로드 UI 추가 -->
+    <div id="zip-upload" class="card mt-5">
+        <div class="card-header">비공개 ZIP 데이터 업로드</div>
+        <div class="card-body">
+            <form th:action="@{/projects/{id}/private-data/upload(id=${project.id})}" method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <input type="file" name="file" accept=".zip" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-success">업로드</button>
+            </form>
+
+            <!-- 업로드 결과 메시지 -->
+            <div th:if="${uploadResult != null}" class="alert alert-info mt-4">
+                <h5 th:text="${uploadResult.message}">업로드 결과</h5>
+
+                <div th:if="${uploadResult.savedFilenames.size() > 0}">
+                    <strong>저장된 파일:</strong>
+                    <ul>
+                        <li th:each="f : ${uploadResult.savedFilenames}" th:text="${f}"></li>
+                    </ul>
+                </div>
+
+                <div th:if="${uploadResult.skippedFilenames.size() > 0}">
+                    <strong>필터링된 파일:</strong>
+                    <ul>
+                        <li th:each="f : ${uploadResult.skippedFilenames}" th:text="${f}"></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
 </section>
 
 </body>

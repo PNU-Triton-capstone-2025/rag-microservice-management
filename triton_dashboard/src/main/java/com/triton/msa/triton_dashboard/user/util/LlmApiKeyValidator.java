@@ -16,28 +16,41 @@ public class LlmApiKeyValidator {
     private final RestTemplate restTemplate = new RestTemplate();
 
     public void validate(String apiKey, LlmModel model) {
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            throw new IllegalArgumentException("API 키를 입력해주세요.");
+        }
+        if (model == null) {
+            throw new IllegalArgumentException("모델을 선택해주세요.");
+        }
+
         String endpoint = switch (model) {
             case OPENAI -> "https://api.openai.com/v1/chat/completions";
             case CLAUDE -> "https://api.anthropic.com/v1/messages";
-            case GEMINI -> "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+            case GEMINI -> "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
             case GROK -> "https://api.grok.xyz/v1/chat"; // 가정
         };
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Bearer " + apiKey);
-        if (model == LlmModel.CLAUDE) {
-            headers.set("anthropic-version", "2023-06-01");
+
+        switch (model) {
+            case OPENAI, GROK -> headers.set("Authorization", "Bearer " + apiKey);
+            case CLAUDE -> {
+                headers.set("Authorization", "Bearer " + apiKey);
+                headers.set("anthropic-version", "2023-06-01");
+            }
+            case GEMINI -> headers.set("X-goog-api-key", apiKey);
         }
 
         String body = getTestBody(model);
-
         HttpEntity<String> entity = new HttpEntity<>(body, headers);
         try {
             ResponseEntity<String> response = restTemplate.postForEntity(endpoint, entity, String.class);
+            String responseBody = response.getBody();
 
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new IllegalArgumentException("API 키 인증 실패: " + response.getStatusCode());
+            if (!response.getStatusCode().is2xxSuccessful()
+                    || (responseBody != null && responseBody.contains("\"error\""))) {
+                throw new IllegalArgumentException("API 키 인증 실패: " + responseBody);
             }
         } catch (Exception e) {
             throw new IllegalArgumentException("API 키 요청 실패: " + e.getMessage());

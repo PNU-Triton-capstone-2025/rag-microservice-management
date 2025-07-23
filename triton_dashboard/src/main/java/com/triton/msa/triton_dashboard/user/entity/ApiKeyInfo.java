@@ -10,5 +10,5 @@ import lombok.Setter;
 public class ApiKeyInfo {
 
     private String apiServiceApiKey;
-
+    private LlmModel llmModel;
 }

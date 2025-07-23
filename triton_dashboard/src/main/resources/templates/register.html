@@ -24,10 +24,21 @@
             <input type="password" class="form-control" th:field="*{password}" required>
           </div>
 
-          <h5 class="mt-4">AI Service Key</h5>
+          <h5 class="mt-4">AI Service 설정</h5>
+          <div class="mb-3">
+            <label for="llmModel" class="form-label">LLM 모델 선택</label>
+            <select class="form-select" th:field="*{llmModel}" required>
+              <option value="" disabled selected>모델을 선택하세요</option>
+              <option value="OPENAI">OpenAI GPT</option>
+              <option value="CLAUDE">Anthropic Claude</option>
+              <option value="GEMINI">Google Gemini</option>
+              <option value="GROK">xAI Grok</option>
+            </select>
+          </div>
+
           <div class="mb-3">
             <label for="aiServiceApiKey" class="form-label">API Key</label>
-            <input type="password" class="form-control" th:field="*{aiServiceApiKey}">
+            <input type="password" class="form-control" th:field="*{aiServiceApiKey}" required>
           </div>
 
           <button type="submit" class="btn btn-primary w-100">Register</button>

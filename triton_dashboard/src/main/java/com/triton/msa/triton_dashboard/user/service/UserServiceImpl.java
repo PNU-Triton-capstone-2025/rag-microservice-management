@@ -5,7 +5,6 @@ import com.triton.msa.triton_dashboard.user.entity.ApiKeyInfo;
 import com.triton.msa.triton_dashboard.user.entity.User;
 import com.triton.msa.triton_dashboard.user.entity.UserRole;
 import com.triton.msa.triton_dashboard.user.repository.UserRepository;
-import com.triton.msa.triton_dashboard.user.util.LlmApiKeyValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,19 +22,15 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final LlmApiKeyValidator apiKeyValidator;
 
     @Override
     @Transactional
     public User registerNewUser(UserRegistrationDto registrationDto) {
-        apiKeyValidator.validate(registrationDto.aiServiceApiKey(), registrationDto.llmModel());
-
         ApiKeyInfo apiKeyInfo = new ApiKeyInfo();
         apiKeyInfo.setApiServiceApiKey(registrationDto.aiServiceApiKey());
         apiKeyInfo.setLlmModel(registrationDto.llmModel());
 
         User user = new User();
-
         user.setUsername(registrationDto.username());
         user.setPassword(passwordEncoder.encode(registrationDto.password()));
         user.setApiKeyInfo(apiKeyInfo);

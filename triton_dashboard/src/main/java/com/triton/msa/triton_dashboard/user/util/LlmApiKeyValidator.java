@@ -50,10 +50,26 @@ public class LlmApiKeyValidator {
 
             if (!response.getStatusCode().is2xxSuccessful()
                     || (responseBody != null && responseBody.contains("\"error\""))) {
-                throw new IllegalArgumentException("API 키 인증 실패: " + responseBody);
+
+                String shortMsg = "API 키 인증 실패";
+                String detailed = responseBody.length() > 200 ? responseBody.substring(0, 200) + "..." : responseBody;
+                throw new IllegalArgumentException(shortMsg + "\n상세: " + detailed);
             }
         } catch (Exception e) {
-            throw new IllegalArgumentException("API 키 요청 실패: " + e.getMessage());
+            throw new IllegalArgumentException("API 키 요청 실패: " + summaryErrorMsg(e.getMessage()) + "\n상세: " + e.getMessage());
+        }
+
+    }
+
+    private String summaryErrorMsg(String rawErrorMessage) {
+        if (rawErrorMessage.contains("Too Many Requests")) {
+            return "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.";
+        } else if (rawErrorMessage.contains("401")) {
+            return "API 키가 유효하지 않습니다.";
+        } else if (rawErrorMessage.contains("insufficient_quota")) {
+            return "API 사용 할당량이 초과되었습니다.";
+        } else {
+            return "알 수 없는 오류가 발생했습니다.";
         }
     }
 

@@ -1,7 +1,6 @@
 package com.triton.msa.triton_dashboard.user.controller;
 
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
-import com.triton.msa.triton_dashboard.user.entity.LlmModel;
 import com.triton.msa.triton_dashboard.user.service.UserService;
 import com.triton.msa.triton_dashboard.user.util.LlmApiKeyValidator;
 import jakarta.validation.Valid;
@@ -18,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
-    private final LlmApiKeyValidator llmApiKeyValidator;
+    private final LlmApiKeyValidator apiKeyValidator;
 
     @GetMapping()
     public String root() {
@@ -49,14 +48,12 @@ public class UserController {
 
     @PostMapping("/validate-api-key")
     @ResponseBody
-    public ResponseEntity<?> validateApiKey(@RequestBody ApiKeyValidationRequest request) {
+    public ResponseEntity<String> validateApiKey(@RequestBody UserRegistrationDto registrationDto) {
         try {
-            llmApiKeyValidator.validate(request.apiKey(), request.model());
+            apiKeyValidator.validate(registrationDto.aiServiceApiKey(), registrationDto.llmModel());
             return ResponseEntity.ok().body("valid");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
-
-    public record ApiKeyValidationRequest(String apiKey, LlmModel model) {}
 }

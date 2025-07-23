@@ -28,7 +28,7 @@
           <div class="mb-3">
             <label for="llmModel" class="form-label">LLM 모델 선택</label>
             <select class="form-select" id="llmModel" name="llmModel" required>
-              <option value="" disabled selected>모델 선택</option>
+              <option value="" disabled hidden selected>모델 선택</option>
               <option value="OPENAI">OpenAI GPT</option>
               <option value="CLAUDE">Claude</option>
               <option value="GEMINI">Gemini</option>
@@ -68,6 +68,7 @@
               statusEl.innerText = '❌ API 키와 모델을 모두 입력하세요';
               statusEl.style.color = 'red';
               submitBtn.disabled = true;
+
               return;
             }
 
@@ -80,12 +81,14 @@
               const res = await fetch('/validate-api-key', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ apiKey, model })
+                body: JSON.stringify({
+                  aiServiceApiKey: apiKey,
+                  llmModel: model
+                })
               });
 
               const text = await res.text();
-              console.log("응답 상태:", res.status);
-              console.log("응답 본문:", text);
+
               if (res.ok) {
                 statusEl.innerText = '✅ API 키 검증 성공';
                 statusEl.style.color = 'green';

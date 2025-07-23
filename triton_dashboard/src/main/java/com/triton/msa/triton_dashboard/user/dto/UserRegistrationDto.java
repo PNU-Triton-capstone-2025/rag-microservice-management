@@ -14,7 +14,7 @@ public record UserRegistrationDto(
     private final static String DEFAULT_USERNAME = "user_default";
     private final static String DEFAULT_PASSWORD = "";
     private final static String DEFAULT_AISERVICEAPIKEY = "ai service key";
-    private final static LlmModel DEFAULT_LLMMODEL = LlmModel.OPENAI;
+    private final static LlmModel DEFAULT_LLMMODEL = LlmModel.GPT_4O;
 
     public static UserRegistrationDto getEmpty() {
         return new UserRegistrationDto(

@@ -31,7 +31,7 @@ public class PrivateDataController {
         UploadResultDto result;
 
         try {
-            result = privateDataService.processZipFile(projectId, file);
+            result = privateDataService.unzipAndSaveFiles(projectId, file);
         } catch (IllegalArgumentException e) {
             result = new UploadResultDto(e.getMessage(), List.of(), List.of());
         }

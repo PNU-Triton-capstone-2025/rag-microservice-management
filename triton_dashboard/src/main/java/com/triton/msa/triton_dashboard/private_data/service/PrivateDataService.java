@@ -1,6 +1,11 @@
 package com.triton.msa.triton_dashboard.private_data.service;
 
+import com.triton.msa.triton_dashboard.private_data.ExtractedFile;
 import com.triton.msa.triton_dashboard.private_data.dto.UploadResultDto;
+import com.triton.msa.triton_dashboard.project.entity.PrivateData;
+import com.triton.msa.triton_dashboard.project.entity.Project;
+import com.triton.msa.triton_dashboard.project.repository.PrivateDataRepository;
+import com.triton.msa.triton_dashboard.project.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -24,8 +29,10 @@ import java.util.zip.ZipInputStream;
 public class PrivateDataService {
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final ProjectService projectService;
+    private final PrivateDataRepository privateDataRepository;
 
-    public UploadResultDto processZipFile(Long projectId, MultipartFile file) {
+    public UploadResultDto unzipAndSaveFiles(Long projectId, MultipartFile file) {
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".zip")) {
             throw new IllegalArgumentException("지원되지 않는 파일 형식입니다. .zip 파일만 업로드해주세요.");
@@ -41,10 +48,20 @@ public class PrivateDataService {
 
             for (ExtractedFile doc : extractedFiles) {
                 if (isAllowed(doc.filename())) {
-                    saveToElasticsearch(projectId, doc);
-                    saved.add(doc.filename());
+                    try {
+                        saveFile(projectId, doc);
+                        saved.add(doc.filename());
+                    } catch (Exception e) {
+                        String reason;
+                        if (e.getMessage().contains("Connection refused")) {
+                            reason = "(저장 실패: 서버에 연결할 수 없음)";
+                        } else {
+                            reason = "(저장 실패: 알 수 없는 오류)";
+                        }
+                        skipped.add(doc.filename() + " " + reason);
+                    }
                 } else {
-                    skipped.add(doc.filename());
+                    skipped.add(doc.filename() + " (허용되지 않음)");
                 }
             }
 
@@ -85,6 +102,18 @@ public class PrivateDataService {
         return !(lower.endsWith(".exe") || lower.endsWith(".sh") || lower.endsWith("bat"));
     }
 
+    private void saveToDatabase(Long projectId, ExtractedFile file) {
+        Project project = projectService.getProject(projectId);
+        PrivateData privateData = new PrivateData();
+
+        privateData.setProject(project);
+        privateData.setFilename(file.filename());
+        privateData.setContentType("text/plain");
+        privateData.setData(file.content().getBytes());
+
+        privateDataRepository.save(privateData);
+    }
+
     private void saveToElasticsearch(Long projectId, ExtractedFile file) {
         // String indexUrl = "http://54.253.214.14:9200/project-" + projectId + "/_doc";
         String indexUrl = "http://localhost:30920/project-" + projectId + "/_doc";
@@ -98,6 +127,15 @@ public class PrivateDataService {
         restTemplate.postForEntity(indexUrl, documnet, String.class);
     }
 
-    private record ExtractedFile(String filename, String content, Instant timestamp) {}
+    private void saveFile(Long projectId, ExtractedFile file) {
+        try {
+            saveToElasticsearch(projectId, file);
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+
+        // Elasticsearch에 저장 성공 시에만 로컬 db도 저장
+        saveToDatabase(projectId, file);
+    }
 }
 

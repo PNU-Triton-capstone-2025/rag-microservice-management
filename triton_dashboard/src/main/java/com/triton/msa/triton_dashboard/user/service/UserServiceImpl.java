@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,14 +26,14 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User registerNewUser(UserRegistrationDto registrationDto) {
+        ApiKeyInfo apiKeyInfo = new ApiKeyInfo();
+        apiKeyInfo.setApiServiceApiKey(registrationDto.aiServiceApiKey());
+        apiKeyInfo.setLlmModel(registrationDto.llmModel());
+
         User user = new User();
         user.setUsername(registrationDto.username());
         user.setPassword(passwordEncoder.encode(registrationDto.password()));
-
-        ApiKeyInfo apiKeyInfo = new ApiKeyInfo();
-        apiKeyInfo.setApiServiceApiKey(registrationDto.aiServiceApiKey());
         user.setApiKeyInfo(apiKeyInfo);
-
         user.setRoles(Collections.singleton(UserRole.USER));
 
         return userRepository.save(user);

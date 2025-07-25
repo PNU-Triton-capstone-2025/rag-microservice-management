@@ -21,7 +21,7 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**")
                 .permitAll()
-                .requestMatchers("/", "/register", "/login")
+                .requestMatchers("/", "/register", "/login", "/validate-api-key")
                 .permitAll()
                 .requestMatchers("/h2-console/**")
                 .permitAll()
@@ -39,7 +39,7 @@ public class SecurityConfig {
                 .permitAll()
         )
         .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**"))
+                .ignoringRequestMatchers("/h2-console/**", "/validate-api-key"))
         .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
 
         return http.build();

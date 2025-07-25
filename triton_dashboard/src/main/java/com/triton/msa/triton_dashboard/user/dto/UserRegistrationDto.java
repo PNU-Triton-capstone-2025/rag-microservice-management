@@ -1,5 +1,6 @@
 package com.triton.msa.triton_dashboard.user.dto;
 
+import com.triton.msa.triton_dashboard.user.entity.LlmModel;
 import jakarta.validation.constraints.NotEmpty;
 
 public record UserRegistrationDto(
@@ -7,17 +8,20 @@ public record UserRegistrationDto(
         String username,
         @NotEmpty
         String password,
-        String aiServiceApiKey
+        String aiServiceApiKey,
+        LlmModel llmModel
 ) {
     private final static String DEFAULT_USERNAME = "user_default";
     private final static String DEFAULT_PASSWORD = "";
     private final static String DEFAULT_AISERVICEAPIKEY = "ai service key";
+    private final static LlmModel DEFAULT_LLMMODEL = LlmModel.GPT_4O;
 
     public static UserRegistrationDto getEmpty() {
         return new UserRegistrationDto(
                 DEFAULT_USERNAME,
                 DEFAULT_PASSWORD,
-                DEFAULT_AISERVICEAPIKEY
+                DEFAULT_AISERVICEAPIKEY,
+                DEFAULT_LLMMODEL
         );
     }
 }

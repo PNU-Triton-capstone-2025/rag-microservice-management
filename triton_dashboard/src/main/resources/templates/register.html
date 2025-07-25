@@ -24,17 +24,90 @@
             <input type="password" class="form-control" th:field="*{password}" required>
           </div>
 
-          <h5 class="mt-4">AI Service Key</h5>
+          <h5 class="mt-4">AI Service 설정</h5>
           <div class="mb-3">
-            <label for="aiServiceApiKey" class="form-label">API Key</label>
-            <input type="password" class="form-control" th:field="*{aiServiceApiKey}">
+            <label for="llmModel" class="form-label">LLM 모델 선택</label>
+            <select class="form-select" id="llmModel" name="llmModel" required>
+              <option value="" disabled hidden selected>모델 선택</option>
+              <option value="GPT_4O">OpenAI - gpt-4o</option>
+              <option value="GPT_3_5">OpenAI - gpt-3.5-turbo</option>
+              <option value="CLAUDE_3_OPUS">Anthropic - claude-3-opus</option>
+              <option value="CLAUDE_3_HAIKU">Anthropic - claude-3-haiku</option>
+              <option value="GEMINI_15_FLASH">Google - gemini-1.5-flash</option>
+              <option value="GEMINI_PRO">Google - gemini-pro</option>
+              <option value="GROK_1">Grok - grok-1</option>
+            </select>
           </div>
 
-          <button type="submit" class="btn btn-primary w-100">Register</button>
+          <div class="mb-3">
+            <label for="aiServiceApiKey" class="form-label">API Key</label>
+            <input type="password" class="form-control" id="aiServiceApiKey" name="aiServiceApiKey" required>
+          </div>
+
+          <div class="mb-3 d-flex gap-2">
+            <button type="button" id="validateKeyBtn" class="btn btn-outline-primary">API 키 검증</button>
+            <span id="keyStatus" class="align-self-center"></span>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100" id="submitBtn" disabled>Register</button>
+
+          <!--<button type="submit" class="btn btn-primary w-100">Register</button>-->
+
           <div class="text-center mt-3">
             <a th:href="@{/login}">이미 계정이 있으신가요? 로그인</a>
           </div>
         </form>
+
+        <script>
+          const validateBtn = document.getElementById('validateKeyBtn');
+          const submitBtn = document.getElementById('submitBtn');
+          const statusEl = document.getElementById('keyStatus');
+
+          validateBtn.addEventListener('click', async () => {
+            const apiKey = document.getElementById('aiServiceApiKey').value;
+            const model = document.getElementById('llmModel').value;
+
+            if (!apiKey || !model) {
+              statusEl.innerText = '❌ API 키와 모델을 모두 입력하세요';
+              statusEl.style.color = 'red';
+              submitBtn.disabled = true;
+
+              return;
+            }
+
+            // 초기화
+            statusEl.innerText = '검증 중...';
+            statusEl.style.color = 'black';
+            submitBtn.disabled = true;
+
+            try {
+              const res = await fetch('/validate-api-key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  aiServiceApiKey: apiKey,
+                  llmModel: model
+                })
+              });
+
+              const text = await res.text();
+
+              if (res.ok) {
+                statusEl.innerText = '✅ API 키 검증 성공';
+                statusEl.style.color = 'green';
+                submitBtn.disabled = false;
+              } else {
+                statusEl.innerText = '❌ 실패: ' + text;
+                statusEl.style.color = 'red';
+                submitBtn.disabled = true;
+              }
+            } catch (e) {
+              statusEl.innerText = '❌ 네트워크 오류';
+              statusEl.style.color = 'red';
+              submitBtn.disabled = true;
+            }
+          });
+        </script>
       </div>
     </div>
   </div>

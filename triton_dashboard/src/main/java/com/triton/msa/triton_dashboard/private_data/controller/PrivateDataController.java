@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -32,6 +33,8 @@ public class PrivateDataController {
 
         try {
             result = privateDataService.unzipAndSaveFiles(projectId, file);
+        } catch (MaxUploadSizeExceededException e) {
+            result = new UploadResultDto("업로드 용량 초과: 10MB 이하의 zip 파일만 업로드 가능합니다.", List.of(), List.of());
         } catch (IllegalArgumentException e) {
             result = new UploadResultDto(e.getMessage(), List.of(), List.of());
         }

@@ -72,6 +72,16 @@
                     <h5 class="mb-0 fw-semibold">파일 저장 결과</h5>
                 </div>
 
+                <!-- 전체 실패 (예: zip 아님) -->
+                <div th:if="${uploadResult.savedFilenames.size() == 0 and uploadResult.skippedFilenames.size() == 0}">
+                    <div class="alert alert-danger d-flex align-items-center" role="alert">
+                        <i class="bi bi-x-octagon-fill me-2 fs-5"></i>
+                        <div>
+                            <strong th:text="${uploadResult.message}">파일 업로드 오류</strong>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 업로드 성공 목록 -->
                 <div th:if="${uploadResult.savedFilenames.size() > 0}" class="mb-3">
                     <h6 class="text-success fw-bold mb-2"><i class="bi bi-check-circle me-1"></i>업로드된 파일 목록</h6>
@@ -99,6 +109,6 @@
             </div>
         </div>
     </div>
-</section>
+</section>z
 </body>
 </html>

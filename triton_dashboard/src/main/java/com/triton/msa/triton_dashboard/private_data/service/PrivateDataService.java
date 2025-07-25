@@ -7,12 +7,17 @@ import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.repository.PrivateDataRepository;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+import org.apache.tika.Tika;
+import org.apache.tika.exception.TikaException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -21,8 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +34,7 @@ public class PrivateDataService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final ProjectService projectService;
     private final PrivateDataRepository privateDataRepository;
+    private final Tika tika = new Tika();
 
     public UploadResultDto unzipAndSaveFiles(Long projectId, MultipartFile file) {
         String originalFilename = file.getOriginalFilename();
@@ -75,26 +79,55 @@ public class PrivateDataService {
     private List<ExtractedFile> unzipToFileList(InputStream inputStream, Path targetDir) throws IOException {
         List<ExtractedFile> files = new ArrayList<>();
 
-        try (ZipInputStream zis = new ZipInputStream((inputStream))) {
-            ZipEntry entry;
+        try (ZipArchiveInputStream zis = new ZipArchiveInputStream(inputStream, "CP949", true)) {
+            ZipArchiveEntry entry;
 
-            while ((entry = zis.getNextEntry()) != null) {
-                // 폴더는 스킵
+            while ((entry = zis.getNextZipEntry()) != null) {
                 if (entry.isDirectory()) continue;
 
-                // 압축 해제 대상 경로 구성
-                Path newFile = targetDir.resolve(entry.getName()).normalize();
-                if (!newFile.startsWith(targetDir)) throw new IOException("Zip Slip 공격 탑지됨");
+                String filename = entry.getName(); // 한글 포함된 파일명도 CP949로 정상 복호화
+                Path newFile = targetDir.resolve(filename).normalize();
+
+                if (!newFile.startsWith(targetDir)) {
+                    throw new IOException("Zip Slip 공격 탐지됨");
+                }
 
                 Files.createDirectories(newFile.getParent());
                 Files.copy(zis, newFile, StandardCopyOption.REPLACE_EXISTING);
 
-                // Elasticsearch 저장을 위해 파일 내용을 하나의 문자열로 합침
-                String content = Files.readAllLines(newFile).stream().collect(Collectors.joining("\n"));
-                files.add(new ExtractedFile(entry.getName(), content, Instant.now()));
+                String content;
+                try {
+                    if (isPlainText(filename)) {
+                        content = Files.readAllLines(newFile, StandardCharsets.UTF_8).stream().collect(Collectors.joining("\n"));
+                    } else {
+                        content = extractTextFromFile(newFile);
+                    }
+
+                    content.getBytes(StandardCharsets.UTF_8); // 인코딩 검증
+                } catch (Exception e) {
+                    content = "텍스트 추출 실패 (UTF-8 인코딩 오류)";
+                }
+
+                files.add(new ExtractedFile(filename, content, Instant.now()));
             }
         }
+
         return files;
+    }
+
+    private boolean isPlainText(String filename) {
+        String lower = filename.toLowerCase();
+        return lower.endsWith(".txt") || lower.endsWith(".log") || lower.endsWith(".env") ||
+                lower.endsWith(".ini") || lower.endsWith(".conf") || lower.endsWith(".csv") ||
+                lower.endsWith(".md") || lower.endsWith(".yaml") || lower.endsWith(".yml");
+    }
+
+    private String extractTextFromFile(Path filePath) {
+        try {
+            return tika.parseToString(filePath);
+        } catch (IOException | TikaException e) {
+            return "텍스트 추출 실패";
+        }
     }
 
     private boolean isAllowed(String filename) {
@@ -102,40 +135,61 @@ public class PrivateDataService {
         return !(lower.endsWith(".exe") || lower.endsWith(".sh") || lower.endsWith("bat"));
     }
 
-    private void saveToDatabase(Long projectId, ExtractedFile file) {
+    private String resolveContentType(String filename) {
+        String lower = filename.toLowerCase();
+
+        if (isPlainText(filename)) return "text/plain";
+
+        if (lower.endsWith(".md")) return "text/markdown";
+        if (lower.endsWith(".json")) return "application/json";
+        if (lower.endsWith(".yaml") || lower.endsWith(".yml")) return "application/x-yaml";
+        if (lower.endsWith(".csv")) return "text/csv";
+        if (lower.endsWith(".xml")) return "application/xml";
+
+        if (lower.endsWith(".pdf")) return "application/pdf";
+        if (lower.endsWith(".docx")) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        if (lower.endsWith(".xlsx")) return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        if (lower.endsWith(".pptx")) return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+
+        return "application/octet-stream";
+    }
+
+    private void saveToDatabase(Long projectId, ExtractedFile file, String contentType) {
         Project project = projectService.getProject(projectId);
         PrivateData privateData = new PrivateData();
 
         privateData.setProject(project);
         privateData.setFilename(file.filename());
-        privateData.setContentType("text/plain");
-        privateData.setData(file.content().getBytes());
+        privateData.setContentType(contentType);
+        privateData.setData(file.content().getBytes(StandardCharsets.UTF_8));
 
         privateDataRepository.save(privateData);
     }
 
-    private void saveToElasticsearch(Long projectId, ExtractedFile file) {
+    private void saveToElasticsearch(Long projectId, ExtractedFile file, String contentType) {
         // String indexUrl = "http://54.253.214.14:9200/project-" + projectId + "/_doc";
         String indexUrl = "http://localhost:30920/project-" + projectId + "/_doc";
 
         Map<String, Object> documnet = Map.of(
                 "filename", file.filename(),
                 "content", file.content(),
-                "timestamp", file.timestamp().toString()
+                "timestamp", file.timestamp().toString(),
+                "contentType", contentType
         );
 
         restTemplate.postForEntity(indexUrl, documnet, String.class);
     }
 
     private void saveFile(Long projectId, ExtractedFile file) {
+        String contentType = resolveContentType(file.filename());
         try {
-            saveToElasticsearch(projectId, file);
+            saveToElasticsearch(projectId, file, contentType);
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
 
         // Elasticsearch에 저장 성공 시에만 로컬 db도 저장
-        saveToDatabase(projectId, file);
+        saveToDatabase(projectId, file, contentType);
     }
 }
 

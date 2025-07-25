@@ -9,6 +9,7 @@ import com.triton.msa.triton_dashboard.project.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+import org.apache.commons.io.FileUtils;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,33 +41,35 @@ public class PrivateDataService {
     public UploadResultDto unzipAndSaveFiles(Long projectId, MultipartFile file) {
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".zip")) {
-            throw new IllegalArgumentException("지원되지 않는 파일 형식입니다. .zip 파일만 업로드해주세요.");
+            return new UploadResultDto("지원되지 않는 파일 형식입니다. .zip 파일만 업로드해주세요.", List.of(), List.of());
         }
 
-        try {
-            // 압축 해제를 위한 임시 디렉토리 생성
-            Path tempDir = Files.createTempDirectory("upload-zip");
-            List<ExtractedFile> extractedFiles = unzipToFileList(file.getInputStream(), tempDir);
+        Path tempDir = null;
+        List<String> saved = new ArrayList<>();
+        List<String> skipped = new ArrayList<>();
 
-            List<String> saved = new ArrayList<>();
-            List<String> skipped = new ArrayList<>();
+        try {
+            tempDir = Files.createTempDirectory("upload-zip");
+            List<ExtractedFile> extractedFiles = unzipToFileList(file.getInputStream(), tempDir, skipped);
 
             for (ExtractedFile doc : extractedFiles) {
+                String reason = "";
+
                 if (isAllowed(doc.filename())) {
                     try {
                         saveFile(projectId, doc);
                         saved.add(doc.filename());
+                    } catch (ConnectException e) {
+                        reason = "(저장 실패: 서버에 연결할 수 없음)";
                     } catch (Exception e) {
-                        String reason;
-                        if (e.getMessage().contains("Connection refused")) {
-                            reason = "(저장 실패: 서버에 연결할 수 없음)";
-                        } else {
-                            reason = "(저장 실패: 알 수 없는 오류)";
-                        }
-                        skipped.add(doc.filename() + " " + reason);
+                        reason = "(저장 실패: 알 수 없는 오류)";
                     }
                 } else {
                     skipped.add(doc.filename() + " (허용되지 않음)");
+                }
+
+                if (!reason.isEmpty()) {
+                    skipped.add(doc.filename() + " " + reason);
                 }
             }
 
@@ -73,10 +77,20 @@ public class PrivateDataService {
 
         } catch (IOException e) {
             return new UploadResultDto("압축 해제 실패: " + e.getMessage(), List.of(), List.of());
+
+        } finally {
+            if (tempDir != null) {
+                try {
+                    FileUtils.deleteDirectory(tempDir.toFile());
+                } catch (IOException e) {
+                    // 로그만 남기고 무시
+                    System.err.println("임시 디렉토리 삭제 실패: " + e.getMessage());
+                }
+            }
         }
     }
 
-    private List<ExtractedFile> unzipToFileList(InputStream inputStream, Path targetDir) throws IOException {
+    private List<ExtractedFile> unzipToFileList(InputStream inputStream, Path targetDir, List<String> skipped) throws IOException {
         List<ExtractedFile> files = new ArrayList<>();
 
         try (ZipArchiveInputStream zis = new ZipArchiveInputStream(inputStream, "CP949", true)) {
@@ -85,7 +99,7 @@ public class PrivateDataService {
             while ((entry = zis.getNextZipEntry()) != null) {
                 if (entry.isDirectory()) continue;
 
-                String filename = entry.getName(); // 한글 포함된 파일명도 CP949로 정상 복호화
+                String filename = entry.getName();
                 Path newFile = targetDir.resolve(filename).normalize();
 
                 if (!newFile.startsWith(targetDir)) {
@@ -95,39 +109,36 @@ public class PrivateDataService {
                 Files.createDirectories(newFile.getParent());
                 Files.copy(zis, newFile, StandardCopyOption.REPLACE_EXISTING);
 
-                String content;
                 try {
+                    String content;
                     if (isPlainText(filename)) {
                         content = Files.readAllLines(newFile, StandardCharsets.UTF_8).stream().collect(Collectors.joining("\n"));
                     } else {
-                        content = extractTextFromFile(newFile);
+                        content = tika.parseToString(newFile);
+                    }
+
+                    if (content == null || content.isBlank()) {
+                        skipped.add(filename + " (추출된 데이터 없음)");
+                        continue;
                     }
 
                     content.getBytes(StandardCharsets.UTF_8); // 인코딩 검증
-                } catch (Exception e) {
-                    content = "텍스트 추출 실패 (UTF-8 인코딩 오류)";
+                    files.add(new ExtractedFile(filename, content, Instant.now()));
+                } catch (IOException | TikaException e) {
+                    skipped.add(filename + " (텍스트 추출 실패: UTF-8 인코딩 오류)");
                 }
-
-                files.add(new ExtractedFile(filename, content, Instant.now()));
             }
         }
 
         return files;
     }
 
+
     private boolean isPlainText(String filename) {
         String lower = filename.toLowerCase();
         return lower.endsWith(".txt") || lower.endsWith(".log") || lower.endsWith(".env") ||
                 lower.endsWith(".ini") || lower.endsWith(".conf") || lower.endsWith(".csv") ||
                 lower.endsWith(".md") || lower.endsWith(".yaml") || lower.endsWith(".yml");
-    }
-
-    private String extractTextFromFile(Path filePath) {
-        try {
-            return tika.parseToString(filePath);
-        } catch (IOException | TikaException e) {
-            return "텍스트 추출 실패";
-        }
     }
 
     private boolean isAllowed(String filename) {
@@ -172,24 +183,22 @@ public class PrivateDataService {
 
         Map<String, Object> documnet = Map.of(
                 "filename", file.filename(),
+                "contentType", contentType,
                 "content", file.content(),
-                "timestamp", file.timestamp().toString(),
-                "contentType", contentType
+                "timestamp", file.timestamp().toString()
         );
 
         restTemplate.postForEntity(indexUrl, documnet, String.class);
     }
 
-    private void saveFile(Long projectId, ExtractedFile file) {
+    private void saveFile(Long projectId, ExtractedFile file) throws ConnectException {
         String contentType = resolveContentType(file.filename());
         try {
             saveToElasticsearch(projectId, file, contentType);
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+            throw new ConnectException("Elasticsearch 저장 중 오류 발생: " + e.getMessage());
         }
 
-        // Elasticsearch에 저장 성공 시에만 로컬 db도 저장
         saveToDatabase(projectId, file, contentType);
     }
 }
-

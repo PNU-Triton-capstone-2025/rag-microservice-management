@@ -55,14 +55,12 @@
         </div>
 
         <div class="card-body">
-            <form th:action="@{/projects/{id}/private-data/upload(id=${project.id})}" method="post" enctype="multipart/form-data">
+            <form id="uploadForm" th:action="@{/projects/{id}/private-data/upload(id=${project.id})}" method="post" enctype="multipart/form-data">
                 <div class="mb-3">
                     <label for="zipFile" class="form-label fw-bold">ZIP 파일 선택</label>
                     <input id="zipFile" type="file" name="file" accept=".zip" class="form-control" required>
                 </div>
-                <button type="submit" class="btn btn-success w-100">
-                    <i class="bi bi-cloud-arrow-up-fill me-1"></i> 업로드
-                </button>
+                <button type="button" class="btn btn-success w-100" onclick="handleUpload()">업로드</button>
             </form>
 
             <!-- 업로드 결과 메시지 -->
@@ -72,7 +70,7 @@
                     <h5 class="mb-0 fw-semibold">파일 저장 결과</h5>
                 </div>
 
-                <!-- 전체 실패 (예: zip 아님) -->
+                <!-- 업로드 실패 (예: zip 아님) -->
                 <div th:if="${uploadResult.savedFilenames.size() == 0 and uploadResult.skippedFilenames.size() == 0}">
                     <div class="alert alert-danger d-flex align-items-center" role="alert">
                         <i class="bi bi-x-octagon-fill me-2 fs-5"></i>
@@ -82,7 +80,7 @@
                     </div>
                 </div>
 
-                <!-- 업로드 성공 목록 -->
+                <!-- 저장 성공 목록 -->
                 <div th:if="${uploadResult.savedFilenames.size() > 0}" class="mb-3">
                     <h6 class="text-success fw-bold mb-2"><i class="bi bi-check-circle me-1"></i>업로드된 파일 목록</h6>
                     <ul class="list-group list-group-flush">
@@ -92,7 +90,7 @@
                     </ul>
                 </div>
 
-                <!-- 업로드 실패 목록 -->
+                <!-- 저장 실패 목록 -->
                 <div th:if="${uploadResult.skippedFilenames.size() > 0}">
                     <h6 class="text-warning fw-bold mb-2"><i class="bi bi-exclamation-triangle me-1"></i>처리되지 않은 파일 목록</h6>
                     <ul class="list-group list-group-flush">
@@ -109,6 +107,36 @@
             </div>
         </div>
     </div>
-</section>z
+</section>
+<div layout:fragment="page-scripts">
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            window.handleUpload = function () {
+                const fileInput = document.getElementById("zipFile");
+                const file = fileInput?.files?.[0];
+                const maxSize = 10 * 1024 * 1024;
+
+                if (!file) {
+                    alert("파일을 선택해주세요.");
+                    return;
+                }
+
+                if (file.size > maxSize) {
+                    alert("❗ 10MB를 초과하는 zip 파일은 업로드할 수 없습니다.");
+                    fileInput.value = "";
+                    return;
+                }
+
+                const form = document.getElementById("uploadForm");
+                if (!form) {
+                    alert("❗ 업로드 폼을 찾을 수 없습니다. 페이지를 새로고침 해주세요.");
+                    return;
+                }
+
+                form.submit();
+            };
+        });
+    </script>
+</div>
 </body>
 </html>

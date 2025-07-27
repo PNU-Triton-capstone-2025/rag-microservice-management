@@ -12,6 +12,8 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
+import com.triton.msa.triton_dashboard.private_data.dto.UploadResultDto;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,15 +21,19 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ConnectException;
+
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 @Service
 @RequiredArgsConstructor
@@ -77,7 +83,6 @@ public class PrivateDataService {
 
         } catch (IOException e) {
             return new UploadResultDto("압축 해제 실패: " + e.getMessage(), List.of(), List.of());
-
         } finally {
             if (tempDir != null) {
                 try {
@@ -108,7 +113,7 @@ public class PrivateDataService {
 
                 Files.createDirectories(newFile.getParent());
                 Files.copy(zis, newFile, StandardCopyOption.REPLACE_EXISTING);
-
+              
                 try {
                     String content;
                     if (isPlainText(filename)) {

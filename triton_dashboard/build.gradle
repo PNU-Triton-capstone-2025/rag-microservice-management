@@ -37,6 +37,13 @@ dependencies {
 	// SSH 연결 - Apache MINA SSHD Core
 	implementation 'org.apache.sshd:sshd-core:2.12.1'
 
+	// Apache Tika - 텍스트 추출용
+	implementation 'org.apache.tika:tika-core:3.2.1'
+	implementation 'org.apache.tika:tika-parsers-standard-package:3.2.1'
+
+	// 한글 파일명 압축 위함
+	implementation 'org.apache.commons:commons-compress:1.26.0'
+
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.h2database:h2'
 	annotationProcessor 'org.projectlombok:lombok'

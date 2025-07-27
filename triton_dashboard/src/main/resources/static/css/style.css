@@ -24,3 +24,13 @@ body {
 #wrapper.toggled #sidebar-wrapper {
     margin-left: -250px;
 }
+
+.bg-light-subtle {
+    background-color: #fdfdfd;
+}
+
+.list-group-item {
+    border: none;
+    background-color: transparent;
+    padding-left: 1rem;
+}

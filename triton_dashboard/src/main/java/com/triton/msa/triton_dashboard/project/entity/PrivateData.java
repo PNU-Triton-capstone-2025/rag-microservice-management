@@ -18,6 +18,7 @@ public class PrivateData {
     @JoinColumn(name = "project_id")
     private Project project;
 
+    private String esId; // elasticsearch와 데이터 매핑 위함
     private String filename;
     private String contentType;
 

@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +35,7 @@ public class PrivateDataService {
     private final ProjectService projectService;
     private final PrivateDataRepository privateDataRepository;
     private final ZipExtractor zipExtractor;
+    private final HttpHeaders headers = new HttpHeaders();
 
     public UploadResultDto unzipAndSaveFiles(Long projectId, MultipartFile file) {
         String originalFilename = file.getOriginalFilename();
@@ -75,40 +78,54 @@ public class PrivateDataService {
 
     private void saveFile(Long projectId, ExtractedFile file) throws ConnectException {
         String contentType = FileTypeUtil.resolveContentType(file.filename());
+        String esId;
         try {
-            saveToElasticsearch(projectId, file, contentType);
+            esId = saveToElasticsearch(projectId, file, contentType);
         } catch (Exception e) {
             throw new ConnectException("Elasticsearch 저장 중 오류 발생: " + e.getMessage());
         }
 
-        saveToDatabase(projectId, file, contentType);
+        if (esId != null && !esId.isBlank()) {
+            saveToDatabase(projectId, file, contentType, esId);
+        }
     }
 
-    private void saveToDatabase(Long projectId, ExtractedFile file, String contentType) {
+    private void saveToDatabase(Long projectId, ExtractedFile file, String contentType, String esId) {
         Project project = projectService.getProject(projectId);
         PrivateData privateData = new PrivateData();
 
         privateData.setProject(project);
         privateData.setFilename(file.filename());
         privateData.setContentType(contentType);
+        privateData.setEsId(esId);
         privateData.setData(file.content().getBytes(StandardCharsets.UTF_8));
         privateData.setCreatedAt(file.timestamp());
 
         privateDataRepository.save(privateData);
     }
 
-    private void saveToElasticsearch(Long projectId, ExtractedFile file, String contentType) {
+    private String saveToElasticsearch(Long projectId, ExtractedFile file, String contentType) {
         // String indexUrl = "http://54.253.214.14:9200/project-" + projectId + "/_doc";
         String indexUrl = "http://localhost:30920/project-" + projectId + "/_doc";
 
-        Map<String, Object> documnet = Map.of(
+        Map<String, Object> document = Map.of(
                 "filename", file.filename(),
                 "contentType", contentType,
                 "content", file.content(),
                 "timestamp", file.timestamp().toString()
         );
 
-        restTemplate.postForEntity(indexUrl, documnet, String.class);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(document, headers);
+        ResponseEntity<Map> response = restTemplate.postForEntity(indexUrl, request, Map.class);
+
+        String esId = Optional.ofNullable(response.getBody())
+                .map(b -> b.get("_id"))
+                .map(Object::toString)
+                .orElseThrow(() -> new RuntimeException("Elasticsearch 저장 실패: _id 없음"));
+
+        return esId;
     }
 
     public List<PrivateData> getPrivateDataList(Long projectId) {
@@ -119,26 +136,12 @@ public class PrivateDataService {
         PrivateData data = privateDataRepository.findByIdAndProjectId(dataId, projectId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 데이터가 존재하지 않습니다."));
 
-        deleteFromElasticsearch(projectId, data.getFilename());
+        deleteFromElasticsearch(projectId, data.getEsId());
         privateDataRepository.deleteById(dataId);
     }
 
-    private void deleteFromElasticsearch(Long projectId, String filename) {
-        String indexUrl = "http://localhost:30920/project-" + projectId + "/_delete_by_query";
-        String query = """
-        {
-          "query": {
-            "match": {
-              "filename": "%s"
-            }
-          }
-        }
-        """.formatted(filename);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<String> request = new HttpEntity<>(query, headers);
-        restTemplate.postForEntity(indexUrl, request, String.class);
+    private void deleteFromElasticsearch(Long projectId, String esId) {
+        String indexUrl = "http://localhost:30920/project-" + projectId + "/_doc/" + esId;
+        restTemplate.delete(indexUrl);
     }
 }

@@ -29,6 +29,10 @@
                th:href="|@{/projects/{id}/chat(id=${project.id})}#zip-upload|">
             <i class="bi bi-upload me-2"></i>비공개 데이터 업로드
             </a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
+               th:href="@{/projects/{id}/private-data(id=${project.id})}">
+                <i class="bi bi-file-earmark-lock me-2"></i>비공개 데이터 목록
+            </a>
 
             <hr class="my-2"/>
             <a class="list-group-item list-group-item-action list-group-item-light p-3"

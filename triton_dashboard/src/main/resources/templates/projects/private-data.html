@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko" layout:decorate="~{layout/layout}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+
+<head>
+  <title>비공개 데이터 목록</title>
+</head>
+
+<body>
+<section layout:fragment="page-content">
+  <div class="container-fluid p-4">
+    <h1 class="mt-4">비공개 데이터 목록</h1>
+    <div th:if="${privateDataList.isEmpty()}">
+      <p>등록된 비공개 데이터가 없습니다.</p>
+    </div>
+
+    <table class="table" th:if="${!privateDataList.isEmpty()}">
+      <thead>
+      <tr>
+        <th>파일명</th>
+        <th>Content Type</th>
+        <th>업로드 시간</th>
+        <th>삭제</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="data : ${privateDataList}">
+        <td th:text="${data.filename}"></td>
+        <td th:text="${data.contentType}"></td>
+        <td th:text="${#dates.format(data.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+        <td>
+          <form th:action="@{/projects/{projectId}/private-data/{id}(projectId=${project.id}, id=${data.id})}"
+                method="post" th:object="${data}">
+            <input type="hidden" name="_method" value="delete"/>
+            <button type="submit" class="btn btn-danger btn-sm"
+                    onclick="return confirm('정말 삭제하시겠습니까?');">삭제</button>
+          </form>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+
+    <a th:href="@{/projects/{id}/chat(id=${project.id})}" class="btn btn-secondary mt-3">프로젝트로 돌아가기</a>
+  </div>
+</section>
+</body>
+</html>

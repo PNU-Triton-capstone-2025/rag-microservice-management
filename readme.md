@@ -4,8 +4,9 @@
 
 python -m venv ./<venv>
 
-|Platform|Shell|Command to activate virtual environment|
-|POSIX|bash/zsh|$ source <venv>/bin/activate
-Windows|PowerShell|PS C:\> <venv>\Scripts\Activate.ps1
+| Platform   | Shell       | Command to activate virtual environment |
+|---|---|---|
+| POSIX      | bash/zsh    | source <venv>/bin/activate  |
+| Windows    | PowerShell  | <venv>\Scripts\Activate.ps1 |
 
 pip install -r requirements.txt

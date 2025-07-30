@@ -4,9 +4,38 @@
 
 python -m venv ./<venv>
 
-| Platform   | Shell       | Command to activate virtual environment |
-|---|---|---|
-| POSIX      | bash/zsh    | source <venv>/bin/activate  |
-| Windows    | PowerShell  | <venv>\Scripts\Activate.ps1 |
+<table>
+  <tr>
+    <td>Platform</td>
+    <td>Shell</td>
+    <td>Command to activate virtual environment</td>
+  </tr>
+  <tr>
+    <th rowspan="4">POSIX</th>
+    <td>bash/zsh</td>
+    <td><code>$ source <venv>/bin/activate</code></td>
+  </tr>
+  <tr>
+    <td>fish</td>
+    <td><code>$ source <venv>/bin/activate.fish</code></td>
+  </tr>
+  <tr>
+    <td>csh/tcsh</td>
+    <td><code>$ source <venv>/bin/activate.csh</code></td>
+  </tr>
+  <tr>
+    <td>pwsh</td>
+    <td><code>$ <venv>/bin/Activate.ps1</code></td>
+  </tr>
+  <tr>
+    <th rowspan="2">Windows</th>
+    <td>cmd.exe</td>
+    <td><code>C:\> <venv>\Scripts\activate.bat</code></td>
+  </tr>
+  <tr>
+    <td>PwerShell</td>
+    <td><code>PS C:\> <venv>\Scripts\Activate.ps1</code></td>
+  </tr>
+</table>
 
 pip install -r requirements.txt

@@ -144,4 +144,31 @@ public class PrivateDataService {
         String indexUrl = "http://localhost:30920/project-" + projectId + "/_doc/" + esId;
         restTemplate.delete(indexUrl);
     }
+
+    public List<PrivateData> getPrivateDataList(Long projectId) {
+        return privateDataRepository.findByProjectId(projectId);
+    }
+
+    public void deletePrivateData(Long projectId, Long dataId) {
+        PrivateData data = privateDataRepository.findByIdAndProjectId(dataId, projectId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 데이터가 존재하지 않습니다."));
+
+        String indexUrl = "http://localhost:30920/project-" + projectId + "/_delete_by_query";
+        String query = """
+            {
+              "query": {
+                "match": {
+                  "filename": "%s"
+                }
+              }
+            }
+            """.formatted(data.getFilename());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> request = new HttpEntity<>(query, headers);
+
+        restTemplate.postForEntity(indexUrl, request, String.class);
+        privateDataRepository.deleteById(dataId);
+    }
 }

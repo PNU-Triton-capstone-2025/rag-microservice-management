@@ -12,8 +12,9 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
-import com.triton.msa.triton_dashboard.private_data.dto.UploadResultDto;
-import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,8 +33,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 @Service
 @RequiredArgsConstructor
@@ -178,6 +177,7 @@ public class PrivateDataService {
         privateData.setFilename(file.filename());
         privateData.setContentType(contentType);
         privateData.setData(file.content().getBytes(StandardCharsets.UTF_8));
+        privateData.setCreatedAt(file.timestamp());
 
         privateDataRepository.save(privateData);
     }
@@ -205,5 +205,32 @@ public class PrivateDataService {
         }
 
         saveToDatabase(projectId, file, contentType);
+    }
+
+    public List<PrivateData> getPrivateDataList(Long projectId) {
+        return privateDataRepository.findByProjectId(projectId);
+    }
+
+    public void deletePrivateData(Long projectId, Long dataId) {
+        PrivateData data = privateDataRepository.findByIdAndProjectId(dataId, projectId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 데이터가 존재하지 않습니다."));
+
+        String indexUrl = "http://localhost:30920/project-" + projectId + "/_delete_by_query";
+        String query = """
+            {
+              "query": {
+                "match": {
+                  "filename": "%s"
+                }
+              }
+            }
+            """.formatted(data.getFilename());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> request = new HttpEntity<>(query, headers);
+
+        restTemplate.postForEntity(indexUrl, request, String.class);
+        privateDataRepository.deleteById(dataId);
     }
 }

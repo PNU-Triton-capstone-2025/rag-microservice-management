@@ -46,4 +46,4 @@
 `pip install -r requirements.txt`
 
 ### 5. Run Server
-`python server.py`
+`python app.py`

@@ -1,8 +1,12 @@
-1. .env에 API_KEY 입력
+# RAG server 구동 방법
 
-2. python 가상환경 설정
+### 1. .env에 API_KEY 입력
+`OPENAI_API_KEY = "YOUR API KEY"`
 
-python -m venv ./<venv>
+### 2. python 가상환경 생성
+`python -m venv ./<venv>`
+
+### 3. 가상환경 activate
 
 <table>
   <tr>
@@ -38,4 +42,8 @@ python -m venv ./<venv>
   </tr>
 </table>
 
-pip install -r requirements.txt
+### 4. requirements 설치
+`pip install -r requirements.txt`
+
+### 5. Run Server
+`python server.py`

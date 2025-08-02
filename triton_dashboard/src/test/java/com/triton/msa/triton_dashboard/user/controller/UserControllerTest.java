@@ -1,6 +1,7 @@
 package com.triton.msa.triton_dashboard.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.triton.msa.triton_dashboard.config.SecurityConfig;
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
 import com.triton.msa.triton_dashboard.user.entity.LlmModel;
 import com.triton.msa.triton_dashboard.user.entity.User;
@@ -10,7 +11,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -21,6 +24,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -30,6 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(UserController.class)
+@Import(SecurityConfig.class)
 @DisplayName("UserController 단위 테스트")
 class UserControllerTest {
     @Autowired
@@ -41,7 +46,7 @@ class UserControllerTest {
     @MockitoBean
     private LlmApiKeyValidator apiKeyValidator;
 
-    @MockitoBean
+    @Autowired
     private ObjectMapper objectMapper;
 
     @Test
@@ -82,6 +87,7 @@ class UserControllerTest {
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .param("username", registrationDto.username())
                 .param("password", registrationDto.password())
+                .with(csrf())
         )
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/login/?success"));

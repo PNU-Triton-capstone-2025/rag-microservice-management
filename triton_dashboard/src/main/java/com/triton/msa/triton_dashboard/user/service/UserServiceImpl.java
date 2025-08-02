@@ -30,7 +30,12 @@ public class UserServiceImpl implements UserService {
         apiKeyInfo.setApiServiceApiKey(registrationDto.aiServiceApiKey());
         apiKeyInfo.setLlmModel(registrationDto.llmModel());
 
-        User user = new User();
+        User user = new User(
+                registrationDto.username(),
+                passwordEncoder.encode(registrationDto.password()),
+                apiKeyInfo,
+                Collections.singleton(UserRole.USER)
+        );
         user.setUsername(registrationDto.username());
         user.setPassword(passwordEncoder.encode(registrationDto.password()));
         user.setApiKeyInfo(apiKeyInfo);

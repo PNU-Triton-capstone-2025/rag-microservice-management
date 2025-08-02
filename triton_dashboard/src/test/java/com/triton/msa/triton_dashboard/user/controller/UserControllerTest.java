@@ -3,8 +3,10 @@ package com.triton.msa.triton_dashboard.user.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.triton.msa.triton_dashboard.config.SecurityConfig;
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
+import com.triton.msa.triton_dashboard.user.entity.ApiKeyInfo;
 import com.triton.msa.triton_dashboard.user.entity.LlmModel;
 import com.triton.msa.triton_dashboard.user.entity.User;
+import com.triton.msa.triton_dashboard.user.entity.UserRole;
 import com.triton.msa.triton_dashboard.user.service.UserService;
 import com.triton.msa.triton_dashboard.user.util.LlmApiKeyValidator;
 import org.junit.jupiter.api.DisplayName;
@@ -16,6 +18,9 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Collections;
+import java.util.HashSet;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -80,7 +85,7 @@ class UserControllerTest {
     void registerAndRedirect() throws Exception {
         // given
         UserRegistrationDto registrationDto = new UserRegistrationDto("testUser", "password123", "api-key", LlmModel.GPT_4O);
-        when(userService.registerNewUser(any(UserRegistrationDto.class))).thenReturn(new User());
+        when(userService.registerNewUser(any(UserRegistrationDto.class))).thenReturn(new User("test", "password", new ApiKeyInfo(), Collections.singleton(UserRole.USER)));
 
         // when & then
         mockMvc.perform(post("/register")

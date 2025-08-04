@@ -20,8 +20,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.net.ConnectException;
 
-import java.nio.charset.StandardCharsets;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -98,7 +96,6 @@ public class PrivateDataService {
         privateData.setFilename(file.filename());
         privateData.setContentType(contentType);
         privateData.setEsId(esId);
-        privateData.setData(file.content().getBytes(StandardCharsets.UTF_8));
         privateData.setCreatedAt(file.timestamp());
 
         privateDataRepository.save(privateData);

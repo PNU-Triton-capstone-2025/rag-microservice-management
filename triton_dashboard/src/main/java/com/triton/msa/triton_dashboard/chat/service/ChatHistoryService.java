@@ -27,4 +27,10 @@ public class ChatHistoryService {
     public List<ChatHistory> getHistoryForProject(Project project) {
         return chatHistoryRepository.findByProjectOrderByCreatedAtDesc(project);
     }
+
+    @Transactional(readOnly = true)
+    public ChatHistory getHistoryById(Long id) {
+        return chatHistoryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 채팅 이력을 찾을 수 없습니다."));
+    }
 }

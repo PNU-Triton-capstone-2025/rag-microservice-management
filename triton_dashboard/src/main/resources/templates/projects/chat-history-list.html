@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${project.name} + ' - 작업 이력'">작업 이력</title>
+</head>
+<body>
+<section layout:fragment="page-content">
+    <div class="container-fluid p-4">
+        <h2>작업 이력 - [[${project.name}]]</h2>
+        <hr>
+
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th>제목</th>
+                <th>생성일</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="h : ${histories}"
+                th:onclick="|location.href='@{/projects/{projectId}/chat/history/{id}(projectId=${project.id}, id=${h.id})}'|"
+                style="cursor: pointer;">
+                <td th:text="${h.title}"></td>
+                <td th:text="${#temporals.format(h.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+</body>
+</html>

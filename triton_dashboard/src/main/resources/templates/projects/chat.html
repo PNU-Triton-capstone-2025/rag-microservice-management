@@ -95,30 +95,30 @@
                         eventSource = null;
                     }
 
-// 사용자 메시지 표시
+                    // 사용자 메시지 표시
                     chatWindow.innerHTML += `
-    <div class="d-flex justify-content-end mb-2">
-        <div class="card bg-primary text-white p-2" style="max-width:70%;">
-            <p class="mb-0">${prompt}</p>
-        </div>
-    </div>
-`;
+                        <div class="d-flex justify-content-end mb-2">
+                            <div class="card bg-primary text-white p-2" style="max-width:70%;">
+                                <p class="mb-0">${prompt}</p>
+                            </div>
+                        </div>
+                    `;
 
-// 응답 카드 준비
+                    // 응답 카드 준비
                     const wrapper = document.createElement("div");
                     wrapper.classList.add("d-flex", "justify-content-start", "mb-2");
                     wrapper.innerHTML = `
-    <div class="card bg-light p-2" style="max-width:70%;">
-        <h6 class="card-title">응답</h6>
-        <pre class="llm-response"></pre>
-    </div>
-`;
+                        <div class="card bg-light p-2" style="max-width:70%;">
+                            <h6 class="card-title">응답</h6>
+                            <pre class="llm-response"></pre>
+                        </div>
+                    `;
                     chatWindow.appendChild(wrapper);
 
-// 여기서 새로 만든 pre 엘리먼트를 잡아둠
+                    // 여기서 새로 만든 pre 엘리먼트를 잡아둠
                     const explanationElem = wrapper.querySelector(".llm-response");
 
-// SSE 요청 (토큰 단위 수신)
+                    // SSE 요청 (토큰 단위 수신)
                     const url = `/projects/${projectId}/chat/stream?query=${encodeURIComponent(prompt)}`;
                     eventSource = new EventSource(url);
 

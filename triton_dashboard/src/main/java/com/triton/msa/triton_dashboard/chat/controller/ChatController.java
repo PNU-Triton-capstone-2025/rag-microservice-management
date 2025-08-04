@@ -56,27 +56,27 @@ public class ChatController {
             @PathVariable Long projectId,
             @RequestParam String query) {
 
-        // 1. 프로젝트 조회
         Project project = projectService.getProject(projectId);
 
-        // 2. Gemini API 비동기 호출
         return ragService.generateWithGeminiAsync(projectId, query)
                 .flatMapMany(fullResponse -> {
-
-                    // 3. 응답 검증
                     if (fullResponse == null || fullResponse.isBlank()) {
                         fullResponse = "⚠️ 응답이 비어 있습니다.";
                     }
 
-                    // 4. 채팅 내역 저장 (DB)
-                    chatHistoryService.saveHistory(project, query, fullResponse);
+                    // 전체 응답 저장 (DB 저장용)
+                    String finalResponse = fullResponse;
 
-                    // 5. Flux로 한 글자씩 스트리밍
-                    return Flux.fromStream(fullResponse.chars()
-                                    .mapToObj(c -> String.valueOf((char) c)))
-                            .delayElements(Duration.ofMillis(30));
+                    // 토큰 단위로 쪼개기 (공백 포함, 줄바꿈 포함)
+                    String[] tokens = finalResponse.split("(?<= )|(?=\n)");
+
+                    return Flux.fromArray(tokens)
+                            .delayElements(Duration.ofMillis(20)) // 토큰 전송 속도
+                            .doOnComplete(() -> {
+                                // 스트리밍 끝나면 DB 저장
+                                chatHistoryService.saveHistory(project, query, finalResponse);
+                            });
                 })
-                // 6. 예외 처리
                 .onErrorResume(e -> {
                     e.printStackTrace();
                     return Flux.just("⚠️ 요청 실패");

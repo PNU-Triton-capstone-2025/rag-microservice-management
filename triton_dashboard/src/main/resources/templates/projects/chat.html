@@ -9,6 +9,23 @@
     <!-- CSRF 토큰 -->
     <meta name="_csrf" th:content="${_csrf.token}" />
     <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+
+    <!-- 응답 UI 스타일 -->
+    <style>
+        .llm-response {
+            white-space: pre-wrap;     /* 줄바꿈과 연속 공백 보존 */
+            word-break: break-word;    /* 긴 단어 줄바꿈 */
+            background-color: #fdfdfd;
+            padding: 16px 18px;
+            border-radius: 10px;
+            font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+            font-size: 15px;
+            line-height: 1.7;
+            color: #2c2c2c;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            border: 1px solid #e8e8e8;
+        }
+    </style>
 </head>
 <body>
 
@@ -36,7 +53,7 @@
                 <div th:if="${msg.llmResponse}" class="d-flex justify-content-start mb-2">
                     <div class="card bg-light p-2" style="max-width:70%;">
                         <h6 class="card-title">응답</h6>
-                        <pre><code th:text="${msg.llmResponse}"></code></pre>
+                        <pre class="llm-response" th:text="${msg.llmResponse}"></pre>
                     </div>
                 </div>
             </div>
@@ -54,7 +71,6 @@
         <th:block layout:fragment="page-scripts">
             <script>
                 let projectId = /*[[${project.id}]]*/ 0;
-
                 if (!projectId || projectId === 0) {
                     const match = window.location.pathname.match(/\/projects\/(\d+)\/chat/);
                     if (match) {
@@ -62,7 +78,9 @@
                     }
                 }
 
-                document.getElementById("chat-form").addEventListener("submit", function(e) {
+                let eventSource = null;
+
+                document.getElementById("chat-form").addEventListener("submit", function (e) {
                     e.preventDefault();
 
                     const queryInput = document.getElementById("query");
@@ -71,46 +89,50 @@
 
                     const chatWindow = document.getElementById("chat-window");
 
-                    // 사용자 메시지 표시
-                    chatWindow.innerHTML += `
-                        <div class="d-flex justify-content-end mb-2">
-                            <div class="card bg-primary text-white p-2" style="max-width:70%;">
-                                <p class="mb-0">${prompt}</p>
-                            </div>
-                        </div>
-                    `;
-                    queryInput.value = "";
+                    // 기존 SSE 닫기
+                    if (eventSource) {
+                        eventSource.close();
+                        eventSource = null;
+                    }
 
-                    // 응답 카드 준비
-                    <!-- 응답 카드 준비 -->
+// 사용자 메시지 표시
+                    chatWindow.innerHTML += `
+    <div class="d-flex justify-content-end mb-2">
+        <div class="card bg-primary text-white p-2" style="max-width:70%;">
+            <p class="mb-0">${prompt}</p>
+        </div>
+    </div>
+`;
+
+// 응답 카드 준비
                     const wrapper = document.createElement("div");
                     wrapper.classList.add("d-flex", "justify-content-start", "mb-2");
                     wrapper.innerHTML = `
-                        <div class="card bg-light p-2" style="max-width:70%;">
-                            <h6 class="card-title">응답</h6>
-                            <pre class="llm-response" id="stream-explanation"></pre>
-                        </div>
-                    `;
+    <div class="card bg-light p-2" style="max-width:70%;">
+        <h6 class="card-title">응답</h6>
+        <pre class="llm-response"></pre>
+    </div>
+`;
                     chatWindow.appendChild(wrapper);
 
+// 여기서 새로 만든 pre 엘리먼트를 잡아둠
+                    const explanationElem = wrapper.querySelector(".llm-response");
 
-                    const explanationElem = document.getElementById("stream-explanation");
-
-                    // CSRF 토큰 읽기
-                    const token = document.querySelector("meta[name='_csrf']").content;
-                    const headerName = document.querySelector("meta[name='_csrf_header']").content;
-
-                    // SSE 요청 (스트리밍)
+// SSE 요청 (토큰 단위 수신)
                     const url = `/projects/${projectId}/chat/stream?query=${encodeURIComponent(prompt)}`;
-                    const eventSource = new EventSource(url);
+                    eventSource = new EventSource(url);
 
-                    eventSource.onmessage = function(event) {
-                        explanationElem.textContent += event.data; // 받은 텍스트 바로 이어붙임
+                    eventSource.onmessage = function (event) {
+                        const token = event.data
+                            .replace(/ /g, '&nbsp;') // 공백 보존
+                            .replace(/\n/g, '<br>'); // 줄바꿈 보존
+                        explanationElem.innerHTML += token; // 이번 요청의 박스에만 출력
                         chatWindow.scrollTop = chatWindow.scrollHeight;
                     };
 
-                    eventSource.onerror = function() {
+                    eventSource.onerror = function () {
                         eventSource.close();
+                        eventSource = null;
                     };
                 });
             </script>

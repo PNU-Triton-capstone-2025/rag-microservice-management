@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-
 <html lang="ko" layout:decorate="~{layout/layout}"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf.layout">
 
 <head>
     <meta charset="UTF-8">
     <title th:text="${project.name} + ' - Deployment Management'">Deployment Management</title>
+
+    <!-- CSRF 토큰 -->
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
 </head>
 <body>
 
@@ -21,32 +24,97 @@
             </a>
         </div>
 
+        <!-- 채팅창 -->
         <div id="chat-window" class="border rounded p-3 mb-3" style="height: 500px; overflow-y: auto;">
-            <div th:if="${query}" class="mb-3">
-                <div class="d-flex justify-content-end">
+            <!-- 기존 채팅 이력 -->
+            <div th:each="msg : ${chatHistory}">
+                <div th:if="${msg.userQuery}" class="d-flex justify-content-end mb-2">
                     <div class="card bg-primary text-white p-2" style="max-width:70%;">
-                        <p class="mb-0" th:text="${query}"></p>
+                        <p class="mb-0" th:text="${msg.userQuery}"></p>
                     </div>
                 </div>
-            </div>
-            <div th:if="${response}" class="mb-3">
-                <div class="d-flex justify-content-start">
-                    <div class="card bg-light p-2" style="max-width: 70%">
+                <div th:if="${msg.llmResponse}" class="d-flex justify-content-start mb-2">
+                    <div class="card bg-light p-2" style="max-width:70%;">
                         <h6 class="card-title">응답</h6>
-                        <p class="mb-1" th:text="${response.explanation}"></p>
-                        <pre><code class="yaml" th:text="${response.annotatedSpec}"></code></pre>
+                        <pre><code th:text="${msg.llmResponse}"></code></pre>
                     </div>
                 </div>
             </div>
         </div>
 
-        <form th:action="@{/projects/{id}/chat/send(id=${project.id})}" method="post">
+        <!-- 채팅 입력 -->
+        <form id="chat-form">
             <div class="input-group">
-                <input type="text" name="query" class="forn-control"
-                       placeholder="e.g. 'Create a redis deployment with 3 replicas'" required>
+                <input type="text" id="query" name="query" class="form-control"
+                       placeholder="예: '레디스 3개 복제 배포 생성'" required>
                 <button class="btn btn-primary" type="submit">Send</button>
             </div>
         </form>
+
+        <th:block layout:fragment="page-scripts">
+            <script>
+                let projectId = /*[[${project.id}]]*/ 0;
+
+                if (!projectId || projectId === 0) {
+                    const match = window.location.pathname.match(/\/projects\/(\d+)\/chat/);
+                    if (match) {
+                        projectId = parseInt(match[1], 10);
+                    }
+                }
+
+                document.getElementById("chat-form").addEventListener("submit", function(e) {
+                    e.preventDefault();
+
+                    const queryInput = document.getElementById("query");
+                    const prompt = queryInput.value.trim();
+                    if (!prompt) return;
+
+                    const chatWindow = document.getElementById("chat-window");
+
+                    // 사용자 메시지 표시
+                    chatWindow.innerHTML += `
+                        <div class="d-flex justify-content-end mb-2">
+                            <div class="card bg-primary text-white p-2" style="max-width:70%;">
+                                <p class="mb-0">${prompt}</p>
+                            </div>
+                        </div>
+                    `;
+                    queryInput.value = "";
+
+                    // 응답 카드 준비
+                    <!-- 응답 카드 준비 -->
+                    const wrapper = document.createElement("div");
+                    wrapper.classList.add("d-flex", "justify-content-start", "mb-2");
+                    wrapper.innerHTML = `
+                        <div class="card bg-light p-2" style="max-width:70%;">
+                            <h6 class="card-title">응답</h6>
+                            <pre class="llm-response" id="stream-explanation"></pre>
+                        </div>
+                    `;
+                    chatWindow.appendChild(wrapper);
+
+
+                    const explanationElem = document.getElementById("stream-explanation");
+
+                    // CSRF 토큰 읽기
+                    const token = document.querySelector("meta[name='_csrf']").content;
+                    const headerName = document.querySelector("meta[name='_csrf_header']").content;
+
+                    // SSE 요청 (스트리밍)
+                    const url = `/projects/${projectId}/chat/stream?query=${encodeURIComponent(prompt)}`;
+                    const eventSource = new EventSource(url);
+
+                    eventSource.onmessage = function(event) {
+                        explanationElem.textContent += event.data; // 받은 텍스트 바로 이어붙임
+                        chatWindow.scrollTop = chatWindow.scrollHeight;
+                    };
+
+                    eventSource.onerror = function() {
+                        eventSource.close();
+                    };
+                });
+            </script>
+        </th:block>
     </div>
 </section>
 </body>

@@ -17,7 +17,9 @@ public class ChatHistoryService {
 
     @Transactional
     public void saveHistory(Project project, String query, String response) {
-        String title = query.substring(0, Math.min(query.length(), 50)) + "...";
+        int maxLen = 20;
+        String title = query.substring(0, Math.min(query.length(), maxLen));
+        if (query.length() > maxLen) title += "...";
         ChatHistory history = new ChatHistory(project, title, query, response);
 
         chatHistoryRepository.save(history);

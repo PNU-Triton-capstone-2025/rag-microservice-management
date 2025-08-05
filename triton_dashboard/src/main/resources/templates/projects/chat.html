@@ -44,7 +44,7 @@
             <div class="input-group">
                 <input type="text" id="query" name="query" class="form-control"
                        placeholder="예: '레디스 3개 복제 배포 생성'" required>
-                <button class="btn btn-primary" type="submit">Send</button>
+                <button class="btn btn-primary" type="submit">전송</button>
             </div>
         </form>
     </div>
@@ -72,6 +72,7 @@
                 eventSource = null;
             }
 
+            // 유저 쿼리 렌더링
             chatWindow.innerHTML += `
                     <div class="d-flex justify-content-end mb-2">
                         <div class="chat-bubble-user">${prompt}</div>
@@ -79,6 +80,7 @@
                 `;
             queryInput.value = "";
 
+            // 응답 블럭 추가
             const wrapper = document.createElement("div");
             wrapper.classList.add("d-flex", "justify-content-start", "mb-2");
             wrapper.innerHTML = `
@@ -90,14 +92,17 @@
             chatWindow.appendChild(wrapper);
 
             const explanationElem = wrapper.querySelector(".llm-response");
-
             const url = `/projects/${projectId}/chat/stream?query=${encodeURIComponent(prompt)}`;
+
+            // /projects/{id}/chat/stream GET 요청을 (Server-Sent-Events)SSE 방식으로 보냄
             eventSource = new EventSource(url);
 
+            // LLM이 생성한 텍스트를 토큰 단위로 화면에 렌더링
             eventSource.onmessage = function (event) {
                 const token = event.data
                     .replace(/ /g, '&nbsp;')
                     .replace(/\n/g, '<br>');
+
                 explanationElem.innerHTML += token;
                 chatWindow.scrollTop = chatWindow.scrollHeight;
             };

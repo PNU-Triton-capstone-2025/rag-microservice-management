@@ -54,6 +54,7 @@ public class ChatController {
     @GetMapping("/history")
     public String chatHistoryList(@PathVariable Long projectId, Model model) {
         Project project = projectService.getProject(projectId);
+
         model.addAttribute("project", project);
         model.addAttribute("histories", chatHistoryService.getHistoryForProject(project));
 
@@ -64,6 +65,7 @@ public class ChatController {
     public String chatHistoryDetail(@PathVariable Long projectId, @PathVariable Long historyId, Model model) {
         Project project = projectService.getProject(projectId);
         ChatHistory history = chatHistoryService.getHistoryById(historyId);
+
         model.addAttribute("project", project);
         model.addAttribute("history", history);
 
@@ -79,9 +81,7 @@ public class ChatController {
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @ResponseBody
-    public Flux<String> streamChat(
-            @PathVariable Long projectId,
-            @RequestParam String query) {
+    public Flux<String> streamChat(@PathVariable Long projectId, @RequestParam String query) {
 
         Project project = projectService.getProject(projectId);
 

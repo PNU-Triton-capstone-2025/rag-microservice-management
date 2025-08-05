@@ -1,55 +1,51 @@
+/* ===== 기본 레이아웃 ===== */
 body {
     overflow-x: hidden;
+    font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+    background-color: #f9f9fb;
 }
 
+/* ===== 사이드바 ===== */
 #wrapper {
     display: flex;
 }
-
 #sidebar-wrapper {
     min-height: 100vh;
     width: 250px;
     transition: margin .25s ease-out;
 }
-
-#page-content-wrapper {
-    min-width: 100vw;
+#wrapper.toggled #sidebar-wrapper {
+    margin-left: -250px;
 }
-
 #page-content-wrapper {
     flex: 1;
     min-width: 0;
 }
-
-#wrapper.toggled #sidebar-wrapper {
-    margin-left: -250px;
-}
-
 .bg-light-subtle {
     background-color: #fdfdfd;
 }
-
 .list-group-item {
     border: none;
     background-color: transparent;
     padding-left: 1rem;
 }
 
+/* ===== LLM 응답 스타일 ===== */
 .llm-response {
-    white-space: pre-wrap;     /* 줄바꿈과 연속 공백 보존 */
-    word-break: break-word;    /* 긴 단어 줄바꿈 */
-    background-color: #fdfdfd;
-    padding: 16px 18px;
-    border-radius: 10px;
-    font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background-color: #ffffff;
+    padding: 18px 20px;
+    border-radius: 12px;
+    font-family: 'Fira Code', 'Pretendard', 'Noto Sans KR', monospace;
     font-size: 15px;
     line-height: 1.7;
     color: #2c2c2c;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-    border: 1px solid #e8e8e8;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid #ececec;
 }
 
-/* 헤딩 스타일 */
+/* 헤딩 */
 .llm-response h1, .llm-response h2, .llm-response h3 {
     font-weight: 700;
     margin: 18px 0 8px;
@@ -61,17 +57,15 @@ body {
     margin: 10px 0;
     padding-left: 22px;
 }
-
 .llm-response li {
     margin-bottom: 6px;
 }
 
-/* 강조 텍스트 */
+/* 강조 */
 .llm-response strong {
     color: #222;
     font-weight: 600;
 }
-
 .llm-response em {
     color: #444;
     font-style: italic;
@@ -85,4 +79,62 @@ body {
     font-family: 'Fira Code', monospace;
     font-size: 14px;
     color: #d63384;
+}
+
+/* ===== 채팅 버블 ===== */
+.chat-bubble-user {
+    background: linear-gradient(135deg, #0d6efd, #0dcaf0);
+    color: white;
+    padding: 14px 18px;
+    border-radius: 18px 18px 4px 18px;
+    max-width: 70%;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.chat-bubble-ai {
+    background-color: #ffffff;
+    padding: 16px 18px;
+    border-radius: 18px 18px 18px 4px;
+    max-width: 80%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid #ececec;
+}
+
+/* ===== 작업 이력 목록 ===== */
+.history-table {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+.history-table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+.history-table tbody tr {
+    transition: all 0.15s ease;
+}
+.history-table tbody tr:hover {
+    background-color: #f1f3f5;
+    transform: translateX(2px);
+    cursor: pointer;
+}
+
+/* ===== 상세 페이지 헤더 ===== */
+.history-header {
+    background: linear-gradient(90deg, #0d6efd 0%, #0dcaf0 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.history-meta {
+    font-size: 0.9rem;
+    opacity: 0.85;
+}
+
+/* ===== 버튼 ===== */
+.btn-back {
+    border-radius: 8px;
+    padding: 8px 16px;
 }

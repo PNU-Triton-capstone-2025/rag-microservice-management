@@ -60,9 +60,7 @@ public class ChatController {
     }
 
     @GetMapping("/history/{historyId}")
-    public String chatHistoryDetail(@PathVariable Long projectId,
-                                    @PathVariable Long historyId,
-                                    Model model) {
+    public String chatHistoryDetail(@PathVariable Long projectId, @PathVariable Long historyId, Model model) {
         Project project = projectService.getProject(projectId);
         ChatHistory history = chatHistoryService.getHistoryById(historyId);
         model.addAttribute("project", project);

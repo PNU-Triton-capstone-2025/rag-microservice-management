@@ -56,6 +56,7 @@ public class ChatController {
         Project project = projectService.getProject(projectId);
         model.addAttribute("project", project);
         model.addAttribute("histories", chatHistoryService.getHistoryForProject(project));
+
         return "projects/chat-history-list";
     }
 
@@ -65,9 +66,16 @@ public class ChatController {
         ChatHistory history = chatHistoryService.getHistoryById(historyId);
         model.addAttribute("project", project);
         model.addAttribute("history", history);
+
         return "projects/chat-history-detail";
     }
 
+    @PostMapping("/history/{historyId}/delete")
+    public String deleteHistory(@PathVariable Long historyId, @PathVariable Long projectId) {
+        chatHistoryService.deleteHistory(historyId, projectId);
+
+        return "redirect:/projects/" + projectId + "/chat/history";
+    }
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @ResponseBody

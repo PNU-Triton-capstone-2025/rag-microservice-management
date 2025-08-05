@@ -33,4 +33,9 @@ public class ChatHistoryService {
         return chatHistoryRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 채팅 이력을 찾을 수 없습니다."));
     }
+
+    @Transactional
+    public void deleteHistory(Long historyId, Long projectId) {
+        chatHistoryRepository.deleteByIdAndProjectId(historyId, projectId);
+    }
 }

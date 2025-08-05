@@ -19,13 +19,26 @@
                 <tr>
                     <th>제목</th>
                     <th style="width: 200px;">생성일</th>
+                    <th style="width:80px; text-align:center;">삭제</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="h : ${histories}"
-                    th:onclick="|location.href='@{/projects/{projectId}/chat/history/{id}(projectId=${project.id}, id=${h.id})}'|">
-                    <td th:text="${h.title}"></td>
+                <tr th:each="h : ${histories}">
+                    <td th:text="${h.title}"
+                        th:onclick="|location.href='@{/projects/{projectId}/chat/history/{historyId}(projectId=${project.id}, historyId=${h.id})}'|"
+                        style="cursor:pointer;">
+                    </td>
                     <td th:text="${#temporals.format(h.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                    <td style="width:80px; text-align:center; vertical-align:middle;">
+                        <form th:action="@{/projects/{projectId}/chat/history/{historyId}/delete(projectId=${project.id}, historyId=${h.id})}"
+                              method="post" style="margin:0;">
+                            <button type="submit" class="btn btn-sm btn-danger"
+                                    onclick="return confirm('정말 삭제하시겠습니까?');">
+                                삭제
+                            </button>
+                        </form>
+                    </td>
+
                 </tr>
                 </tbody>
             </table>

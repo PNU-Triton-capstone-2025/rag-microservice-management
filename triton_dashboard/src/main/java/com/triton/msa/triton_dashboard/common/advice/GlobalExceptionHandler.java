@@ -9,23 +9,39 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(SshAuthenticationException.class)
-    public ResponseEntity<ErrorResponse> handleSshAuthException(SshAuthenticationException ex) {
+    public ResponseEntity<Map<String, Object>> handleSshAuthException(SshAuthenticationException ex) {
         log.error("SSH Authentication failed: {}", ex.getMessage());
-        ErrorResponse response = new ErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
-        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+        return makeErrorResponseEntity(ex.getMessage(), HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(SshConnectionException.class)
-    public ResponseEntity<ErrorResponse> handleSshConnectionException(SshConnectionException ex) {
+    public ResponseEntity<Map<String, Object>> handleSshConnectionException(SshConnectionException ex) {
         log.error("SSH Connection error: {}", ex.getMessage());
-        ErrorResponse response = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
-        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        return makeErrorResponseEntity(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
+        log.error("Runtime exception occurred", ex);
+        return makeErrorResponseEntity(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    private ResponseEntity<Map<String, Object>> makeErrorResponseEntity(String msg, HttpStatus status) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("status", status.value());
+        body.put("error", status.getReasonPhrase());
+        body.put("message", msg);
+
+        return ResponseEntity
+                .status(status)
+                .body(body);
     }
 }

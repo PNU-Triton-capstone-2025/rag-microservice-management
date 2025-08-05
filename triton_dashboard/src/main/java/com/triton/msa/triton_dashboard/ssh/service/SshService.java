@@ -1,6 +1,7 @@
 package com.triton.msa.triton_dashboard.ssh.service;
 
 import com.triton.msa.triton_dashboard.ssh.entity.SshInfo;
+import com.triton.msa.triton_dashboard.ssh.exception.SshAuthenticationException;
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
@@ -20,10 +21,43 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class SshService {
 
-    private static final long CONNECT_TIMEOUT = TimeUnit.SECONDS.toMillis(5);
-    private static final long AUTH_TIMEOUT = TimeUnit.SECONDS.toMillis(5);
+    private static final long CONNECT_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(10);
+    private static final long AUTH_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(10);
+    private final SshClient client;
+
+    public SshService() {
+        this.client = SshClient.setUpDefaultClient();
+        this.client.start();
+    }
 
     public boolean testConnection(SshInfo sshInfo) {
+        try(ClientSession session = getClientSession(sshInfo)) {
+            return session.isAuthenticated();
+        }
+        catch (IOException ex) {
+            throw new RuntimeException("세션 닫기 실패", ex);
+        }
+
+        //    Path tempKeyFile = createTempKeyFile(sshInfo.getSshAuthKey());
+    }
+
+    private ClientSession getClientSession(SshInfo sshInfo) {
+        try{
+            return client.connect(sshInfo.getHostname(), sshInfo.getSshIpAddress(), sshInfo.getPort())
+                    .verify(CONNECT_TIMEOUT_MS).getSession();
+        }
+        catch (IOException ex) {
+            String msg = ex.getMessage().toLowerCase();
+            if(msg.contains("auth") || msg.contains("permission")) {
+                throw new SshAuthenticationException("SSH 인증 실패: " + ex.getMessage());
+            }
+            else{
+                throw new SshAuthenticationException("SSH 연결 실패: " + ex.getMessage());
+            }
+        }
+    }
+
+    public boolean testConnection2(SshInfo sshInfo) {
         if (sshInfo == null || sshInfo.getSshIpAddress() == null || sshInfo.getSshAuthKey() == null) {
             return false;
         }
@@ -37,10 +71,10 @@ public class SshService {
             KeyPair keyPair = keyPairProvider.loadKeys(null).iterator().next();
 
             try (ClientSession session = client.connect(sshInfo.getHostname(), sshInfo.getSshIpAddress(), sshInfo.getPort())
-                    .verify(CONNECT_TIMEOUT).getSession()) {
+                    .verify(CONNECT_TIMEOUT_MS).getSession()) {
                 session.addPublicKeyIdentity(keyPair);
 
-                session.auth().verify(AUTH_TIMEOUT);
+                session.auth().verify(AUTH_TIMEOUT_MS);
 
                 boolean isAuthenticated = session.isAuthenticated();
                 Files.delete(tempKeyFile);

@@ -1,8 +1,6 @@
 package com.triton.msa.triton_dashboard.ssh.exception;
 
-import java.io.IOException;
-
-public class SshAuthenticationException extends IOException {
+public class SshAuthenticationException extends RuntimeException {
     public SshAuthenticationException(String msg) {
         super(msg);
     }

@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface ChatHistoryRepository extends JpaRepository<ChatHistory, Long> {
     List<ChatHistory> findByProjectOrderByCreatedAtDesc(Project project);
+    void deleteByIdAndProjectId(Long historyId, Long projectId);
 }

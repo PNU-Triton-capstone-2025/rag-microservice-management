@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${project.name} + ' - 작업 이력'">작업 이력</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<section layout:fragment="page-content">
+    <div class="container-fluid p-4">
+        <h2 class="mb-3">📜 작업 이력 - [[${project.name}]]</h2>
+        <div class="history-table">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                <tr>
+                    <th>제목</th>
+                    <th style="width: 200px;">생성일</th>
+                    <th style="width:80px; text-align:center;">삭제</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="h : ${histories}">
+                    <td th:text="${h.title}"
+                        th:onclick="|location.href='@{/projects/{projectId}/chat/history/{historyId}(projectId=${project.id}, historyId=${h.id})}'|"
+                        style="cursor:pointer;">
+                    </td>
+                    <td th:text="${#temporals.format(h.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                    <td style="width:80px; text-align:center; vertical-align:middle;">
+                        <form th:action="@{/projects/{projectId}/chat/history/{historyId}/delete(projectId=${project.id}, historyId=${h.id})}"
+                              method="post" style="margin:0;">
+                            <button type="submit" class="btn btn-sm btn-danger"
+                                    onclick="return confirm('정말 삭제하시겠습니까?');">삭제
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+</body>
+</html>

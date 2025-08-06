@@ -49,7 +49,7 @@ public class RagService {
         String apiKey = userService.getUser(username).getApiKeyInfo().getApiServiceApiKey();
 
         if (apiKey == null || apiKey.isBlank()) {
-            return Mono.just("⚠️ API 키가 설정되지 않았습니다.");
+            return Mono.error(new RuntimeException("API 키가 설정되지 않았습니다."));
         }
 
         String url = "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -72,11 +72,16 @@ public class RagService {
                         List<Map<String, Object>> candidates = (List<Map<String, Object>>) body.get("candidates");
                         Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
                         List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
-                        return (String) parts.get(0).get("text");
+                        String text = (String) parts.get(0).get("text");
+
+                        if (text == null || text.isBlank()) {
+                            throw new RuntimeException("응답이 비어있습니다.");
+                        }
+                        return text;
                     } catch (Exception e) {
-                        return "⚠️ 응답 파싱 실패";
+                        throw new RuntimeException("응답 파싱 실패");
                     }
                 })
-                .onErrorReturn("⚠️ 요청 실패");
+                .onErrorResume(e -> Mono.error(new RuntimeException("️요청 실패", e)));
     }
 }

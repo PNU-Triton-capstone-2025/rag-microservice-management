@@ -1,12 +1,12 @@
 package com.triton.msa.triton_dashboard.chat.controller;
 
-import com.triton.msa.triton_dashboard.chat.dto.RagResponseDto;
 import com.triton.msa.triton_dashboard.chat.entity.ChatHistory;
 import com.triton.msa.triton_dashboard.chat.service.ChatHistoryService;
 import com.triton.msa.triton_dashboard.chat.service.RagService;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,8 +15,8 @@ import reactor.core.publisher.Flux;
 
 import java.security.Principal;
 import java.time.Duration;
-import java.util.Map;
 
+@Slf4j
 @Controller
 @RequestMapping("/projects/{projectId}/chat")
 @RequiredArgsConstructor
@@ -87,25 +87,18 @@ public class ChatController {
 
         return ragService.generateWithGeminiAsync(projectId, query)
                 .flatMapMany(fullResponse -> {
-                    if (fullResponse == null || fullResponse.isBlank()) {
-                        fullResponse = "⚠️ 응답이 비어 있습니다.";
-                    }
-
-                    // 전체 응답 저장 (DB 저장용)
-                    String finalResponse = fullResponse;
-
                     // 토큰 단위로 쪼개기 (공백 포함, 줄바꿈 포함)
-                    String[] tokens = finalResponse.split("(?<= )|(?=\n)");
+                    String[] tokens = fullResponse.split("(?<= )|(?=\n)");
 
                     return Flux.fromArray(tokens)
                             .delayElements(Duration.ofMillis(20)) // 토큰 전송 속도
                             .doOnComplete(() -> {
                                 // 스트리밍 끝나면 DB 저장
-                                chatHistoryService.saveHistory(project, query, finalResponse);
+                                chatHistoryService.saveHistory(project, query, fullResponse);
                             });
                 })
                 .onErrorResume(e -> {
-                    e.printStackTrace();
+                    log.error("LLM 요청 실패", e);
                     return Flux.just("⚠️ 요청 실패");
                 });
     }

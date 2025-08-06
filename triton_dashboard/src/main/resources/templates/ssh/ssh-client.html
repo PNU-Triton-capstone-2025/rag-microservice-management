@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="layout/layout">
+
+<th:block layout:fragment="title">SSH Client</th:block>
+
+<th:block layout:fragment="css">
+    <link href=" https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css " rel="stylesheet">
+    <style>
+        #terminal-container {
+            width: 100%;
+            height: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        #terminal {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</th:block>
+
+<div layout:fragment="page-content">
+    <h2 class="mb-3">📜 서비스 원격 접속</h2>
+    <div id="terminal-container">
+        <div id="terminal"></div>
+    </div>
+</div>
+
+<th:block layout:fragment="page-scripts">
+    <script src=" https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js "></script>
+    <script th:inline="javascript">
+        document.addEventListener("DOMContentLoaded", function() {
+            const term = new Terminal({
+                cursorBlink: true,
+                fontSize: 14,
+                fontFamily: 'Consolas, "Courier New", monospace',
+                theme: {
+                    background: '#1e1e1e',
+                    foreground: '#d4d4d4',
+                    cursor: '#ffffff',
+                    selectionBackground: '#264f78'
+                }
+            });
+            term.open(document.getElementById('terminal'));
+
+            const projectId = /*[[${projectId}]]*/'';
+
+            if(!projectId) {
+                term.write("\x1b[31mError: Project ID가 지정되지 않았습니다.\x1b[0m\r\n");
+                return;
+            }
+
+            term.write('connecting server via triton...\r\n');
+            let ws;
+
+            fetch(`/api/ssh/connect/${projectId}`, { method: 'POST'})
+                .then(response => {
+                    if(!response.ok) {
+                        return response.json().then(errorBody => {
+                            throw new Error(errorBody.message || 'Unknown Server Error');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const sessionId = data.sessionId;
+                    if (!sessionId) {
+                        throw new Error('서버로부터 세션 ID를 받지 못했습니다.');
+                    }
+
+                    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                    const host = window.location.host;
+                    const wsUrl = `${protocol}//${host}/ws/ssh/${sessionId}`;
+
+                    ws = new WebSocket(wsUrl);
+
+                    ws.onopen = () => {
+                        term.write('\x1b[32mSSH 연결 성공!\x1b[0m\r\n');
+                        term.focus();
+                    };
+
+                    ws.onmessage = (event) => {
+                        term.write(event.data);
+                    };
+
+                    ws.onclose = (event) => {
+                        term.write(`\r\n\x1b[33m연결이 종료되었습니다. 코드: ${event.code}, 이유: ${event.reason || '없음'}\x1b[0m\r\n`);
+                    };
+
+                    ws.onerror = (error) => {
+                        term.write('\r\n\x1b[31mWebSocket 오류가 발생했습니다.\x1b[0m\r\n');
+                        console.error('WebSocket Error: ', error);
+                    };
+
+                    term.onData(data => {
+                        if(ws && ws.readyState === WebSocket.OPEN) {
+                            ws.send(data);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('SSH 연결 시작 오류:', error);
+                    term.write(`\r\n\x1b[31m연결 실패: ${error.message}\x1b[0m\r\n`);
+                })
+        })
+    </script>
+</th:block>
+</html>

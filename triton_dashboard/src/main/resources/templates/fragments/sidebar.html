@@ -27,6 +27,10 @@
                th:href="@{/projects/{id}/private-data(id=${project.id})}">
                 <i class="bi bi-shield-lock me-2"></i>비공개 데이터 관리
             </a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
+               th:href="@{/ssh/connect/{projectId}(projectId=${project.id})}">
+                <i class="bi bi-diagram-2 me-2"></i>서비스 원격 접속
+            </a>
             <hr class="my-2"/>
             <a class="list-group-item list-group-item-action list-group-item-light p-3"
                th:href="@{/projects}">

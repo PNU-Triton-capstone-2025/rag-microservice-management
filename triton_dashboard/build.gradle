@@ -37,6 +37,9 @@ dependencies {
 	// SSH 연결 - Apache MINA SSHD Core
 	implementation 'org.apache.sshd:sshd-core:2.12.1'
 
+	// WebSocket
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
 	// Apache Tika - 텍스트 추출용
 	implementation 'org.apache.tika:tika-core:3.2.1'
 	implementation 'org.apache.tika:tika-parsers-standard-package:3.2.1'

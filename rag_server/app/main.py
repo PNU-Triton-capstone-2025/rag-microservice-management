@@ -8,6 +8,7 @@ from elasticsearch import Elasticsearch
 app = Flask(__name__)
 es_client = Elasticsearch(settings.elasticsearch_url)
 
+#ElasticSearch의 index에 해당하는 문서를 활용하여 RAG 기반 답변 생성하는 api
 @app.route("/api/get-rag-response", methods=["POST"])
 def get_rag_response():
     data = request.json
@@ -23,6 +24,7 @@ def get_rag_response():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+#문서 embedding 후 ElasticSearch에 저장하는 api
 @app.route("/api/embedding", methods=["POST"])
 def embedding():
     data = request.json
@@ -46,10 +48,13 @@ def embedding():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+#ElasticSearch 버전 맞지 않을 경우 knn 검색을 위한 index 초기화
+#기본적으로 docker로 ElasticSearch v8.15.x 이상 구동한 후 테스트할 것
 def init_indices():
-    ensure_index_exists(es_client, "test-1")
+    es_index = ""
+    ensure_index_exists(es_client, es_index)
     print("index init completed.")
 
 if __name__ == "__main__":
-    init_indices()
+    #init_indices()
     app.run(host="0.0.0.0", port=5000, debug=True)

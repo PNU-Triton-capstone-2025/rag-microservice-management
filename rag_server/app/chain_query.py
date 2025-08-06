@@ -4,6 +4,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQA
 from settings import settings
 
+#해당 index를 참호자는 chain 생성
 def create_rag_chain(index_name: str):
     embedding_model = OpenAIEmbeddings()
     vectorstore = ElasticsearchStore(
@@ -19,13 +20,14 @@ def create_rag_chain(index_name: str):
         retriever=retriever,
         return_source_documents=True,
         chain_type="stuff"
-        # 또는 refine, map_reduce 등
     )
     return rag_chain
 
 def query_rag(question: str, index_name: str) -> dict:
     rag_chain = create_rag_chain(index_name)
     result = rag_chain(question)
+    
+    #question: 사용자 질문, answer: RAG 기반 답변, sources: 참조한 문서
     return {
         "question": question,
         "answer": result["result"],

@@ -5,11 +5,9 @@ from langchain.vectorstores.elasticsearch import ElasticsearchStore
 from elasticsearch import Elasticsearch
 from settings import settings
 
-#
 es_url = settings.elasticsearch_url
 es_client = Elasticsearch(es_url)
 embedding_model = OpenAIEmbeddings()
-
 text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
     separator="\n",
     chunk_size = 600,

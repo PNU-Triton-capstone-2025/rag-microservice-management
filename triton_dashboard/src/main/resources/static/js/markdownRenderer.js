@@ -1,7 +1,7 @@
 function renderMarkdownToElement(element, rawText) {
     if (!element) return;
 
-    // 코드블럭 렌더링
+    // 변환된 텍스트로 마크다운 렌더링
     let html = marked.parse(rawText || "", {
         highlight: function (code, lang) {
             if (lang && hljs.getLanguage(lang)) {
@@ -12,7 +12,7 @@ function renderMarkdownToElement(element, rawText) {
     });
     element.innerHTML = html;
 
-    // 코드블럭 복사 버튼 추가
+    // 코드 블럭 복사 버튼 추가
     element.querySelectorAll("pre code").forEach(block => {
         const parentPre = block.parentElement;
         if (!parentPre.classList.contains("code-block")) {

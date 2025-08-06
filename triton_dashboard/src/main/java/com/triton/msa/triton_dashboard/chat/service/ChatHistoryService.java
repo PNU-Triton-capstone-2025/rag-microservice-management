@@ -17,7 +17,9 @@ public class ChatHistoryService {
 
     @Transactional
     public void saveHistory(Project project, String query, String response) {
-        String title = query.substring(0, Math.min(query.length(), 50)) + "...";
+        int maxLen = 20;
+        String title = query.substring(0, Math.min(query.length(), maxLen));
+        if (query.length() > maxLen) title += "...";
         ChatHistory history = new ChatHistory(project, title, query, response);
 
         chatHistoryRepository.save(history);
@@ -26,5 +28,16 @@ public class ChatHistoryService {
     @Transactional(readOnly = true)
     public List<ChatHistory> getHistoryForProject(Project project) {
         return chatHistoryRepository.findByProjectOrderByCreatedAtDesc(project);
+    }
+
+    @Transactional(readOnly = true)
+    public ChatHistory getHistoryById(Long id) {
+        return chatHistoryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 채팅 이력을 찾을 수 없습니다."));
+    }
+
+    @Transactional
+    public void deleteHistory(Long historyId, Long projectId) {
+        chatHistoryRepository.deleteByIdAndProjectId(historyId, projectId);
     }
 }

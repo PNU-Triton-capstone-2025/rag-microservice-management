@@ -1,14 +1,80 @@
 <!DOCTYPE html>
 <html lang="ko" layout:decorate="~{layout/layout}" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 <head>
-  <title>비공개 데이터 목록</title>
+  <title>비공개 데이터</title>
 </head>
+
 <body>
 <section layout:fragment="page-content">
   <div class="container-fluid p-4">
+    <h2 class="mb-4">📁 비공개 데이터 관리</h2>
+
+    <!-- 업로드 폼 -->
+    <div class="card shadow-sm mb-5">
+      <div class="card-header bg-dark text-white">
+        <i class="bi bi-upload me-2"></i> 비공개 데이터 업로드
+      </div>
+      <div class="card-body">
+        <form id="uploadForm" th:action="@{/projects/{id}/private-data/upload(id=${project.id})}" method="post" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label for="zipFile" class="form-label fw-bold">ZIP 파일 선택</label>
+            <input id="zipFile" type="file" name="file" accept=".zip" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-success w-100">업로드</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 업로드 결과 메시지 -->
+    <div th:if="${uploadResult != null}" class="card mt-4 border-0 shadow-sm bg-body-secondary p-4">
+      <div class="d-flex align-items-center mb-3">
+        <i class="bi bi-clipboard-check-fill fs-4 text-primary me-2"></i>
+        <h5 class="mb-0 fw-semibold">업로드 완료</h5>
+      </div>
+
+      <!-- 실패 케이스 (파일 없음) -->
+      <div th:if="${uploadResult.savedFilenames.size() == 0 and uploadResult.skippedFilenames.size() == 0}">
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+          <i class="bi bi-x-octagon-fill me-2 fs-5"></i>
+          <div><strong th:text="${uploadResult.message}">업로드 실패</strong></div>
+        </div>
+      </div>
+
+      <!-- 저장된 파일 목록 -->
+      <div th:if="${uploadResult.savedFilenames.size() > 0}" class="mb-3">
+        <h6 class="text-success fw-bold mb-2">
+          <i class="bi bi-check-circle me-1"></i>업로드된 파일 목록
+        </h6>
+        <ul class="list-group list-group-flush">
+          <li th:each="file : ${uploadResult.savedFilenames}" class="list-group-item ps-4">
+            <i class="bi bi-file-earmark-text me-2 text-secondary"></i>
+            <span th:text="${file}"></span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- 처리되지 않은 파일 목록 -->
+      <div th:if="${uploadResult.skippedFilenames.size() > 0}">
+        <h6 class="text-warning fw-bold mb-2">
+          <i class="bi bi-exclamation-triangle me-1"></i>처리되지 않은 파일 목록
+        </h6>
+        <ul class="list-group list-group-flush">
+          <li th:each="file : ${uploadResult.skippedFilenames}" class="list-group-item ps-4">
+            <i class="bi bi-x-circle text-danger me-2"></i>
+            <span th:text="${file}"></span>
+          </li>
+        </ul>
+        <p class="text-muted small mt-2">
+          <i class="bi bi-info-circle-fill me-1"></i>
+          실행 파일(.exe, .bat, .sh) 또는 저장 중 오류가 발생한 파일은 저장되지 않습니다.
+        </p>
+      </div>
+    </div>
+
+    <!-- 파일 목록 테이블 -->
     <div class="card shadow-sm">
       <div class="card-body">
-        <h2 class="card-title mb-4">📁 비공개 데이터 목록</h2>
+        <h5 class="card-title mb-4">📄 업로드된 파일 목록</h5>
 
         <div th:if="${privateDataList.isEmpty()}" class="alert alert-info">
           등록된 비공개 데이터가 없습니다.
@@ -16,10 +82,10 @@
 
         <div th:if="${!privateDataList.isEmpty()}">
           <div class="table-responsive">
-            <table class="table table-hover table-striped align-middle">
+            <table class="table table-hover align-middle">
               <thead class="table-light">
               <tr>
-                <th><i class="bi bi-file-earmark-text me-1"></i>파일명</th>
+                <th>파일명</th>
                 <th>Content Type</th>
                 <th>업로드 시간</th>
                 <th class="text-end">삭제</th>
@@ -27,18 +93,14 @@
               </thead>
               <tbody>
               <tr th:each="data : ${privateDataList}">
-                <td>
-                  <i class="bi bi-file-earmark me-2"></i>
-                  <span th:text="${data.filename}">filename</span>
-                </td>
-                <td th:text="${data.contentType}">type</td>
-                <td th:text="${#dates.format(data.createdAt, 'yyyy-MM-dd HH:mm')}">time</td>
+                <td th:text="${data.filename}"></td>
+                <td th:text="${data.contentType}"></td>
+                <td th:text="${#dates.format(data.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
                 <td class="text-end">
-                  <form th:action="@{/projects/{projectId}/private-data/{id}(projectId=${project.id}, id=${data.id})}"
-                        method="post" class="d-inline">
+                  <form th:action="@{/projects/{projectId}/private-data/{id}(projectId=${project.id}, id=${data.id})}" method="post">
                     <input type="hidden" name="_method" value="delete"/>
-                    <button type="submit" class="btn btn-outline-danger btn-sm"
-                            onclick="return confirm('정말 삭제하시겠습니까?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                            onclick="return confirm('정말 삭제하시겠습니까?')">
                       <i class="bi bi-trash"></i> 삭제
                     </button>
                   </form>
@@ -49,12 +111,42 @@
           </div>
         </div>
 
-        <a th:href="@{/projects/{id}/chat(id=${project.id})}" class="btn btn-secondary mt-3">
+        <a th:href="@{/projects/{id}/chat(id=${project.id})}" class="btn btn-secondary mt-4">
           <i class="bi bi-arrow-left-circle me-1"></i> 프로젝트로 돌아가기
         </a>
       </div>
     </div>
   </div>
 </section>
+<div layout:fragment="page-scripts">
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      window.handleUpload = function () {
+        const fileInput = document.getElementById("zipFile");
+        const file = fileInput?.files?.[0];
+        const maxSize = 10 * 1024 * 1024;
+
+        if (!file) {
+          alert("파일을 선택해주세요.");
+          return;
+        }
+
+        if (file.size > maxSize) {
+          alert("❗ 10MB를 초과하는 zip 파일은 업로드할 수 없습니다.");
+          fileInput.value = "";
+          return;
+        }
+
+        const form = document.getElementById("uploadForm");
+        if (!form) {
+          alert("❗ 업로드 폼을 찾을 수 없습니다. 페이지를 새로고침 해주세요.");
+          return;
+        }
+
+        form.submit();
+      };
+    });
+  </script>
+</div>
 </body>
 </html>

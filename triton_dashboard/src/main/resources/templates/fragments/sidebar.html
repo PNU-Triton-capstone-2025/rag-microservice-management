@@ -13,31 +13,24 @@
         <div th:if="${project != null}">
             <a class="list-group-item list-group-item-action list-group-item-light p-3"
                th:href="@{/projects/{id}/chat(id=${project.id})}">
-                <i class="bi bi-chat-dots me-2"></i>배포 명세 관리
+                <i class="bi bi-diagram-3 me-2"></i>서비스 배포 관리
             </a>
             <a class="list-group-item list-group-item-action list-group-item-light p-3"
                th:href="@{/projects/{id}/deploy/download-config(id=${project.id})}">
-                <i class="bi bi-gear me-2"></i>시스템 초기화
+                <i class="bi bi-arrow-repeat me-2"></i>로그 수집기 다운로드
             </a>
             <a class="list-group-item list-group-item-action list-group-item-light p-3"
-               th:href="@{/projects/{id}/history(id=${project.id})}">
+               th:href="@{/projects/{projectId}/chat/history(projectId=${project.id})}">
                 <i class="bi bi-clock-history me-2"></i>작업 이력 조회
-            </a>
-
-            <!--추가됨-->
-            <a class="list-group-item list-group-item-action list-group-item-light p-3"
-               th:href="|@{/projects/{id}/chat(id=${project.id})}#zip-upload|">
-            <i class="bi bi-upload me-2"></i>비공개 데이터 업로드
             </a>
             <a class="list-group-item list-group-item-action list-group-item-light p-3"
                th:href="@{/projects/{id}/private-data(id=${project.id})}">
-                <i class="bi bi-file-earmark-lock me-2"></i>비공개 데이터 목록
+                <i class="bi bi-shield-lock me-2"></i>비공개 데이터 관리
             </a>
-
             <hr class="my-2"/>
             <a class="list-group-item list-group-item-action list-group-item-light p-3"
                th:href="@{/projects}">
-                <i class="bi bi-arrow-left-square me-2"></i>프로젝트 목록으로
+                <i class="bi bi-list-ul me-2"></i>프로젝트 목록으로
             </a>
         </div>
 

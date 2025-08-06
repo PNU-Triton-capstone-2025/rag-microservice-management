@@ -22,9 +22,6 @@ public class PrivateData {
     private String filename;
     private String contentType;
 
-    @Lob
-    private byte[] data;
-
     @Column(nullable = false)
     private Instant createdAt;
 }

@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
 import java.security.Principal;
-import java.time.Duration;
 
 @Slf4j
 @Controller
@@ -51,6 +50,12 @@ public class ChatController {
 //        return "projects/chat";
 //    }
 
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @ResponseBody
+    public Flux<String> streamChatResponse(@PathVariable Long projectId, @RequestParam String query) {
+        return ragService.streamChatResponse(projectId, query);
+    }
+
     @GetMapping("/history")
     public String chatHistoryList(@PathVariable Long projectId, Model model) {
         Project project = projectService.getProject(projectId);
@@ -77,29 +82,5 @@ public class ChatController {
         chatHistoryService.deleteHistory(historyId, projectId);
 
         return "redirect:/projects/" + projectId + "/chat/history";
-    }
-
-    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    @ResponseBody
-    public Flux<String> streamChat(@PathVariable Long projectId, @RequestParam String query) {
-
-        Project project = projectService.getProject(projectId);
-
-        return ragService.generateWithGeminiAsync(projectId, query)
-                .flatMapMany(fullResponse -> {
-                    // 토큰 단위로 쪼개기
-                    String[] tokens = fullResponse.split("(?<=\\n\\n)");
-
-                    return Flux.fromStream(fullResponse.chars().mapToObj(c -> String.valueOf((char) c)))
-                            .delayElements(Duration.ofMillis(5))
-                            .doOnComplete(() -> {
-                                // 스트리밍 끝나면 DB 저장
-                                chatHistoryService.saveHistory(project, query, fullResponse);
-                            });
-                })
-                .onErrorResume(e -> {
-                    log.error("LLM 요청 실패", e);
-                    return Flux.just("⚠️ 요청 실패");
-                });
     }
 }

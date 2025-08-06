@@ -12,11 +12,15 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import lombok.extern.slf4j.Slf4j;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RagService {
@@ -83,5 +87,22 @@ public class RagService {
                     }
                 })
                 .onErrorResume(e -> Mono.error(new RuntimeException("️요청 실패", e)));
+    }
+
+    public Flux<String> streamChatResponse(Long projectId, String query) {
+        Project project = projectService.getProject(projectId);
+
+        return generateWithGeminiAsync(projectId, query)
+                .flatMapMany(fullResponse -> {
+                    String[] tokens = fullResponse.split("(?<=\\n)|(?=\\n)");
+
+                    return Flux.fromArray(tokens)
+                            .delayElements(Duration.ofMillis(20))
+                            .doOnComplete(() -> chatHistoryService.saveHistory(project, query, fullResponse));
+                })
+                .onErrorResume(e -> {
+                    log.error("LLM 요청 실패", e);
+                    return Flux.just("요청 실패");
+                });
     }
 }

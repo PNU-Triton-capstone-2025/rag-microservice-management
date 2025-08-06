@@ -7,19 +7,25 @@ import com.triton.msa.triton_dashboard.ssh.exception.SshKeyFileException;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.sshd.client.SshClient;
+import org.apache.sshd.client.channel.ChannelShell;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
 import org.springframework.stereotype.Service;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.KeyPair;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -29,6 +35,8 @@ public class SshService {
     private static final long CONNECT_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(10);
     private static final long AUTH_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(10);
     private final SshClient client;
+
+    private final Map<String, SshConnectionDetails> activeSessions = new ConcurrentHashMap<>();
 
     public SshService() {
         this.client = SshClient.setUpDefaultClient();
@@ -51,6 +59,86 @@ public class SshService {
         } finally {
             deleteTempKeyFile(tempKeyFile);
         }
+    }
+
+    public String startSshSession(SshInfo sshInfo) {
+        Path tempKeyFile = createTempKeyFile(sshInfo.getSshAuthKey());
+        ClientSession session = null;
+
+        try {
+            FileKeyPairProvider keyPairProvider = new FileKeyPairProvider(tempKeyFile);
+            KeyPair keyPair = loadKeyPair(keyPairProvider);
+
+            session = connectClientSession(sshInfo);
+            session.addPublicKeyIdentity(keyPair);
+            session.auth().verify(AUTH_TIMEOUT_MS);
+
+            if(!session.isAuthenticated()) {
+                throw new SshAuthenticationException("SSH 인증에 실패했습니다. 자격 증명과 서버 설정을 확인해주세요.");
+            }
+
+            ChannelShell channelShell = session.createShellChannel();
+            channelShell.setupSensibleDefaultPty();
+
+            PipedOutputStream ptyOut = new PipedOutputStream();
+            PipedInputStream ptyIn = new PipedInputStream(ptyOut);
+
+            PipedInputStream shellOut = new PipedInputStream();
+            PipedOutputStream shellIn = new PipedOutputStream(shellOut);
+
+            channelShell.setIn(ptyIn);
+            channelShell.setOut(shellIn);
+            channelShell.setErr(shellIn);
+
+            channelShell.open().verify(CONNECT_TIMEOUT_MS);
+
+            String sessionId = UUID.randomUUID().toString();
+            SshConnectionDetails details = new SshConnectionDetails(session, channelShell, ptyOut, shellOut, tempKeyFile);
+            activeSessions.put(sessionId, details);
+
+            log.info("SSH session started with ID: {}", sessionId);
+            return sessionId;
+        }
+        catch (SshAuthenticationException | SshConnectionException ex) {
+            cleanupOnFailure(session, tempKeyFile);
+            throw ex;
+        }
+        catch (Exception ex) {
+            cleanupOnFailure(session, tempKeyFile);
+            throw new SshConnectionException("SSH 세션 시작 중 오류 발생: " + ex.getMessage());
+        }
+    }
+
+    public void sendCommand(String sessionId, String command) {
+        SshConnectionDetails details = activeSessions.get(sessionId);
+
+        if(details != null && details.channelShell().isOpen()) {
+            try {
+                details.outputStream().write(command.getBytes());
+                details.outputStream().flush();
+            }
+            catch (IOException ex) {
+                log.error("SSH 세션 {}에 명령어 전송 실패", sessionId, ex);
+                closeSshSession(sessionId);
+            }
+        }
+    }
+
+    public void closeSshSession(String sessionId) {
+        SshConnectionDetails details = activeSessions.remove(sessionId);
+
+        if (details != null) {
+            log.info("Closing SSH session: {}", sessionId);
+
+            details.channelShell().close(true);
+            details.session().close(true);
+
+            deleteTempKeyFile(details.tempKeyPath());
+        }
+    }
+
+    public SshConnectionDetails findSessionDetails(String sessionId) {
+        return activeSessions.get(sessionId);
     }
 
     private Path createTempKeyFile(String privateKey) {
@@ -84,7 +172,7 @@ public class SshService {
     }
 
     private boolean verifyClientSession(SshInfo sshInfo, KeyPair keyPair) {
-        try (ClientSession session = getClientSession(sshInfo)) {
+        try (ClientSession session = connectClientSession(sshInfo)) {
             session.addPublicKeyIdentity(keyPair);
             session.auth().verify(AUTH_TIMEOUT_MS);
             return session.isAuthenticated();
@@ -93,7 +181,7 @@ public class SshService {
         }
     }
 
-    private ClientSession getClientSession(SshInfo sshInfo) {
+    private ClientSession connectClientSession(SshInfo sshInfo) {
         try{
             return client.connect(sshInfo.getHostname(), sshInfo.getSshIpAddress(), sshInfo.getPort())
                     .verify(CONNECT_TIMEOUT_MS).getSession();
@@ -107,6 +195,18 @@ public class SshService {
                 throw new SshConnectionException("SSH 연결 실패: " + ex.getMessage());
             }
         }
+    }
+
+    private void cleanupOnFailure(ClientSession session, Path tempKeyFile) {
+        if (session != null) {
+            try {
+                session.close();
+            }
+            catch (IOException e) {
+                log.error("Error closing SSH session during cleanup", e);
+            }
+        }
+        deleteTempKeyFile(tempKeyFile);
     }
 
     private void deleteTempKeyFile(Path path) {

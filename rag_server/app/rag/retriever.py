@@ -1,21 +1,18 @@
-import os
-from dotenv import load_dotenv
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.chat_models import ChatOpenAI
 from langchain.schema import Document
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores.elasticsearch import ElasticsearchStore
 from langchain.chains import RetrievalQA
 from elasticsearch import Elasticsearch
+from app.settings import settings
 
-load_dotenv()
-es_url = os.getenv("ELASTICSEARCH_URL")
+es_url = settings.elasticsearch_url
 es_client = Elasticsearch(es_url)
 embedding_model = OpenAIEmbeddings()
 
 vectorstore = ElasticsearchStore(
     es_url=es_url,
-    index_name="langchain-rag-index",
+    index_name=settings.elasticsearch_index,
     embedding=embedding_model,
     es_client=es_client
 )

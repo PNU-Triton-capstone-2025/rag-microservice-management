@@ -4,4 +4,8 @@ public class SshAuthenticationException extends RuntimeException {
     public SshAuthenticationException(String msg) {
         super(msg);
     }
+
+    public SshAuthenticationException(String msg, Throwable cause) {
+        super(msg, cause);
+    }
 }

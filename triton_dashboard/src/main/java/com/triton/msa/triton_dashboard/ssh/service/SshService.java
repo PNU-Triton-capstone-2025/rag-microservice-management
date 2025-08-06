@@ -2,6 +2,7 @@ package com.triton.msa.triton_dashboard.ssh.service;
 
 import com.triton.msa.triton_dashboard.ssh.entity.SshInfo;
 import com.triton.msa.triton_dashboard.ssh.exception.SshAuthenticationException;
+import com.triton.msa.triton_dashboard.ssh.exception.SshConnectionException;
 import com.triton.msa.triton_dashboard.ssh.exception.SshKeyFileException;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
@@ -39,20 +40,56 @@ public class SshService {
             return false;
         }
 
-        Path tempKeyFile = createTempKeyFile(sshInfo.getSshAuthKey());
+        Path tempKeyFile = null;
+        try {
+            tempKeyFile = createTempKeyFile(sshInfo.getSshAuthKey());
 
-        FileKeyPairProvider keyPairProvider = new FileKeyPairProvider(tempKeyFile);
-        KeyPair keyPair = keyPairProvider.loadKeys(null).iterator().next();
+            FileKeyPairProvider keyPairProvider = new FileKeyPairProvider(tempKeyFile);
+            KeyPair keyPair = loadKeyPair(keyPairProvider);
 
-        try(ClientSession session = getClientSession(sshInfo)) {
-
-            session.addPublicKeyIdentity(keyPair);
-            session.auth().verify(AUTH_TIMEOUT_MS);
+            return verifyClientSession(sshInfo, keyPair);
+        } finally {
             deleteTempKeyFile(tempKeyFile);
-            return session.isAuthenticated();
+        }
+    }
+
+    private Path createTempKeyFile(String privateKey) {
+        Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rw-------");
+        FileAttribute<Set<PosixFilePermission>> attr = PosixFilePermissions.asFileAttribute(perms);
+
+        return createTempKeyFileTemplate(privateKey, attr);
+    }
+
+    private Path createTempKeyFileTemplate(String privateKey, FileAttribute<Set<PosixFilePermission>> attribute) {
+        try {
+            Path tempFile = Files.createTempFile("ssh-key-", ".pem", attribute);
+
+            try (FileOutputStream fos = new FileOutputStream(tempFile.toFile())) {
+                fos.write(privateKey.getBytes());
+            }
+            return tempFile;
         }
         catch (IOException ex) {
-            throw new RuntimeException("세션 닫기 실패", ex);
+            throw new SshKeyFileException("SSH 임시 키 파일 생성 실패");
+        }
+    }
+
+    private KeyPair loadKeyPair(FileKeyPairProvider keyPairProvider) {
+        try {
+            return keyPairProvider.loadKeys(null).iterator().next();
+        }
+        catch (Exception ex) {
+            throw new SshAuthenticationException("제공된 SSH 키가 유효하지 않거나 손상되었습니다.", ex);
+        }
+    }
+
+    private boolean verifyClientSession(SshInfo sshInfo, KeyPair keyPair) {
+        try (ClientSession session = getClientSession(sshInfo)) {
+            session.addPublicKeyIdentity(keyPair);
+            session.auth().verify(AUTH_TIMEOUT_MS);
+            return session.isAuthenticated();
+        } catch (Exception ex) {
+            throw new SshAuthenticationException("SSH 인증에 실패했습니다. 자격 증명과 서버 설정을 확인해주세요", ex);
         }
     }
 
@@ -67,28 +104,8 @@ public class SshService {
                 throw new SshAuthenticationException("SSH 인증 실패: " + ex.getMessage());
             }
             else{
-                throw new SshAuthenticationException("SSH 연결 실패: " + ex.getMessage());
+                throw new SshConnectionException("SSH 연결 실패: " + ex.getMessage());
             }
-        }
-    }
-
-    private Path createTempKeyFile(String privateKey) {
-        Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rw-------");
-        FileAttribute<Set<PosixFilePermission>> attr = PosixFilePermissions.asFileAttribute(perms);
-
-        try {
-            Path tempFile = Files.createTempFile("ssh-key-", ".pem", attr);
-
-            try (FileOutputStream fos = new FileOutputStream(tempFile.toFile())) {
-                fos.write(privateKey.getBytes());
-            }
-
-            tempFile.toFile().deleteOnExit();
-
-            return tempFile;
-        }
-        catch (IOException ex) {
-            throw new SshKeyFileException("SSH 임시 키 파일 생성 실패");
         }
     }
 

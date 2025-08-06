@@ -94,7 +94,7 @@ public class RagService {
 
         return generateWithGeminiAsync(projectId, query)
                 .flatMapMany(fullResponse -> {
-                    String[] tokens = fullResponse.split("(?<=\\n)|(?=\\n)");
+                    String[] tokens = fullResponse.split("(?<=\\n)");
 
                     return Flux.fromArray(tokens)
                             .delayElements(Duration.ofMillis(20))

@@ -1,7 +1,7 @@
 package com.triton.msa.triton_dashboard.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.triton.msa.triton_dashboard.config.SecurityConfig;
+import com.triton.msa.triton_dashboard.common.config.SecurityConfig;
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
 import com.triton.msa.triton_dashboard.user.entity.ApiKeyInfo;
 import com.triton.msa.triton_dashboard.user.entity.LlmModel;
@@ -15,14 +15,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
-import java.util.HashSet;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;

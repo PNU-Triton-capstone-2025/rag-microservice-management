@@ -1,4 +1,4 @@
-package com.triton.msa.triton_dashboard.config;
+package com.triton.msa.triton_dashboard.common.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

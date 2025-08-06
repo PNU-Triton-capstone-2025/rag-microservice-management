@@ -10,8 +10,8 @@ import java.nio.file.Path;
 public record SshConnectionDetails(
         ClientSession session,
         ChannelShell channelShell,
-        PipedOutputStream outputStream,
-        PipedInputStream inputStream,
+        PipedOutputStream ptyOut,
+        PipedInputStream shellOut,
         Path tempKeyPath
 ) {
 }

@@ -77,24 +77,7 @@ public class SshService {
                 throw new SshAuthenticationException("SSH 인증에 실패했습니다. 자격 증명과 서버 설정을 확인해주세요.");
             }
 
-            ChannelShell channelShell = session.createShellChannel();
-            channelShell.setupSensibleDefaultPty();
-
-            PipedOutputStream ptyOut = new PipedOutputStream();
-            PipedInputStream ptyIn = new PipedInputStream(ptyOut);
-
-            PipedInputStream shellOut = new PipedInputStream();
-            PipedOutputStream shellIn = new PipedOutputStream(shellOut);
-
-            channelShell.setIn(ptyIn);
-            channelShell.setOut(shellIn);
-            channelShell.setErr(shellIn);
-
-            channelShell.open().verify(CONNECT_TIMEOUT_MS);
-
-            String sessionId = UUID.randomUUID().toString();
-            SshConnectionDetails details = new SshConnectionDetails(session, channelShell, ptyOut, shellOut, tempKeyFile);
-            activeSessions.put(sessionId, details);
+            String sessionId = saveAndGetSessionId(session, tempKeyFile);
 
             log.info("SSH session started with ID: {}", sessionId);
             return sessionId;
@@ -109,13 +92,35 @@ public class SshService {
         }
     }
 
+    private String saveAndGetSessionId(ClientSession session, Path tempKeyFile) throws IOException {
+        ChannelShell channelShell = session.createShellChannel();
+        channelShell.setupSensibleDefaultPty();
+
+        PipedOutputStream ptyOut = new PipedOutputStream();
+        PipedInputStream ptyIn = new PipedInputStream(ptyOut);
+
+        PipedInputStream shellOut = new PipedInputStream();
+        PipedOutputStream shellIn = new PipedOutputStream(shellOut);
+
+        channelShell.setIn(ptyIn);
+        channelShell.setOut(shellIn);
+        channelShell.setErr(shellIn);
+
+        channelShell.open().verify(CONNECT_TIMEOUT_MS);
+
+        String sessionId = UUID.randomUUID().toString();
+        SshConnectionDetails details = new SshConnectionDetails(session, channelShell, ptyOut, shellOut, tempKeyFile);
+        activeSessions.put(sessionId, details);
+        return sessionId;
+    }
+
     public void sendCommand(String sessionId, String command) {
         SshConnectionDetails details = activeSessions.get(sessionId);
 
         if(details != null && details.channelShell().isOpen()) {
             try {
-                details.outputStream().write(command.getBytes());
-                details.outputStream().flush();
+                details.ptyOut().write(command.getBytes());
+                details.ptyOut().flush();
             }
             catch (IOException ex) {
                 log.error("SSH 세션 {}에 명령어 전송 실패", sessionId, ex);
@@ -130,10 +135,18 @@ public class SshService {
         if (details != null) {
             log.info("Closing SSH session: {}", sessionId);
 
-            details.channelShell().close(true);
-            details.session().close(true);
-
-            deleteTempKeyFile(details.tempKeyPath());
+            try {
+                details.ptyOut().close();
+                details.shellOut().close();
+                details.channelShell().close(true);
+                details.session().close(true);
+            }
+            catch (IOException ex) {
+                log.error("Error while closing streams for session ID: {}", sessionId, ex);
+            }
+            finally {
+                deleteTempKeyFile(details.tempKeyPath());
+            }
         }
     }
 
@@ -222,6 +235,10 @@ public class SshService {
 
     @PreDestroy
     public void stop() {
+        log.info("Closing all active sessions.");
+        activeSessions.keySet().forEach(this::closeSshSession);
+        activeSessions.clear();
+
         if (this.client != null) {
             this.client.stop();
         }

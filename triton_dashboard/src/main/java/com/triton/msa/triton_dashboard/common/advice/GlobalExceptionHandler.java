@@ -1,11 +1,12 @@
 package com.triton.msa.triton_dashboard.common.advice;
 
-import com.triton.msa.triton_dashboard.common.exception.ErrorResponse;
 import com.triton.msa.triton_dashboard.ssh.exception.SshAuthenticationException;
 import com.triton.msa.triton_dashboard.ssh.exception.SshConnectionException;
+import com.triton.msa.triton_dashboard.ssh.exception.SshKeyFileException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -31,6 +32,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
         log.error("Runtime exception occurred", ex);
+        return makeErrorResponseEntity(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(SshKeyFileException.class)
+    public ResponseEntity<Map<String, Object>> handleSshKeyFileException(SshKeyFileException ex) {
+        log.error("Failed to generate temporary SSH key file", ex);
         return makeErrorResponseEntity(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 

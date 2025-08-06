@@ -2,6 +2,9 @@ package com.triton.msa.triton_dashboard.ssh.service;
 
 import com.triton.msa.triton_dashboard.ssh.entity.SshInfo;
 import com.triton.msa.triton_dashboard.ssh.exception.SshAuthenticationException;
+import com.triton.msa.triton_dashboard.ssh.exception.SshKeyFileException;
+import jakarta.annotation.PreDestroy;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
@@ -19,6 +22,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Service
+@Slf4j
 public class SshService {
 
     private static final long CONNECT_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(10);
@@ -31,14 +35,25 @@ public class SshService {
     }
 
     public boolean testConnection(SshInfo sshInfo) {
+        if (sshInfo == null || sshInfo.getSshIpAddress() == null || sshInfo.getSshAuthKey() == null) {
+            return false;
+        }
+
+        Path tempKeyFile = createTempKeyFile(sshInfo.getSshAuthKey());
+
+        FileKeyPairProvider keyPairProvider = new FileKeyPairProvider(tempKeyFile);
+        KeyPair keyPair = keyPairProvider.loadKeys(null).iterator().next();
+
         try(ClientSession session = getClientSession(sshInfo)) {
+
+            session.addPublicKeyIdentity(keyPair);
+            session.auth().verify(AUTH_TIMEOUT_MS);
+            deleteTempKeyFile(tempKeyFile);
             return session.isAuthenticated();
         }
         catch (IOException ex) {
             throw new RuntimeException("세션 닫기 실패", ex);
         }
-
-        //    Path tempKeyFile = createTempKeyFile(sshInfo.getSshAuthKey());
     }
 
     private ClientSession getClientSession(SshInfo sshInfo) {
@@ -57,48 +72,41 @@ public class SshService {
         }
     }
 
-    public boolean testConnection2(SshInfo sshInfo) {
-        if (sshInfo == null || sshInfo.getSshIpAddress() == null || sshInfo.getSshAuthKey() == null) {
-            return false;
-        }
-
-        try(SshClient client = SshClient.setUpDefaultClient()) {
-            client.start();
-
-            Path tempKeyFile = createTempKeyFile(sshInfo.getSshAuthKey());
-
-            FileKeyPairProvider keyPairProvider = new FileKeyPairProvider(tempKeyFile);
-            KeyPair keyPair = keyPairProvider.loadKeys(null).iterator().next();
-
-            try (ClientSession session = client.connect(sshInfo.getHostname(), sshInfo.getSshIpAddress(), sshInfo.getPort())
-                    .verify(CONNECT_TIMEOUT_MS).getSession()) {
-                session.addPublicKeyIdentity(keyPair);
-
-                session.auth().verify(AUTH_TIMEOUT_MS);
-
-                boolean isAuthenticated = session.isAuthenticated();
-                Files.delete(tempKeyFile);
-                return isAuthenticated;
-            }
-        }
-        catch (IOException ex) {
-            ex.printStackTrace();
-            return false;
-        }
-    }
-
-    private Path createTempKeyFile(String privateKey) throws IOException {
+    private Path createTempKeyFile(String privateKey) {
         Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rw-------");
         FileAttribute<Set<PosixFilePermission>> attr = PosixFilePermissions.asFileAttribute(perms);
 
-        Path tempFile = Files.createTempFile("ssh-key-", ".pem", attr);
+        try {
+            Path tempFile = Files.createTempFile("ssh-key-", ".pem", attr);
 
-        try(FileOutputStream fos = new FileOutputStream(tempFile.toFile())) {
-            fos.write(privateKey.getBytes());
+            try (FileOutputStream fos = new FileOutputStream(tempFile.toFile())) {
+                fos.write(privateKey.getBytes());
+            }
+
+            tempFile.toFile().deleteOnExit();
+
+            return tempFile;
         }
+        catch (IOException ex) {
+            throw new SshKeyFileException("SSH 임시 키 파일 생성 실패");
+        }
+    }
 
-        tempFile.toFile().deleteOnExit();
+    private void deleteTempKeyFile(Path path) {
+        try{
+            if(path != null) {
+                Files.deleteIfExists(path);
+            }
+        }
+        catch (IOException e) {
+            log.error("Failed to delete temporary SSH key file: {}", path, e);
+        }
+    }
 
-        return tempFile;
+    @PreDestroy
+    public void stop() {
+        if (this.client != null) {
+            this.client.stop();
+        }
     }
 }

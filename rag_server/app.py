@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from RAG.retriever import embed_text_document
+from rag import embed_and_store
 
 app = Flask(__name__)
 
@@ -22,16 +22,22 @@ def get_rag_response():
 def embedding():
     data = request.json
     text = data.get("text")
+    file_name = data.get("file_name")
+    content_type = data.get("content_type")
+    es_index = data.get("es_index")
+    
+    metadata = {
+        "file_name": file_name,
+        "content_type": content_type
+    }
     
     if not text:
-        return jsonify({"error": "문서가 비어 있습니다."}), 400
-    
-    #vector embedding
-    embed_text_document(text)
-    
-    return jsonify({
-        "message": "문서 임베딩 성공"
-    }), 200
+        return jsonify({"error": "document is empty."}), 400
+    try:
+        chunk_count = embed_and_store(text=text, es_index=es_index, metadata=metadata)
+        return jsonify({"message": f"{chunk_count} chunks stored successfully in '{es_index}'",}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)

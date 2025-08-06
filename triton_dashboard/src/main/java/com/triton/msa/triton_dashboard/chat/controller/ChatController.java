@@ -87,11 +87,11 @@ public class ChatController {
 
         return ragService.generateWithGeminiAsync(projectId, query)
                 .flatMapMany(fullResponse -> {
-                    // 토큰 단위로 쪼개기 (공백 포함, 줄바꿈 포함)
-                    String[] tokens = fullResponse.split("(?<= )|(?=\n)");
+                    // 토큰 단위로 쪼개기
+                    String[] tokens = fullResponse.split("(?<=\\n\\n)");
 
-                    return Flux.fromArray(tokens)
-                            .delayElements(Duration.ofMillis(20)) // 토큰 전송 속도
+                    return Flux.fromStream(fullResponse.chars().mapToObj(c -> String.valueOf((char) c)))
+                            .delayElements(Duration.ofMillis(5))
                             .doOnComplete(() -> {
                                 // 스트리밍 끝나면 DB 저장
                                 chatHistoryService.saveHistory(project, query, fullResponse);

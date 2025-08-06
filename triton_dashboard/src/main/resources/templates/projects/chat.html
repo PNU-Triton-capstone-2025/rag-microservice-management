@@ -105,11 +105,14 @@
                 eventSource.onmessage = function (event) {
                     if (loadingElem) loadingElem.remove();
                     accumulatedText += event.data;
+
+                    // markdown 렌더링
                     renderMarkdownToElement(explanationElem, accumulatedText);
                     chatWindow.scrollTop = chatWindow.scrollHeight;
                 };
 
                 eventSource.onerror = function () {
+                    clearTypingIndicator();
                     if (loadingElem) loadingElem.innerText = "⚠️ 응답 불가";
                     eventSource.close();
                     eventSource = null;
@@ -128,6 +131,7 @@
                     eventSource.close();
                     eventSource = null;
                 }
+                clearTypingIndicator();
 
                 appendUserMessage(prompt);
                 queryInput.value = "";

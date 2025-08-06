@@ -42,5 +42,9 @@ function renderMarkdownFromDataAttr(selector) {
     });
 }
 
+function clearTypingIndicator() {
+    document.querySelectorAll(".typing-indicator").forEach(el => el.remove());
+}
+
 window.renderMarkdownToElement = renderMarkdownToElement;
 window.renderMarkdownFromDataAttr = renderMarkdownFromDataAttr;

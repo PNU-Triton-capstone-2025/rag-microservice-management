@@ -32,17 +32,21 @@ body {
 
 /* ===== LLM 응답 스타일 ===== */
 .llm-response {
-    white-space: pre-wrap;
     word-break: break-word;
     background-color: #ffffff;
     padding: 18px 20px;
     border-radius: 12px;
-    font-family: 'Fira Code', 'Pretendard', 'Noto Sans KR', monospace;
+    font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
     font-size: 15px;
-    line-height: 1.7;
+    line-height: 1.5;
     color: #2c2c2c;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     border: 1px solid #ececec;
+}
+
+/* 문단 간격 */
+.llm-response p {
+    margin: 0 0 8px;
 }
 
 /* 헤딩 */
@@ -58,7 +62,7 @@ body {
     padding-left: 22px;
 }
 .llm-response li {
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 /* 강조 */
@@ -71,14 +75,53 @@ body {
     font-style: italic;
 }
 
-/* 코드블록 */
+/* ===== 코드블럭 ===== */
+.llm-response pre {
+    background: #f6f8fa;
+    padding: 14px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 12px 0;
+    font-family: 'Fira Code', monospace;
+    font-size: 14px;
+}
 .llm-response code {
-    background-color: #f4f4f4;
-    padding: 2px 5px;
+    background: #f6f8fa;
+    padding: 2px 4px;
     border-radius: 4px;
     font-family: 'Fira Code', monospace;
     font-size: 14px;
     color: #d63384;
+}
+
+/* 코드블럭 복사 버튼 */
+.copy-btn {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: #f0f0f0;
+    border: none;
+    padding: 4px 6px;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.copy-btn:hover {
+    background: #ddd;
+}
+.code-block {
+    position: relative;
+}
+
+/* ===== 로딩 인디케이터 ===== */
+.typing-indicator {
+    font-style: italic;
+    color: #888;
+    animation: blink 1s infinite;
+}
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
 }
 
 /* ===== 채팅 버블 ===== */

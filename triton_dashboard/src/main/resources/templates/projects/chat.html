@@ -12,7 +12,14 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}" />
 
     <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <!-- Markdown + Highlight.js -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="/js/markdownRenderer.js"></script>
 </head>
+
 <body>
 <section layout:fragment="page-content">
     <div class="container-fluid p-4">
@@ -26,6 +33,7 @@
             </a>
         </div>
 
+        <!-- 채팅 히스토리 -->
         <div id="chat-window" class="border rounded p-3 mb-3 bg-white" style="height: 500px; overflow-y: auto;">
             <div th:each="msg : ${chatHistory}">
                 <div th:if="${msg.userQuery}" class="d-flex justify-content-end mb-2">
@@ -34,83 +42,101 @@
                 <div th:if="${msg.llmResponse}" class="d-flex justify-content-start mb-2">
                     <div class="chat-bubble-ai">
                         <h6 class="fw-bold mb-2">응답</h6>
-                        <pre class="llm-response" th:text="${msg.llmResponse}"></pre>
+                        <!-- 과거 응답은 data-content에 넣어 렌더링 -->
+                        <div class="llm-response" th:attr="data-content=${msg.llmResponse}"></div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- 입력창 -->
         <form id="chat-form">
             <div class="input-group">
                 <input type="text" id="query" name="query" class="form-control"
-                       placeholder="예: '레디스 3개 복제 배포 생성'" required>
+                       placeholder="예: '프로젝트 배포 명세 파일 생성해줘'" required>
                 <button class="btn btn-primary" type="submit">전송</button>
             </div>
         </form>
     </div>
 </section>
 <th:block layout:fragment="page-scripts">
-    <script>
-        let projectId = /*[[${project.id}]]*/ 0;
-        if (!projectId || projectId === 0) {
-            const match = window.location.pathname.match(/\/projects\/(\d+)\/chat/);
-            if (match) {
-                projectId = parseInt(match[1], 10);
+    <script th:inline="javascript">
+        document.addEventListener("DOMContentLoaded", function () {
+            let projectId = /*[[${project.id}]]*/ 0;
+            if (!projectId) {
+                const match = window.location.pathname.match(/\/projects\/(\d+)\/chat/);
+                if (match) projectId = parseInt(match[1], 10);
             }
-        }
-        let eventSource = null;
 
-        document.getElementById("chat-form").addEventListener("submit", function (e) {
-            e.preventDefault();
-            const queryInput = document.getElementById("query");
-            const prompt = queryInput.value.trim();
-            if (!prompt) return;
             const chatWindow = document.getElementById("chat-window");
+            let eventSource = null;
 
-            if (eventSource) {
-                eventSource.close();
-                eventSource = null;
+            // 사용자 메시지 DOM 추가
+            function appendUserMessage(message) {
+                chatWindow.innerHTML += `
+                    <div class="d-flex justify-content-end mb-2">
+                        <div class="chat-bubble-user">${message}</div>
+                    </div>
+                `;
+                chatWindow.scrollTop = chatWindow.scrollHeight;
             }
 
-            // 유저 쿼리 렌더링
-            chatWindow.innerHTML += `
-                    <div class="d-flex justify-content-end mb-2">
-                        <div class="chat-bubble-user">${prompt}</div>
-                    </div>
-                `;
-            queryInput.value = "";
-
-            // 응답 블럭 추가
-            const wrapper = document.createElement("div");
-            wrapper.classList.add("d-flex", "justify-content-start", "mb-2");
-            wrapper.innerHTML = `
+            // LLM 응답 placeholder DOM 추가
+            function appendAIResponsePlaceholder() {
+                const wrapper = document.createElement("div");
+                wrapper.classList.add("d-flex", "justify-content-start", "mb-2");
+                wrapper.innerHTML = `
                     <div class="chat-bubble-ai">
-                        <h6 class="fw-bold mb-2">응답</h6>
-                        <pre class="llm-response"></pre>
+                        <div class="llm-response">
+                            <div class="typing-indicator">응답 생성 중...</div>
+                        </div>
                     </div>
                 `;
-            chatWindow.appendChild(wrapper);
+                chatWindow.appendChild(wrapper);
+                return wrapper.querySelector(".llm-response");
+            }
 
-            const explanationElem = wrapper.querySelector(".llm-response");
-            const url = `/projects/${projectId}/chat/stream?query=${encodeURIComponent(prompt)}`;
+            // SSE 연결 및 수신 후 렌더링
+            function renderStreamingResponse(prompt, explanationElem, loadingElem) {
+                let accumulatedText = "";
+                const url = `/projects/${projectId}/chat/stream?query=${encodeURIComponent(prompt)}`;
+                eventSource = new EventSource(url);
 
-            // /projects/{id}/chat/stream GET 요청을 (Server-Sent-Events)SSE 방식으로 보냄
-            eventSource = new EventSource(url);
+                eventSource.onmessage = function (event) {
+                    if (loadingElem) loadingElem.remove();
+                    accumulatedText += event.data;
+                    renderMarkdownToElement(explanationElem, accumulatedText);
+                    chatWindow.scrollTop = chatWindow.scrollHeight;
+                };
 
-            // LLM이 생성한 텍스트를 토큰 단위로 화면에 렌더링
-            eventSource.onmessage = function (event) {
-                const token = event.data
-                    .replace(/ /g, '&nbsp;')
-                    .replace(/\n/g, '<br>');
+                eventSource.onerror = function () {
+                    if (loadingElem) loadingElem.innerText = "⚠️ 응답 불가";
+                    eventSource.close();
+                    eventSource = null;
+                };
+            }
 
-                explanationElem.innerHTML += token;
-                chatWindow.scrollTop = chatWindow.scrollHeight;
-            };
+            // 폼 전송 이벤트
+            document.getElementById("chat-form").addEventListener("submit", function (e) {
+                e.preventDefault();
+                const queryInput = document.getElementById("query");
+                const prompt = queryInput.value.trim();
+                if (!prompt) return;
 
-            eventSource.onerror = function () {
-                eventSource.close();
-                eventSource = null;
-            };
+                // 기존 SSE 닫기
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+                }
+
+                appendUserMessage(prompt);
+                queryInput.value = "";
+
+                const explanationElem = appendAIResponsePlaceholder();
+                const loadingElem = explanationElem.querySelector(".typing-indicator");
+
+                renderStreamingResponse(prompt, explanationElem, loadingElem);
+            });
         });
     </script>
 </th:block>

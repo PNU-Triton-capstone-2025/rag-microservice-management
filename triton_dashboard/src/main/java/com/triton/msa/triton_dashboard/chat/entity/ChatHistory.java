@@ -29,7 +29,7 @@ public class ChatHistory {
     private String llmResponse;
 
     private LocalDateTime createdAt;
-
+    
     public ChatHistory(Project project, String title, String userQuery, String llmResponse) {
         this.project = project;
         this.title = title;

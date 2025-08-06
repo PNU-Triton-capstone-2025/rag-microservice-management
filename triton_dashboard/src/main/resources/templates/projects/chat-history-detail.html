@@ -8,6 +8,12 @@
   <meta charset="UTF-8">
   <title th:text="${history.title}">작업 이력 상세</title>
   <link rel="stylesheet" th:href="@{/css/style.css}">
+
+  <!-- Markdown + Highlight.js -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="/js/markdownRenderer.js"></script>
 </head>
 <body>
 <section layout:fragment="page-content">
@@ -19,23 +25,30 @@
       </p>
     </div>
 
+    <!-- 사용자 질문 -->
     <div class="d-flex justify-content-end mb-3">
       <div class="chat-bubble-user" th:text="${history.userQuery}"></div>
     </div>
 
+    <!-- LLM 응답 -->
     <div class="d-flex justify-content-start mb-3">
       <div class="chat-bubble-ai">
-        <h6 class="fw-bold mb-2">응답</h6>
-        <pre class="llm-response"
-             th:utext="${#strings.replace(#strings.replace(history.llmResponse, ' ', '&nbsp;'), '\n', '<br>')}">
-        </pre>
+        <div id="llm-response" class="llm-response" th:attr="data-content=${history.llmResponse}"></div>
       </div>
     </div>
 
     <a th:href="@{/projects/{projectId}/chat/history(projectId=${project.id})}"
-       class="btn btn-secondary btn-back mt-3">← 목록으로
+       class="btn btn-secondary btn-back mt-3">
+      ← 목록으로
     </a>
   </div>
 </section>
+<th:block layout:fragment="page-scripts">
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      renderMarkdownFromDataAttr("#llm-response");
+    });
+  </script>
+</th:block>
 </body>
 </html>

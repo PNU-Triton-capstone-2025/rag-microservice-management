@@ -1,22 +1,27 @@
 from flask import Flask, request, jsonify
-from rag import embed_and_store
+from retriever import embed_and_store
+from chain_query import query_rag
+from check_es_index import ensure_index_exists
+from settings import settings
+from elasticsearch import Elasticsearch
 
 app = Flask(__name__)
+es_client = Elasticsearch(settings.elasticsearch_url)
 
 @app.route("/api/get-rag-response", methods=["POST"])
 def get_rag_response():
     data = request.json
     query = data.get("query")
+    es_index = data.get("es_index")
 
     if not query:
-        return jsonify({"error": "질문이 비어 있습니다."}), 400
+        return jsonify({"error": "query is empty."}), 400
 
-    #generate response
-    response_text = "응답"
-
-    return jsonify({
-        "response": response_text
-    }), 200
+    try:
+        response_data = query_rag(query, es_index)
+        return jsonify(response_data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     
 @app.route("/api/embedding", methods=["POST"])
 def embedding():
@@ -35,9 +40,16 @@ def embedding():
         return jsonify({"error": "document is empty."}), 400
     try:
         chunk_count = embed_and_store(text=text, es_index=es_index, metadata=metadata)
-        return jsonify({"message": f"{chunk_count} chunks stored successfully in '{es_index}'",}), 200
+        return jsonify({
+            "message": f"{chunk_count} chunks stored successfully in '{es_index}'"
+        }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+def init_indices():
+    ensure_index_exists(es_client, "test-1")
+    print("index init completed.")
+
 if __name__ == "__main__":
+    init_indices()
     app.run(host="0.0.0.0", port=5000, debug=True)

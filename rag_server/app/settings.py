@@ -12,5 +12,5 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
 
-# 싱글톤 인스턴스로 사용
+
 settings = Settings()

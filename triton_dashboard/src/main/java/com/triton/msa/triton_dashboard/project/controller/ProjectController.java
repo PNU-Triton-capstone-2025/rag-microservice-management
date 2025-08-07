@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -42,7 +43,10 @@ public class ProjectController {
     }
 
     @PostMapping
-    public String createProject(@ModelAttribute Project project, @AuthenticationPrincipal UserDetails userDetails) {
+    public String createProject(
+            @ModelAttribute Project project,
+            @RequestParam("pemFile") MultipartFile pemFile,
+            @AuthenticationPrincipal UserDetails userDetails) {
         User user = userService.getUser(userDetails.getUsername());
         project.setUser(user);
         projectService.saveProject(project);

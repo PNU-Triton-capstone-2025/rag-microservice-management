@@ -1,15 +1,12 @@
-from pydantic import BaseSettings
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    openai_api_key: str = os.getenv("OPENAI_API_KEY")
-    elasticsearch_url: str = os.getenv("ELASTICSEARCH_URL")
+    openai_api_key: str
+    elasticsearch_url: str
+    langsmith_api_key: str
+    langsmith_project: str
 
-    class Config:
-        env_file = ".env"
-        
-#싱글톤 패턴으로 환경변수 사용
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+# 싱글톤 인스턴스
 settings = Settings()

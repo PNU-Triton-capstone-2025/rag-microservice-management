@@ -1,5 +1,6 @@
-package com.triton.msa.triton_dashboard.project.entity;
+package com.triton.msa.triton_dashboard.private_data.entity;
 
+import com.triton.msa.triton_dashboard.project.entity.Project;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,7 +19,6 @@ public class PrivateData {
     @JoinColumn(name = "project_id")
     private Project project;
 
-    private String esId; // elasticsearch와 데이터 매핑 위함
     private String filename;
     private String contentType;
 

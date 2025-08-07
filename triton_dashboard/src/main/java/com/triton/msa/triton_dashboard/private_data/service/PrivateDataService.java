@@ -2,20 +2,20 @@ package com.triton.msa.triton_dashboard.private_data.service;
 
 import com.triton.msa.triton_dashboard.private_data.ExtractedFile;
 import com.triton.msa.triton_dashboard.private_data.dto.UploadResultDto;
+import com.triton.msa.triton_dashboard.private_data.exception.ElasticsearchDeleteException;
 import com.triton.msa.triton_dashboard.private_data.util.FileTypeUtil;
 import com.triton.msa.triton_dashboard.private_data.util.ZipExtractor;
-import com.triton.msa.triton_dashboard.project.entity.PrivateData;
+import com.triton.msa.triton_dashboard.private_data.entity.PrivateData;
 import com.triton.msa.triton_dashboard.project.entity.Project;
-import com.triton.msa.triton_dashboard.project.repository.PrivateDataRepository;
+import com.triton.msa.triton_dashboard.private_data.repository.PrivateDataRepository;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -23,17 +23,16 @@ import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class PrivateDataService {
 
-    private final RestTemplate restTemplate = new RestTemplate();
     private final ProjectService projectService;
     private final PrivateDataRepository privateDataRepository;
     private final ZipExtractor zipExtractor;
-    private final HttpHeaders headers = new HttpHeaders();
+
+    private final WebClient webClient;
 
     public UploadResultDto unzipAndSaveFiles(Long projectId, MultipartFile file) {
         String originalFilename = file.getOriginalFilename();
@@ -76,35 +75,29 @@ public class PrivateDataService {
 
     private void saveFile(Long projectId, ExtractedFile file) throws ConnectException {
         String contentType = FileTypeUtil.resolveContentType(file.filename());
-        String esId;
         try {
-            esId = saveToElasticsearch(projectId, file, contentType);
+            saveToElasticsearch(projectId, file, contentType);
         } catch (Exception e) {
             throw new ConnectException("Elasticsearch 저장 중 오류 발생: " + e.getMessage());
         }
 
-        if (esId != null && !esId.isBlank()) {
-            saveToDatabase(projectId, file, contentType, esId);
-        }
+        saveToDatabase(projectId, file, contentType);
     }
 
-    private void saveToDatabase(Long projectId, ExtractedFile file, String contentType, String esId) {
+    private void saveToDatabase(Long projectId, ExtractedFile file, String contentType) {
         Project project = projectService.getProject(projectId);
         PrivateData privateData = new PrivateData();
 
         privateData.setProject(project);
         privateData.setFilename(file.filename());
         privateData.setContentType(contentType);
-        privateData.setEsId(esId);
         privateData.setCreatedAt(file.timestamp());
 
         privateDataRepository.save(privateData);
     }
 
-    private String saveToElasticsearch(Long projectId, ExtractedFile file, String contentType) {
-        // String indexUrl = "http://54.253.214.14:9200/project-" + projectId + "/_doc";
-        String indexUrl = "http://localhost:30920/project-" + projectId + "/_doc";
-
+    private void saveToElasticsearch(Long projectId, ExtractedFile file, String contentType) {
+        String url = "http://localhost:30920/project-" + projectId + "/_doc";
         Map<String, Object> document = Map.of(
                 "filename", file.filename(),
                 "contentType", contentType,
@@ -112,30 +105,47 @@ public class PrivateDataService {
                 "timestamp", file.timestamp().toString()
         );
 
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(document, headers);
-        ResponseEntity<Map> response = restTemplate.postForEntity(indexUrl, request, Map.class);
-
-        String esId = Optional.ofNullable(response.getBody())
-                .map(b -> b.get("_id"))
-                .map(Object::toString)
-                .orElseThrow(() -> new RuntimeException("Elasticsearch 저장 실패: _id 없음"));
-
-        return esId;
+        webClient.post()
+                .uri(url)
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .bodyValue(document)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .block(); // block으로 하면 응답에 의존적인 것 같은데, subcribe로 바꾸는 게 맞는지
     }
 
     public void deletePrivateData(Long projectId, Long dataId) {
         PrivateData data = privateDataRepository.findByIdAndProjectId(dataId, projectId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 데이터가 존재하지 않습니다."));
 
-        deleteFromElasticsearch(projectId, data.getEsId());
+        deleteFromElasticsearch(projectId, data.getFilename());
         privateDataRepository.deleteById(dataId);
     }
 
-    private void deleteFromElasticsearch(Long projectId, String esId) {
-        String indexUrl = "http://localhost:30920/project-" + projectId + "/_doc/" + esId;
-        restTemplate.delete(indexUrl);
+    private void deleteFromElasticsearch(Long projectId, String filename) {
+        String url = "http://localhost:30920/project-" + projectId + "/_delete_by_query";
+        String deleteQuery = """
+            {
+                "query": {
+                    "term": {
+                        "filename.keyword": "%s"
+                    }
+                }
+            }
+        """.formatted(filename);
+
+        try {
+            webClient.post()
+                    .uri(url)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                    .bodyValue(deleteQuery)
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .block(); // block으로 하면 응답에 의존적인 것 같은데, subcribe로 바꾸는 게 맞는지
+        } catch (Exception e) {
+            throw new ElasticsearchDeleteException("서버 연결 오류로 삭제하지 못했습니다.");
+        }
+
     }
 
     public List<PrivateData> getPrivateDataList(Long projectId) {

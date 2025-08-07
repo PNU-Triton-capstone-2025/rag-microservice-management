@@ -1,6 +1,6 @@
-package com.triton.msa.triton_dashboard.project.repository;
+package com.triton.msa.triton_dashboard.private_data.repository;
 
-import com.triton.msa.triton_dashboard.project.entity.PrivateData;
+import com.triton.msa.triton_dashboard.private_data.entity.PrivateData;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

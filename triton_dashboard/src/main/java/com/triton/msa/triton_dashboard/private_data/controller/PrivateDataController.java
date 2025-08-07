@@ -1,9 +1,13 @@
 package com.triton.msa.triton_dashboard.private_data.controller;
 
 import com.triton.msa.triton_dashboard.private_data.dto.UploadResultDto;
+import com.triton.msa.triton_dashboard.private_data.entity.PrivateData;
 import com.triton.msa.triton_dashboard.private_data.service.PrivateDataService;
+import com.triton.msa.triton_dashboard.project.entity.Project;
+import com.triton.msa.triton_dashboard.project.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,6 +21,18 @@ import java.util.List;
 public class PrivateDataController {
 
     private final PrivateDataService privateDataService;
+    private final ProjectService projectService;
+
+    @GetMapping
+    public String listPrivateData(@PathVariable Long projectId, Model model) {
+        Project project = projectService.getProject(projectId);
+        List<PrivateData> privateDataList = privateDataService.getPrivateDataList(projectId);
+
+        model.addAttribute("project", project);
+        model.addAttribute("privateDataList", privateDataList);
+
+        return "projects/private-data";
+    }
 
     @PostMapping("/upload")
     public String uploadZip(
@@ -35,6 +51,12 @@ public class PrivateDataController {
         }
 
         redirectAttributes.addFlashAttribute("uploadResult", result);
+        return "redirect:/projects/" + projectId + "/private-data";
+    }
+
+    @PostMapping("/{id}")
+    public String deletePrivateData(@PathVariable Long projectId, @PathVariable Long id) {
+        privateDataService.deletePrivateData(projectId, id); // 로컬 + ES 삭제
         return "redirect:/projects/" + projectId + "/private-data";
     }
 }

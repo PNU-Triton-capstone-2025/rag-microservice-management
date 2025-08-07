@@ -7,7 +7,7 @@ from prompt_template import prompts
 
 def query_rag(question: str, index_name: str, query_type: str) -> dict:
     rag_chain = create_rag_chain(index_name, query_type)
-    result = rag_chain.run(question)
+    result = rag_chain(question)
     
     #question: 사용자 질문, answer: RAG 기반 답변, sources: 참조한 문서
     return {
@@ -18,6 +18,7 @@ def query_rag(question: str, index_name: str, query_type: str) -> dict:
 
 #해당 index를 참조하는 chain 생성
 def create_rag_chain(index_name: str, query_type: str):
+    
     embedding_model = OpenAIEmbeddings()
     vectorstore = ElasticsearchStore(
         es_url=settings.elasticsearch_url,

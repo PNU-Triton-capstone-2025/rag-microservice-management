@@ -9,5 +9,6 @@ import java.util.Optional;
 public interface PrivateDataRepository extends JpaRepository<PrivateData, Long> {
     List<PrivateData> findByProjectId(Long projectId);
     Optional<PrivateData> findByIdAndProjectId(Long id, Long projectId);
-    void deleteById(Long id);
+    void deleteById(Long dataId);
+    boolean existsByProjectIdAndFilename(Long projectId, String filename);
 }

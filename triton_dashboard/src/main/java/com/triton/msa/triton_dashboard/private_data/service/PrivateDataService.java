@@ -63,6 +63,11 @@ public class PrivateDataService {
     }
 
     private boolean saveFile(Long projectId, ExtractedFile file,  List<String> skipped) {
+        if (privateDataRepository.existsByProjectIdAndFilename(projectId, file.filename())) {
+            skipped.add(file.filename() + " (이미 저장된 파일)");
+            return false;
+        }
+
         String contentType = FileTypeUtil.resolveContentType(file.filename());
         try {
             saveToElasticsearch(projectId, file, contentType);

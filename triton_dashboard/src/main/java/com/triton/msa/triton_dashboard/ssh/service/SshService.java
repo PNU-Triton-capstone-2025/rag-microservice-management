@@ -196,7 +196,7 @@ public class SshService {
 
     private ClientSession connectClientSession(SshInfo sshInfo) {
         try{
-            return client.connect(sshInfo.getHostname(), sshInfo.getSshIpAddress(), sshInfo.getPort())
+            return client.connect(sshInfo.getUsername(), sshInfo.getSshIpAddress(), 22)
                     .verify(CONNECT_TIMEOUT_MS).getSession();
         }
         catch (IOException ex) {

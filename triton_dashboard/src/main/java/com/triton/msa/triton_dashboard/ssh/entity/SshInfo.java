@@ -13,6 +13,5 @@ public class SshInfo {
     private String sshIpAddress;
     @Lob
     private String sshAuthKey;
-    private String hostname;
-    private int port;
+    private String username;
 }

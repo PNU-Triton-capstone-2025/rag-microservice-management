@@ -39,7 +39,7 @@ public class SecurityConfig {
                 .permitAll()
         )
         .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**", "/validate-api-key"))
+                .ignoringRequestMatchers("/h2-console/**", "/validate-api-key", "/api/ssh/**"))
         .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
 
         return http.build();

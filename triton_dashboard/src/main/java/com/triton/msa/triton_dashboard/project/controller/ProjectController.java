@@ -39,13 +39,13 @@ public class ProjectController {
 
     @GetMapping("/new")
     public String newProjectForm(Model model) {
-        model.addAttribute("project", ProjectCreateRequestDto.getEmpty());
+        model.addAttribute("newProject", ProjectCreateRequestDto.getEmpty());
         return "projects/form";
     }
 
     @PostMapping
     public String createProject(
-            @ModelAttribute("project") ProjectCreateRequestDto requestDto,
+            @ModelAttribute("newProject") ProjectCreateRequestDto requestDto,
             @AuthenticationPrincipal UserDetails userDetails) {
         projectService.createProject(requestDto, userDetails.getUsername());
 

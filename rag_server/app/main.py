@@ -14,12 +14,13 @@ def get_rag_response():
     data = request.json
     query = data.get("query")
     es_index = data.get("es_index")
+    query_type = data.get("query_type")
 
     if not query:
         return jsonify({"error": "query is empty."}), 400
 
     try:
-        response_data = query_rag(query, es_index)
+        response_data = query_rag(query, es_index, query_type)
         return jsonify(response_data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

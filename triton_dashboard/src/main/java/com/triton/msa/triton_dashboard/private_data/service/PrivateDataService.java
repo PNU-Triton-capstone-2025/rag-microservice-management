@@ -47,22 +47,11 @@ public class PrivateDataService {
             List<ExtractedFile> extractedFiles = zipExtractor.extract(file, skipped);
 
             for (ExtractedFile doc : extractedFiles) {
-                String reason = "";
                 if (FileTypeUtil.isAllowed(doc.filename())) {
-                    try {
-                        saveFile(projectId, doc);
-                        saved.add(doc.filename());
-                    } catch (ConnectException e) {
-                        reason = "(저장 실패: 서버에 연결할 수 없음)";
-                    } catch (Exception e) {
-                        reason = "(저장 실패: 알 수 없는 오류)";
-                    }
+                    boolean isSuccess = saveFile(projectId, doc, skipped);
+                    if (isSuccess) saved.add(doc.filename());
                 } else {
                     skipped.add(doc.filename() + " (허용되지 않음)");
-                }
-
-                if (!reason.isEmpty()) {
-                    skipped.add(doc.filename() + " " + reason);
                 }
             }
 
@@ -73,15 +62,16 @@ public class PrivateDataService {
         }
     }
 
-    private void saveFile(Long projectId, ExtractedFile file) throws ConnectException {
+    private boolean saveFile(Long projectId, ExtractedFile file,  List<String> skipped) {
         String contentType = FileTypeUtil.resolveContentType(file.filename());
         try {
             saveToElasticsearch(projectId, file, contentType);
+            saveToDatabase(projectId, file, contentType);
+            return true;
         } catch (Exception e) {
-            throw new ConnectException("Elasticsearch 저장 중 오류 발생: " + e.getMessage());
+            skipped.add(file.filename() + " (시스템 오류로 저장되지 않았습니다.)");
+            return false;
         }
-
-        saveToDatabase(projectId, file, contentType);
     }
 
     private void saveToDatabase(Long projectId, ExtractedFile file, String contentType) {

@@ -1,6 +1,7 @@
 package com.triton.msa.triton_dashboard.common.advice;
 
 import com.triton.msa.triton_dashboard.private_data.exception.ElasticsearchDeleteException;
+import com.triton.msa.triton_dashboard.private_data.exception.ZipSlipException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -13,18 +14,34 @@ public class GlobalExceptionHandler {
     public String handleElasticsearchDeleteException(ElasticsearchDeleteException e,
                                                      HttpServletRequest request,
                                                      RedirectAttributes redirectAttributes) {
-        String uri = request.getRequestURI();
-        String projectId = "1";
 
+        String projectId = extractProjectId(request.getRequestURI());
+        redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+
+        return "redirect:/projects/" + projectId + "/private-data";
+    }
+
+    @ExceptionHandler(ZipSlipException.class)
+    public String handleZipSlipException(ZipSlipException e,
+                                         HttpServletRequest request,
+                                         RedirectAttributes redirectAttributes) {
+
+        String projectId = extractProjectId(request.getRequestURI());
+        redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+
+        return "redirect:/projects/" + projectId + "/private-data";
+    }
+
+
+    private String extractProjectId(String uri) {
         String[] parts = uri.split("/");
         for (int i = 0; i < parts.length; i++) {
             if ("projects".equals(parts[i]) && i + 1 < parts.length) {
-                projectId = parts[i + 1];
-                break;
+                return parts[i + 1];
             }
         }
 
-        redirectAttributes.addFlashAttribute("errorMessage", e.getMessage()); //
-        return "redirect:/projects/" + projectId + "/private-data";
+        return "1";
     }
+
 }

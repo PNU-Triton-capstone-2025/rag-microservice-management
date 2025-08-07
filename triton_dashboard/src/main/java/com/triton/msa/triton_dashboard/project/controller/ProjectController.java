@@ -1,6 +1,7 @@
 package com.triton.msa.triton_dashboard.project.controller;
 
 import com.triton.msa.triton_dashboard.private_data.service.PrivateDataService;
+import com.triton.msa.triton_dashboard.project.dto.ProjectCreateRequestDto;
 import com.triton.msa.triton_dashboard.project.entity.PrivateData;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
@@ -38,18 +39,15 @@ public class ProjectController {
 
     @GetMapping("/new")
     public String newProjectForm(Model model) {
-        model.addAttribute("project", new Project());
+        model.addAttribute("project", ProjectCreateRequestDto.getEmpty());
         return "projects/form";
     }
 
     @PostMapping
     public String createProject(
-            @ModelAttribute Project project,
-            @RequestParam("pemFile") MultipartFile pemFile,
+            @ModelAttribute("project") ProjectCreateRequestDto requestDto,
             @AuthenticationPrincipal UserDetails userDetails) {
-        User user = userService.getUser(userDetails.getUsername());
-        project.setUser(user);
-        projectService.saveProject(project);
+        projectService.createProject(requestDto, userDetails.getUsername());
 
         return "redirect:/projects";
     }
@@ -70,6 +68,4 @@ public class ProjectController {
         privateDataService.deletePrivateData(projectId, id); // 로컬 + ES 삭제
         return "redirect:/projects/" + projectId + "/private-data";
     }
-
-    // SSH 연결 추가 예정
 }

@@ -37,4 +37,12 @@ public class Project {
     public void updateSshInfo(SshInfo sshInfo) {
         this.sshInfo = sshInfo;
     }
+
+    protected Project() {
+
+    }
+
+    public Project(String name) {
+        this.name = name;
+    }
 }

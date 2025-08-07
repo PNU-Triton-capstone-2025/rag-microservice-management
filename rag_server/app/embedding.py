@@ -1,7 +1,7 @@
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.schema import Document
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores.elasticsearch import ElasticsearchStore
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import ElasticsearchStore
 from elasticsearch import Elasticsearch
 from settings import settings
 

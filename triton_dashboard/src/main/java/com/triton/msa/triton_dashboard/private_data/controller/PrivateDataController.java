@@ -3,6 +3,7 @@ package com.triton.msa.triton_dashboard.private_data.controller;
 import com.triton.msa.triton_dashboard.private_data.dto.PrivateDataResponseDto;
 import com.triton.msa.triton_dashboard.private_data.dto.UploadResultDto;
 import com.triton.msa.triton_dashboard.private_data.entity.PrivateData;
+import com.triton.msa.triton_dashboard.private_data.service.PrivateDataPersistenceService;
 import com.triton.msa.triton_dashboard.private_data.service.PrivateDataService;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
@@ -22,6 +23,7 @@ import java.util.List;
 public class PrivateDataController {
 
     private final PrivateDataService privateDataService;
+    private final PrivateDataPersistenceService privateDataPersistenceService;
     private final ProjectService projectService;
 
     @GetMapping
@@ -57,7 +59,7 @@ public class PrivateDataController {
 
     @PostMapping("/{id}")
     public String deletePrivateData(@PathVariable Long projectId, @PathVariable Long id) {
-        privateDataService.deletePrivateData(projectId, id); // 로컬 + ES 삭제
+        privateDataPersistenceService.deletePrivateData(projectId, id); // 로컬 + ES 삭제
         return "redirect:/projects/" + projectId + "/private-data";
     }
 }

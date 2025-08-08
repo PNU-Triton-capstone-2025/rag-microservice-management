@@ -2,7 +2,6 @@ package com.triton.msa.triton_dashboard.private_data.entity;
 
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import jakarta.persistence.*;
-import lombok.Getter;
 
 import java.time.Instant;
 

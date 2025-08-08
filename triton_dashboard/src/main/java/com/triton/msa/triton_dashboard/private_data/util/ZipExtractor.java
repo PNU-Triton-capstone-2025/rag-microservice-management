@@ -1,6 +1,7 @@
 package com.triton.msa.triton_dashboard.private_data.util;
 
 import com.triton.msa.triton_dashboard.private_data.ExtractedFile;
+import com.triton.msa.triton_dashboard.private_data.exception.ZipSlipException;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
@@ -29,7 +30,7 @@ public class ZipExtractor {
         Path tempDir = Files.createTempDirectory("upload-zip");
 
         try (InputStream inputStream = file.getInputStream();
-             ZipArchiveInputStream zis = new ZipArchiveInputStream(inputStream, "CP949", true)) {
+             ZipArchiveInputStream zis = new ZipArchiveInputStream(inputStream, StandardCharsets.UTF_8.name(), true)) {
 
             List<ExtractedFile> files = new ArrayList<>();
             ZipArchiveEntry entry;
@@ -40,7 +41,7 @@ public class ZipExtractor {
                 String filename = entry.getName();
                 Path newFile = tempDir.resolve(filename).normalize();
 
-                if (!newFile.startsWith(tempDir)) throw new IOException("Zip Slip 공격 탐지됨");
+                if (!newFile.startsWith(tempDir)) throw new ZipSlipException("압축 파일에 보안 취약성이 감지되어 업로드가 중단되었습니다.");
 
                 Files.createDirectories(newFile.getParent());
                 Files.copy(zis, newFile, StandardCopyOption.REPLACE_EXISTING);
@@ -54,7 +55,7 @@ public class ZipExtractor {
 
                     files.add(new ExtractedFile(filename, content, Instant.now()));
                 } catch (IOException | TikaException e) {
-                    skipped.add(filename + " (텍스트 추출 실패: UTF-8 인코딩 오류)");
+                    skipped.add(filename + " (본문 추출에 실패했습니다)");
                 }
             }
 

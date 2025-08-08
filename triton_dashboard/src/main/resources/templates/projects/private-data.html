@@ -25,6 +25,13 @@
       </div>
     </div>
 
+
+    <!-- flash 메시지 출력 영역 -->
+    <div th:if="${errorMessage}" class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+      <i class="bi bi-exclamation-octagon-fill me-2 fs-5"></i>
+      <div th:text="${errorMessage}">오류 메시지</div>
+    </div>
+
     <!-- 업로드 결과 메시지 -->
     <div th:if="${uploadResult != null}" class="card mt-4 border-0 shadow-sm bg-body-secondary p-4">
       <div class="d-flex align-items-center mb-3">
@@ -98,7 +105,6 @@
                 <td th:text="${#dates.format(data.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
                 <td class="text-end">
                   <form th:action="@{/projects/{projectId}/private-data/{id}(projectId=${project.id}, id=${data.id})}" method="post">
-                    <input type="hidden" name="_method" value="delete"/>
                     <button type="submit" class="btn btn-sm btn-outline-danger"
                             onclick="return confirm('정말 삭제하시겠습니까?')">
                       <i class="bi bi-trash"></i> 삭제

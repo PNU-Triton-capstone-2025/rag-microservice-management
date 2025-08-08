@@ -9,6 +9,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -26,6 +27,7 @@ public class ZipExtractor {
 
     private final Tika tika = new Tika();
 
+    @Transactional
     public List<ExtractedFile> extract(MultipartFile file, List<String> skipped) throws IOException {
         Path tempDir = Files.createTempDirectory("upload-zip");
 

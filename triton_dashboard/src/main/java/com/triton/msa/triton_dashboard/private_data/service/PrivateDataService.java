@@ -1,6 +1,7 @@
 package com.triton.msa.triton_dashboard.private_data.service;
 
 import com.triton.msa.triton_dashboard.private_data.ExtractedFile;
+import com.triton.msa.triton_dashboard.private_data.dto.PrivateDataResponseDto;
 import com.triton.msa.triton_dashboard.private_data.dto.UploadResultDto;
 import com.triton.msa.triton_dashboard.private_data.exception.ElasticsearchDeleteException;
 import com.triton.msa.triton_dashboard.private_data.util.FileTypeUtil;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -34,6 +36,7 @@ public class PrivateDataService {
 
     private final WebClient webClient;
 
+    @Transactional
     public UploadResultDto unzipAndSaveFiles(Long projectId, MultipartFile file) {
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".zip")) {
@@ -81,12 +84,7 @@ public class PrivateDataService {
 
     private void saveToDatabase(Long projectId, ExtractedFile file, String contentType) {
         Project project = projectService.getProject(projectId);
-        PrivateData privateData = new PrivateData();
-
-        privateData.setProject(project);
-        privateData.setFilename(file.filename());
-        privateData.setContentType(contentType);
-        privateData.setCreatedAt(file.timestamp());
+        PrivateData privateData = new PrivateData(project, file.filename(), contentType, file.timestamp());
 
         privateDataRepository.save(privateData);
     }
@@ -113,7 +111,7 @@ public class PrivateDataService {
         PrivateData data = privateDataRepository.findByIdAndProjectId(dataId, projectId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 데이터가 존재하지 않습니다."));
 
-        deleteFromElasticsearch(projectId, data.getFilename());
+        deleteFromElasticsearch(projectId, data.filename());
         privateDataRepository.deleteById(dataId);
     }
 
@@ -143,7 +141,8 @@ public class PrivateDataService {
 
     }
 
-    public List<PrivateData> getPrivateDataList(Long projectId) {
-        return privateDataRepository.findByProjectId(projectId);
+    @Transactional(readOnly = true)
+    public List<PrivateDataResponseDto> getPrivateDataList(Long projectId) {
+        return privateDataRepository.findDtosByProjectId(projectId);
     }
 }

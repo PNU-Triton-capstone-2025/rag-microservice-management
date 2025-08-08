@@ -1,5 +1,6 @@
 package com.triton.msa.triton_dashboard.private_data.controller;
 
+import com.triton.msa.triton_dashboard.private_data.dto.PrivateDataResponseDto;
 import com.triton.msa.triton_dashboard.private_data.dto.UploadResultDto;
 import com.triton.msa.triton_dashboard.private_data.entity.PrivateData;
 import com.triton.msa.triton_dashboard.private_data.service.PrivateDataService;
@@ -26,7 +27,7 @@ public class PrivateDataController {
     @GetMapping
     public String listPrivateData(@PathVariable Long projectId, Model model) {
         Project project = projectService.getProject(projectId);
-        List<PrivateData> privateDataList = privateDataService.getPrivateDataList(projectId);
+        List<PrivateDataResponseDto> privateDataList = privateDataService.getPrivateDataList(projectId);
 
         model.addAttribute("project", project);
         model.addAttribute("privateDataList", privateDataList);

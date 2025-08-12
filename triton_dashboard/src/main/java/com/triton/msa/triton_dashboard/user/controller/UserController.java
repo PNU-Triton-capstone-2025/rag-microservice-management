@@ -1,6 +1,8 @@
 package com.triton.msa.triton_dashboard.user.controller;
 
+import com.triton.msa.triton_dashboard.user.dto.ApiKeyValidationResponseDto;
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
+import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
 import com.triton.msa.triton_dashboard.user.service.UserService;
 import com.triton.msa.triton_dashboard.user.util.LlmApiKeyValidator;
 import jakarta.validation.Valid;
@@ -11,6 +13,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Controller
 @RequiredArgsConstructor
@@ -36,24 +42,21 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public String registerUserAccount(@ModelAttribute("user") @Valid UserRegistrationDto registrationDto,
-        BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
+    public String registerUserAccount(@ModelAttribute("user") @Valid UserRegistrationDto dto,
+                                      BindingResult bindingResult,
+                                      Model model) {
+        if (bindingResult.hasErrors()) return "register";
+
+        ApiKeyValidationResponseDto responseDto = apiKeyValidator.validateAll(dto);
+
+        if (!responseDto.allValid()) {
+            bindingResult.reject("apiKey.invalid", "입력하신 API 키가 유효하지 않습니다. 아래 상태를 확인하세요.");
+
+            model.addAttribute("validation", responseDto);
             return "register";
         }
 
-        userService.registerNewUser(registrationDto);
+        userService.registerNewUser(dto);
         return "redirect:/login/?success";
-    }
-
-    @PostMapping("/validate-api-key")
-    @ResponseBody
-    public ResponseEntity<String> validateApiKey(@RequestBody UserRegistrationDto registrationDto) {
-        try {
-            apiKeyValidator.validate(registrationDto.aiServiceApiKey(), registrationDto.llmModel());
-            return ResponseEntity.ok().body("valid");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        }
     }
 }

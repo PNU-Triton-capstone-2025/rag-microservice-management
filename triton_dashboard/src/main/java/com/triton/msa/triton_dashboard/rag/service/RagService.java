@@ -5,6 +5,8 @@ import com.triton.msa.triton_dashboard.rag.dto.RagRequestDto;
 import com.triton.msa.triton_dashboard.rag.dto.RagResponseDto;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
+import com.triton.msa.triton_dashboard.user.entity.ApiKeyInfo;
+import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
 import com.triton.msa.triton_dashboard.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -51,11 +54,12 @@ public class RagService {
 
     public Mono<String> generateWithGeminiAsync(Long projectId, String prompt) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        String apiKey = userService.getUser(username).getApiKeyInfo().getApiServiceApiKey();
-
-        if (apiKey == null || apiKey.isBlank()) {
-            return Mono.error(new RuntimeException("API 키가 설정되지 않았습니다."));
-        }
+        String apiKey = userService.getUser(username)
+                .getApiKeys().stream()
+                .filter(k -> k.getProvider() == LlmProvider.GOOGLE)
+                .map(ApiKeyInfo::getApiKey)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("GOOGLE API 키가 없습니다."));
 
         String url = "https://generativelanguage.googleapis.com/v1beta/models/"
                 + "gemini-1.5-flash:generateContent?key=" + apiKey;

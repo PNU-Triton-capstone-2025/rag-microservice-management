@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from datetime import datetime
+from datetime import datetime, timezone
 
 from embedding import embed_and_store
 from chain_query import query_rag
@@ -17,7 +17,7 @@ def status():
     return jsonify({
         "service": "RAG Flask Server",
         "status": "running",
-        "timestamp": datetime.utcnow().isoformat() + "Z"
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }), 200
 
 # ElasticSearch의 index에 해당하는 문서를 활용하여 RAG 기반 답변 생성하는 API

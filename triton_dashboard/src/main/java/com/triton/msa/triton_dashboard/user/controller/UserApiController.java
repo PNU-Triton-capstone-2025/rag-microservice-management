@@ -1,15 +1,12 @@
 package com.triton.msa.triton_dashboard.user.controller;
 
-import com.triton.msa.triton_dashboard.user.dto.ApiKeyValidationRequestDto;
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
 import com.triton.msa.triton_dashboard.user.dto.UserResponseDto;
-import com.triton.msa.triton_dashboard.user.entity.LlmModel;
 import com.triton.msa.triton_dashboard.user.entity.User;
 import com.triton.msa.triton_dashboard.user.service.UserService;
 import com.triton.msa.triton_dashboard.user.util.LlmApiKeyValidator;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,8 +47,8 @@ public class UserApiController {
     }
 
     @PostMapping("/validate-api-key")
-    public ResponseEntity<String> validateApiKey(@RequestBody ApiKeyValidationRequestDto validationRequestDto) {
-        apiKeyValidator.validate(validationRequestDto.aiServiceApiKey(), LlmModel.valueOf(validationRequestDto.llmModel()));
+    public ResponseEntity<String> validateApiKey(@RequestBody UserRegistrationDto userRegistrationDto) {
+        apiKeyValidator.validateAll(userRegistrationDto);
         return ResponseEntity.ok("API Key is valid.");
     }
 }

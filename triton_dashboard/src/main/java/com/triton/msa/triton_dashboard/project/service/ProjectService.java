@@ -3,7 +3,6 @@ package com.triton.msa.triton_dashboard.project.service;
 import com.triton.msa.triton_dashboard.project.dto.ProjectCreateRequestDto;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.repository.ProjectRepository;
-import com.triton.msa.triton_dashboard.ssh.dto.SshInfoCreateRequestDto;
 import com.triton.msa.triton_dashboard.ssh.entity.SshInfo;
 import com.triton.msa.triton_dashboard.user.entity.User;
 import com.triton.msa.triton_dashboard.user.repository.UserRepository;

@@ -1,7 +1,7 @@
-package com.triton.msa.triton_dashboard.chat.controller;
+package com.triton.msa.triton_dashboard.chat_history.controller;
 
-import com.triton.msa.triton_dashboard.chat.entity.ChatHistory;
-import com.triton.msa.triton_dashboard.chat.service.ChatHistoryService;
+import com.triton.msa.triton_dashboard.chat_history.entity.ChatHistory;
+import com.triton.msa.triton_dashboard.chat_history.service.ChatHistoryService;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
 import lombok.RequiredArgsConstructor;

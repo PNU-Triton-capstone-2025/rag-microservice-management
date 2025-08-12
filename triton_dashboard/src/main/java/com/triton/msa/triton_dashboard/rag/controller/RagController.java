@@ -1,6 +1,6 @@
-package com.triton.msa.triton_dashboard.chat.controller;
+package com.triton.msa.triton_dashboard.rag.controller;
 
-import com.triton.msa.triton_dashboard.chat.service.RagService;
+import com.triton.msa.triton_dashboard.rag.service.RagService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;

@@ -1,7 +1,8 @@
-package com.triton.msa.triton_dashboard.chat.service;
+package com.triton.msa.triton_dashboard.rag.service;
 
-import com.triton.msa.triton_dashboard.chat.dto.RagRequestDto;
-import com.triton.msa.triton_dashboard.chat.dto.RagResponseDto;
+import com.triton.msa.triton_dashboard.chat_history.service.ChatHistoryService;
+import com.triton.msa.triton_dashboard.rag.dto.RagRequestDto;
+import com.triton.msa.triton_dashboard.rag.dto.RagResponseDto;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
 import com.triton.msa.triton_dashboard.user.service.UserService;

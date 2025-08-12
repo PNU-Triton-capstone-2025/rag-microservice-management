@@ -1,6 +1,6 @@
-package com.triton.msa.triton_dashboard.chat.repository;
+package com.triton.msa.triton_dashboard.chat_history.repository;
 
-import com.triton.msa.triton_dashboard.chat.entity.ChatHistory;
+import com.triton.msa.triton_dashboard.chat_history.entity.ChatHistory;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import org.springframework.data.jpa.repository.JpaRepository;
 

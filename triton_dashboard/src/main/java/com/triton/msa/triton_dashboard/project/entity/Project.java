@@ -1,6 +1,6 @@
 package com.triton.msa.triton_dashboard.project.entity;
 
-import com.triton.msa.triton_dashboard.chat.entity.ChatHistory;
+import com.triton.msa.triton_dashboard.chat_history.entity.ChatHistory;
 import com.triton.msa.triton_dashboard.private_data.entity.PrivateData;
 import com.triton.msa.triton_dashboard.ssh.entity.SshInfo;
 import com.triton.msa.triton_dashboard.user.entity.User;

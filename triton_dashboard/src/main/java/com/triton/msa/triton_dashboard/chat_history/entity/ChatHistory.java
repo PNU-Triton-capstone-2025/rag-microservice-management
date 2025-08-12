@@ -1,4 +1,4 @@
-package com.triton.msa.triton_dashboard.chat.entity;
+package com.triton.msa.triton_dashboard.chat_history.entity;
 
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import jakarta.persistence.*;

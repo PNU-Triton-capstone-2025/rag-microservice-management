@@ -1,7 +1,7 @@
-package com.triton.msa.triton_dashboard.chat.service;
+package com.triton.msa.triton_dashboard.chat_history.service;
 
-import com.triton.msa.triton_dashboard.chat.entity.ChatHistory;
-import com.triton.msa.triton_dashboard.chat.repository.ChatHistoryRepository;
+import com.triton.msa.triton_dashboard.chat_history.entity.ChatHistory;
+import com.triton.msa.triton_dashboard.chat_history.repository.ChatHistoryRepository;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

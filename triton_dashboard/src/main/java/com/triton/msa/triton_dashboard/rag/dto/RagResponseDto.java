@@ -1,4 +1,4 @@
-package com.triton.msa.triton_dashboard.chat.dto;
+package com.triton.msa.triton_dashboard.rag.dto;
 
 public record RagResponseDto(
         String response,

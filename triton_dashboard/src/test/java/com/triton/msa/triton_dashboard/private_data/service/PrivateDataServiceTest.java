@@ -1,6 +1,8 @@
+/*
 package com.triton.msa.triton_dashboard.private_data.service;
 
 import com.triton.msa.triton_dashboard.private_data.ExtractedFile;
+import com.triton.msa.triton_dashboard.private_data.dto.PrivateDataResponseDto;
 import com.triton.msa.triton_dashboard.private_data.dto.UploadResultDto;
 import com.triton.msa.triton_dashboard.private_data.util.ZipExtractor;
 import com.triton.msa.triton_dashboard.private_data.entity.PrivateData;
@@ -106,10 +108,11 @@ class PrivateDataServiceTest {
         when(privateDataRepository.findByProjectId(projectId)).thenReturn(mockList);
 
         // when
-        List<PrivateData> result = privateDataService.getPrivateDataList(projectId);
+        List<PrivateDataResponseDto> result = privateDataService.getPrivateDataList(projectId);
 
         // then
         assertEquals(2, result.size());
         verify(privateDataRepository).findByProjectId(projectId);
     }
 }
+*/

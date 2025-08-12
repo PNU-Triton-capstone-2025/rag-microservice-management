@@ -1,7 +1,7 @@
 package com.triton.msa.triton_dashboard.ssh.handler;
 
-import com.triton.msa.triton_dashboard.ssh.service.SshConnectionDetails;
-import com.triton.msa.triton_dashboard.ssh.service.SshService;
+import com.triton.msa.triton_dashboard.ssh.client.SshConnectionDetails;
+import com.triton.msa.triton_dashboard.ssh.client.SshServiceClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -18,10 +18,10 @@ import java.util.concurrent.Executors;
 @Slf4j
 public class SshWebSocketHandler extends TextWebSocketHandler {
 
-    private final SshService sshService;
+    private final SshServiceClient sshService;
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
-    public SshWebSocketHandler(SshService sshService) {
+    public SshWebSocketHandler(SshServiceClient sshService) {
         this.sshService = sshService;
     }
 

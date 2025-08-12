@@ -1,4 +1,4 @@
-package com.triton.msa.triton_dashboard.ssh.service;
+package com.triton.msa.triton_dashboard.ssh.client;
 
 import org.apache.sshd.client.channel.ChannelShell;
 import org.apache.sshd.client.session.ClientSession;

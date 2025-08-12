@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko" layout:decorate="~{layout/layout}"
+<html lang="ko" layout:decorate="layout/layout"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 
 <head>
@@ -12,20 +12,31 @@
         <h1 class="mt-4">새 프로젝트</h1>
         <div class="card">
             <div class="card-body">
-                <form th:action="@{/projects}" th:object="${project}" method="post">
+                <form th:action="@{/projects}" th:object="${newProject}" method="post" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label for="name" class="form-label">Project Name</label>
-                        <input type="text" class="form-control" th:field="*{name}" required>
+                        <input type="text" class="form-control" id="name" th:field="*{name}" required>
                     </div>
 
                     <h5 class="mt-4">SSH 접속 정보</h5>
                     <div class="mb-3">
-                        <label for="sshIpAddress" class="form-label">IP 주소</label>
-                        <input type="text" class="form-control" th:field="*{sshInfo.sshIpAddress}">
+                        <label class="form-label">
+                            IP 주소
+                            <input type="text" class="form-control" th:field="*{sshInfoCreateRequestDto.sshIpAddress}">
+                        </label>
                     </div>
+
                     <div class="mb-3">
-                        <label for="sshAuthKey" class="form-label">인증 키</label>
-                        <textarea class="form-control" rows="3" th:field="*{sshInfo.sshAuthKey}"></textarea>
+                        <label class="form-label">
+                            서버 사용자명
+                            <input type="text" class="form-control" th:field="*{sshInfoCreateRequestDto.username}">
+                        </label>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <input type="file" class="form-control" accept=".pem" th:field="*{sshInfoCreateRequestDto.pemFile}">
+                        </label>
                     </div>
 
                     <button type="submit" class="btn btn-primary">프로젝트 저장</button>

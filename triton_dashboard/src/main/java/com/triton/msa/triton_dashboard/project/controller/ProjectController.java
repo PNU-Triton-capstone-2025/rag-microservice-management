@@ -1,5 +1,6 @@
 package com.triton.msa.triton_dashboard.project.controller;
 
+import com.triton.msa.triton_dashboard.project.dto.ProjectCreateRequestDto;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
 import com.triton.msa.triton_dashboard.user.entity.User;
@@ -33,18 +34,16 @@ public class ProjectController {
 
     @GetMapping("/new")
     public String newProjectForm(Model model) {
-        model.addAttribute("project", new Project());
+        model.addAttribute("newProject", ProjectCreateRequestDto.getEmpty());
         return "projects/form";
     }
 
     @PostMapping
-    public String createProject(@ModelAttribute Project project, @AuthenticationPrincipal UserDetails userDetails) {
-        User user = userService.getUser(userDetails.getUsername());
-        project.setUser(user);
-        projectService.saveProject(project);
+    public String createProject(
+            @ModelAttribute("newProject") ProjectCreateRequestDto requestDto,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        projectService.createProject(requestDto, userDetails.getUsername());
 
         return "redirect:/projects";
     }
-
-    // SSH 연결 추가 예정
 }

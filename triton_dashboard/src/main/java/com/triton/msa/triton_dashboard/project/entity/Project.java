@@ -1,6 +1,6 @@
 package com.triton.msa.triton_dashboard.project.entity;
 
-import com.triton.msa.triton_dashboard.chat_history.entity.ChatHistory;
+import com.triton.msa.triton_dashboard.rag_history.entity.RagHistory;
 import com.triton.msa.triton_dashboard.private_data.entity.PrivateData;
 import com.triton.msa.triton_dashboard.ssh.entity.SshInfo;
 import com.triton.msa.triton_dashboard.user.entity.User;
@@ -30,7 +30,7 @@ public class Project {
     private SshInfo sshInfo;
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ChatHistory> chatHistoryList = new ArrayList<>();
+    private List<RagHistory> ragHistoryList = new ArrayList<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PrivateData> privateData = new ArrayList<>();

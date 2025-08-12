@@ -1,6 +1,6 @@
 package com.triton.msa.triton_dashboard.rag.service;
 
-import com.triton.msa.triton_dashboard.chat_history.service.ChatHistoryService;
+import com.triton.msa.triton_dashboard.rag_history.service.RagHistoryService;
 import com.triton.msa.triton_dashboard.rag.dto.RagRequestDto;
 import com.triton.msa.triton_dashboard.rag.dto.RagResponseDto;
 import com.triton.msa.triton_dashboard.project.entity.Project;
@@ -27,7 +27,7 @@ import java.util.Map;
 public class RagService {
 
     private final RestTemplate restTemplate;
-    private final ChatHistoryService chatHistoryService;
+    private final RagHistoryService ragHistoryService;
     private final ProjectService projectService;
     private final UserService userService;
     private final WebClient webClient;
@@ -43,7 +43,7 @@ public class RagService {
         RagResponseDto responseDto = restTemplate.postForObject(ragServiceUrl, requestDto, RagResponseDto.class);
 
         if(responseDto != null) {
-            chatHistoryService.saveHistory(project, query, responseDto.response());
+            ragHistoryService.saveHistory(project, query, responseDto.response());
         }
 
         return responseDto;
@@ -99,7 +99,7 @@ public class RagService {
 
                     return Flux.fromArray(tokens)
                             .delayElements(Duration.ofMillis(20))
-                            .doOnComplete(() -> chatHistoryService.saveHistory(project, query, fullResponse));
+                            .doOnComplete(() -> ragHistoryService.saveHistory(project, query, fullResponse));
                 })
                 .onErrorResume(e -> {
                     log.error("LLM 요청 실패", e);

@@ -33,21 +33,8 @@
             </a>
         </div>
 
-        <!-- 채팅 히스토리 -->
-        <div id="chat-window" class="border rounded p-3 mb-3 bg-white" style="height: 500px; overflow-y: auto;">
-            <div th:each="msg : ${chatHistory}">
-                <div th:if="${msg.userQuery}" class="d-flex justify-content-end mb-2">
-                    <div class="chat-bubble-user" th:text="${msg.userQuery}"></div>
-                </div>
-                <div th:if="${msg.llmResponse}" class="d-flex justify-content-start mb-2">
-                    <div class="chat-bubble-ai">
-                        <h6 class="fw-bold mb-2">응답</h6>
-                        <!-- 과거 응답은 data-content에 넣어 렌더링 -->
-                        <div class="llm-response" th:attr="data-content=${msg.llmResponse}"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- 채팅창 -->
+        <div id="chat-window" class="border rounded p-3 mb-3 bg-white" style="height: 500px; overflow-y: auto;"></div>
 
         <!-- 입력창 -->
         <form id="chat-form">
@@ -64,7 +51,7 @@
         document.addEventListener("DOMContentLoaded", function () {
             let projectId = /*[[${project.id}]]*/ 0;
             if (!projectId) {
-                const match = window.location.pathname.match(/\/projects\/(\d+)\/chat/);
+                const match = window.location.pathname.match(/\/projects\/(\d+)\/rag/);
                 if (match) projectId = parseInt(match[1], 10);
             }
 
@@ -99,7 +86,7 @@
             // SSE 연결 및 수신 후 렌더링
             function renderStreamingResponse(prompt, explanationElem, loadingElem) {
                 let accumulatedText = "";
-                const url = `/projects/${projectId}/chat/stream?query=${encodeURIComponent(prompt)}`;
+                const url = `/projects/${projectId}/rag/stream?query=${encodeURIComponent(prompt)}`;
                 eventSource = new EventSource(url);
 
                 eventSource.onmessage = function (event) {

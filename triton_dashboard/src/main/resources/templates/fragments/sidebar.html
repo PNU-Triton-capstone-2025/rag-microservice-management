@@ -3,7 +3,7 @@
 <body>
 <div th:fragment="sidebar(project)" class="bg-light border-end" id="sidebar-wrapper">
     <div class="sidebar-heading border-bottom bg-light">
-        <a th:href="${project != null} ? @{/projects/{id}/chat(id=${project.id})} : @{/projects}"
+        <a th:href="${project != null} ? @{/projects/{id}/rag(id=${project.id})} : @{/projects}"
            class="text-decoration-none text-dark fw-bold"
            th:text="${project != null} ? ${project.name} : 'Triton MSA'">
             Triton MSA
@@ -12,7 +12,7 @@
     <div class="list-group list-group-flush">
         <div th:if="${project != null}">
             <a class="list-group-item list-group-item-action list-group-item-light p-3"
-               th:href="@{/projects/{id}/chat(id=${project.id})}">
+               th:href="@{/projects/{id}/rag(id=${project.id})}">
                 <i class="bi bi-diagram-3 me-2"></i>서비스 배포 관리
             </a>
             <a class="list-group-item list-group-item-action list-group-item-light p-3"
@@ -20,7 +20,7 @@
                 <i class="bi bi-arrow-repeat me-2"></i>로그 수집기 다운로드
             </a>
             <a class="list-group-item list-group-item-action list-group-item-light p-3"
-               th:href="@{/projects/{projectId}/chat/history(projectId=${project.id})}">
+               th:href="@{/projects/{projectId}/rag/history(projectId=${project.id})}">
                 <i class="bi bi-clock-history me-2"></i>작업 이력 조회
             </a>
             <a class="list-group-item list-group-item-action list-group-item-light p-3"

@@ -46,7 +46,7 @@ public class UserApiController {
 
         User newUser = userService.registerNewUser(registrationDto);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(UserResponseDto.from(newUser))
+        return ResponseEntity.status(HttpStatus.CREATED).body(UserResponseDto.from(newUser));
     }
 
     @PostMapping("/validate-api-key")

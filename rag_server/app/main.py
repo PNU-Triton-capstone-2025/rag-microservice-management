@@ -1,12 +1,13 @@
 from flask import Flask, request, jsonify
 from embedding import embed_and_store
 from chain_query import query_rag
-from check_es_index import ensure_index_exists
 from settings import settings
-from elasticsearch import Elasticsearch
 
 app = Flask(__name__)
-es_client = Elasticsearch(settings.elasticsearch_url)
+
+@app.route("/health", methods=["GET"])
+def health_check():
+    return jsonify({"status": "ok", "message": "Service is running"}), 200
 
 #ElasticSearch의 index에 해당하는 문서를 활용하여 RAG 기반 답변 생성하는 api
 @app.route("/api/get-rag-response", methods=["POST"])
@@ -50,13 +51,6 @@ def embedding():
         }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-#ElasticSearch 버전 맞지 않을 경우 knn 검색을 위한 index 초기화
-#기본적으로 docker로 ElasticSearch v8.15.x 이상 구동한 후 테스트할 것
-def init_indices():
-    es_index = ""
-    ensure_index_exists(es_client, es_index)
-    print("index init completed.")
 
 if __name__ == "__main__":
     #init_indices()

@@ -1,31 +1,45 @@
 from flask import Flask, request, jsonify
+from datetime import datetime, timezone
+
 from embedding import embed_and_store
 from chain_query import query_rag
-from check_es_index import ensure_index_exists
 from settings import settings
-from elasticsearch import Elasticsearch
 
 app = Flask(__name__)
-es_client = Elasticsearch(settings.elasticsearch_url)
 
-#ElasticSearch의 index에 해당하는 문서를 활용하여 RAG 기반 답변 생성하는 api
+# health check용 API
+@app.route("/health", methods=["GET"])
+def health_check():
+    return jsonify({"status": "ok", "message": "Service is running"}), 200
+
+@app.route("/", methods=["GET"])
+def status():
+    return jsonify({
+        "service": "RAG Flask Server",
+        "status": "running",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }), 200
+
+# ElasticSearch의 index에 해당하는 문서를 활용하여 RAG 기반 답변 생성하는 API
 @app.route("/api/get-rag-response", methods=["POST"])
 def get_rag_response():
     data = request.json
     query = data.get("query")
     es_index = data.get("es_index")
     query_type = data.get("query_type")
+    provider = data.get("provider")
+    model = data.get("model")
 
     if not query:
         return jsonify({"error": "query is empty."}), 400
 
     try:
-        response_data = query_rag(query, es_index, query_type)
+        response_data = query_rag(query, es_index, query_type, provider, model)
         return jsonify(response_data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
-#문서 embedding 후 ElasticSearch에 저장하는 api
+# 문서 embedding 후 ElasticSearch에 저장하는 API
 @app.route("/api/embedding", methods=["POST"])
 def embedding():
     data = request.json
@@ -49,13 +63,7 @@ def embedding():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-#ElasticSearch 버전 맞지 않을 경우 knn 검색을 위한 index 초기화
-#기본적으로 docker로 ElasticSearch v8.15.x 이상 구동한 후 테스트할 것
-def init_indices():
-    es_index = ""
-    ensure_index_exists(es_client, es_index)
-    print("index init completed.")
-
 if __name__ == "__main__":
     #init_indices()
     app.run(host="0.0.0.0", port=5000, debug=True)
+    

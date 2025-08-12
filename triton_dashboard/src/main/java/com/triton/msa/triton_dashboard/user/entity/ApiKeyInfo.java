@@ -4,15 +4,20 @@ import jakarta.persistence.Embeddable;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import lombok.Getter;
-import lombok.Setter;
 
 @Embeddable
 @Getter
-@Setter
 public class ApiKeyInfo {
 
-    private String apiServiceApiKey;
+    private String apiKey; // 추후 암호화 고려. (AES)
 
     @Enumerated(EnumType.STRING)
-    private LlmModel llmModel;
+    private LlmProvider provider;
+
+    protected ApiKeyInfo() {}
+
+    public ApiKeyInfo(String apiKey, LlmProvider provider) {
+        this.apiKey = apiKey;
+        this.provider = provider;
+    }
 }

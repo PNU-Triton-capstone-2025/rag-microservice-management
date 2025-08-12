@@ -1,109 +1,111 @@
 package com.triton.msa.triton_dashboard.user.util;
 
-import com.triton.msa.triton_dashboard.user.entity.LlmModel;
+import com.triton.msa.triton_dashboard.user.dto.ApiKeyValidationResponseDto;
+import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
 import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
+import com.triton.msa.triton_dashboard.user.exception.ApiKeysValidationException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
 public class LlmApiKeyValidator {
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final WebClient webClient;
 
-    public void validate(String apiKey, LlmModel model) {
-        if (apiKey == null || apiKey.trim().isEmpty()) {
-            throw new IllegalArgumentException("API 키를 입력해주세요");
+    public void validateAll(UserRegistrationDto dto) {
+        Map<String, Object> results = new LinkedHashMap<>();
+        boolean allValid = true;
+
+        allValid &= validateOne("OPENAI", LlmProvider.OPENAI, dto.openaiApiKey(), results);
+        allValid &= validateOne("ANTHROPIC", LlmProvider.ANTHROPIC, dto.anthropicApiKey(), results);
+        allValid &= validateOne("GOOGLE", LlmProvider.GOOGLE, dto.googleApiKey(), results);
+        allValid &= validateOne("GROK", LlmProvider.GROK, dto.grokApiKey(), results);
+
+        if (!allValid) throw new ApiKeysValidationException(new ApiKeyValidationResponseDto(results), dto);
+    }
+
+    // 비어있으면 스킵, 아니면 provider 별 ping 수행
+    private boolean validateOne(String name, LlmProvider provider, String apiKey, Map<String, Object> results) {
+        if (apiKey == null || apiKey.isBlank()) {
+            results.put(name, "skipped");
+            return true;
         }
-        if (model == null || model.getProvider() == null) {
-            throw new IllegalArgumentException("모델 또는 공급자를 선택해주세요.");
-        }
-
-        String endpoint = getEndpoint(model);
-        HttpHeaders headers = buildHeaders(apiKey, model.getProvider());
-        String body = getTestBody(model);
-
-        HttpEntity<String> entity = new HttpEntity<>(body, headers);
-
         try {
-            ResponseEntity<String> response = restTemplate.postForEntity(endpoint, entity, String.class);
-            String responseBody = response.getBody();
-
-            if (!response.getStatusCode().is2xxSuccessful()
-                    || (responseBody != null && responseBody.contains("\"error\""))) {
-                throw new IllegalArgumentException("API 키 인증 실패: " + summaryErrorMsg(responseBody));
+            switch (provider) {
+                case OPENAI -> pingOpenAI(apiKey);
+                case ANTHROPIC -> pingAnthropic(apiKey);
+                case GOOGLE -> pingGoogle(apiKey);
+                case GROK -> pingGrok(apiKey);
             }
-
+            results.put(name, "valid");
+            return true;
         } catch (Exception e) {
-            throw new IllegalArgumentException("API 키 요청 실패: " + summaryErrorMsg(e.getMessage()));
+            results.put(name, e);
+            return false;
         }
     }
 
-    private String getEndpoint(LlmModel model) {
-        return switch (model.getProvider()) {
-            case OPENAI -> "https://api.openai.com/v1/chat/completions";
-            case ANTHROPIC -> "https://api.anthropic.com/v1/messages";
-            case GOOGLE -> "https://generativelanguage.googleapis.com/v1beta/models/" + model.getModelName() + ":generateContent";
-            case GROK -> "https://api.grok.xyz/v1/chat";
-        };
+    /** OpenAI: GET /v1/models (Authorization: Bearer) */
+    private void pingOpenAI(String apiKey) {
+        webClient.get()
+                .uri("https://api.openai.com/v1/models")
+                .headers(h -> setBearer(h, apiKey))
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .toBodilessEntity()
+                .timeout(Duration.ofSeconds(8))
+                .block(); // 실패 시 예외 throw
     }
 
-    private HttpHeaders buildHeaders(String apiKey, LlmProvider provider) {
-        HttpHeaders headers = new HttpHeaders();
+    /** Anthropic: GET /v1/models (Authorization + anthropic-version) */
+    private void pingAnthropic(String apiKey) {
+        webClient.get()
+                .uri("https://api.anthropic.com/v1/models")
+                .headers(h -> {
+                    setBearer(h, apiKey);
+                    h.set("anthropic-version", "2023-06-01");
+                })
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .toBodilessEntity()
+                .timeout(Duration.ofSeconds(8))
+                .block();
+    }
+
+    /** Google (Gemini): GET /v1beta/models?key= */
+    private void pingGoogle(String apiKey) {
+        webClient.get()
+                .uri("https://generativelanguage.googleapis.com/v1beta/models?key=" + apiKey)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .toBodilessEntity()
+                .timeout(Duration.ofSeconds(8))
+                .block();
+    }
+
+    /** Grok(xAI): GET /v1/models (Authorization: Bearer) */
+    private void pingGrok(String apiKey) {
+        webClient.get()
+                .uri("https://api.x.ai/v1/models")
+                .headers(h -> setBearer(h, apiKey))
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .toBodilessEntity()
+                .timeout(Duration.ofSeconds(8))
+                .block();
+    }
+
+    /* -------------------- Helpers -------------------- */
+    private void setBearer(HttpHeaders headers, String apiKey) {
         headers.setContentType(MediaType.APPLICATION_JSON);
-
-        switch (provider) {
-            case OPENAI, GROK -> headers.set("Authorization", "Bearer " + apiKey);
-            case ANTHROPIC -> {
-                headers.set("Authorization", "Bearer " + apiKey);
-                headers.set("anthropic-version", "2023-06-01");
-            }
-            case GOOGLE -> headers.set("X-goog-api-key", apiKey);
-        }
-
-        return headers;
-    }
-
-    private String getTestBody(LlmModel model) {
-        return switch (model.getProvider()) {
-            case OPENAI, GROK -> """
-                {
-                  "model": "%s",
-                  "messages": [{"role": "user", "content": "ping"}],
-                  "temperature": 0.1
-                }
-            """.formatted(model.getModelName());
-
-            case ANTHROPIC -> """
-                {
-                  "model": "%s",
-                  "messages": [{"role": "user", "content": "ping"}],
-                  "max_tokens": 10
-                }
-            """.formatted(model.getModelName());
-
-            case GOOGLE -> """
-                {
-                  "contents": [{"parts": [{"text": "ping"}]}]
-                }
-            """;
-        };
-    }
-
-    private String summaryErrorMsg(String rawErrorMessage) {
-        if (rawErrorMessage.contains("Too Many Requests")) {
-            return "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.";
-        } else if (rawErrorMessage.contains("401")) {
-            return "API 키가 유효하지 않습니다.";
-        } else if (rawErrorMessage.contains("insufficient_quota")) {
-            return "API 사용 할당량이 초과되었습니다.";
-        } else {
-            return "알 수 없는 오류가 발생했습니다.";
-        }
+        headers.setBearerAuth(apiKey);
     }
 }

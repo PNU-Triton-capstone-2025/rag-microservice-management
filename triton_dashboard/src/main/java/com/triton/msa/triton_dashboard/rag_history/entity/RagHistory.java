@@ -1,16 +1,14 @@
-package com.triton.msa.triton_dashboard.chat.entity;
+package com.triton.msa.triton_dashboard.rag_history.entity;
 
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Setter
-public class ChatHistory {
+public class RagHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,7 +28,7 @@ public class ChatHistory {
 
     private LocalDateTime createdAt;
     
-    public ChatHistory(Project project, String title, String userQuery, String llmResponse) {
+    public RagHistory(Project project, String title, String userQuery, String llmResponse) {
         this.project = project;
         this.title = title;
         this.userQuery = userQuery;
@@ -38,5 +36,5 @@ public class ChatHistory {
         this.createdAt = LocalDateTime.now();
     }
 
-    public ChatHistory() {}
+    public RagHistory() {}
 }

@@ -5,8 +5,6 @@ import com.triton.msa.triton_dashboard.user.service.UserService;
 import com.triton.msa.triton_dashboard.user.util.LlmApiKeyValidator;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -36,24 +34,13 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public String registerUserAccount(@ModelAttribute("user") @Valid UserRegistrationDto registrationDto,
-        BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return "register";
-        }
+    public String registerUserAccount(@ModelAttribute("user") @Valid UserRegistrationDto dto,
+                                      BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) return "register";
 
-        userService.registerNewUser(registrationDto);
+        apiKeyValidator.validateAll(dto);
+        userService.registerNewUser(dto);
+
         return "redirect:/login/?success";
-    }
-
-    @PostMapping("/validate-api-key")
-    @ResponseBody
-    public ResponseEntity<String> validateApiKey(@RequestBody UserRegistrationDto registrationDto) {
-        try {
-            apiKeyValidator.validate(registrationDto.aiServiceApiKey(), registrationDto.llmModel());
-            return ResponseEntity.ok().body("valid");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        }
     }
 }

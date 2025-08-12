@@ -2,6 +2,7 @@ package com.triton.msa.triton_dashboard.user.service;
 
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
 import com.triton.msa.triton_dashboard.user.entity.ApiKeyInfo;
+import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
 import com.triton.msa.triton_dashboard.user.entity.User;
 import com.triton.msa.triton_dashboard.user.entity.UserRole;
 import com.triton.msa.triton_dashboard.user.repository.UserRepository;
@@ -14,38 +15,40 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Override
-    @Transactional
-    public User registerNewUser(UserRegistrationDto registrationDto) {
-        ApiKeyInfo apiKeyInfo = new ApiKeyInfo();
-        apiKeyInfo.setApiServiceApiKey(registrationDto.aiServiceApiKey());
-        apiKeyInfo.setLlmModel(registrationDto.llmModel());
+    @Override @Transactional
+    public User registerNewUser(UserRegistrationDto dto) {
+        Set<ApiKeyInfo> keys = new HashSet<>();
+        if (dto.openaiApiKey()!=null && !dto.openaiApiKey().isBlank())
+            keys.add(new ApiKeyInfo(dto.openaiApiKey(), LlmProvider.OPENAI));
+        if (dto.anthropicApiKey()!=null && !dto.anthropicApiKey().isBlank())
+            keys.add(new ApiKeyInfo(dto.anthropicApiKey(), LlmProvider.ANTHROPIC));
+        if (dto.googleApiKey()!=null && !dto.googleApiKey().isBlank())
+            keys.add(new ApiKeyInfo(dto.googleApiKey(), LlmProvider.GOOGLE));
+        if (dto.grokApiKey()!=null && !dto.grokApiKey().isBlank())
+            keys.add(new ApiKeyInfo(dto.grokApiKey(), LlmProvider.GROK));
 
         User user = new User(
-                registrationDto.username(),
-                passwordEncoder.encode(registrationDto.password()),
-                apiKeyInfo,
+                dto.username(),
+                passwordEncoder.encode(dto.password()),
+                keys,
                 Collections.singleton(UserRole.USER)
         );
-        user.setUsername(registrationDto.username());
-        user.setPassword(passwordEncoder.encode(registrationDto.password()));
-        user.setApiKeyInfo(apiKeyInfo);
-        user.setRoles(Collections.singleton(UserRole.USER));
-
         return userRepository.save(user);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));

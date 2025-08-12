@@ -28,6 +28,6 @@ public class SshApiController {
 
         String sessionId = sshService.startSshSession(project.getSshInfo());
 
-        return ResponseEntity.ok(Map.of("sessionID", sessionId));
+        return ResponseEntity.ok(Map.of("sessionId", sessionId));
     }
 }

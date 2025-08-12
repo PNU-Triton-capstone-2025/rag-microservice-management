@@ -3,13 +3,11 @@ package com.triton.msa.triton_dashboard.chat.entity;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Setter
 public class ChatHistory {
 
     @Id

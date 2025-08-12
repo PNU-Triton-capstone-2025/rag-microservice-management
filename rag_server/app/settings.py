@@ -1,15 +1,29 @@
-from pydantic import BaseSettings
-from dotenv import load_dotenv
+from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
+from dotenv import load_dotenv
 
-load_dotenv()
+# .env 파일 경로 설정 및 로드
+env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+load_dotenv(dotenv_path=env_path)
+
 
 class Settings(BaseSettings):
-    openai_api_key: str = os.getenv("OPENAI_API_KEY")
-    elasticsearch_url: str = os.getenv("ELASTICSEARCH_URL")
+    # .Settings를 .env 값으로 초기화 및 타입 검사
+    openai_api_key: str
+    elasticsearch_url: str
+    langsmith_api_key: str
+    langsmith_project: str
+    
+    model_config = SettingsConfigDict(env_file=env_path, extra="ignore")
+    
+    # os.environ에 LangChain 및 LangSmith용 환경변수 주입
+    def apply_to_environ(self):
+        os.environ["OPENAI_API_KEY"] = self.openai_api_key
+        os.environ["ELASTICSEARCH_URL"] = self.elasticsearch_url
+        os.environ["LANGCHAIN_API_KEY"] = self.langsmith_api_key
+        os.environ["LANGCHAIN_PROJECT"] = self.langsmith_project
+        os.environ["LANGCHAIN_TRACING_V2"] = "true"
 
-    class Config:
-        env_file = ".env"
-        
-#싱글톤 패턴으로 환경변수 사용
+# 싱글톤 인스턴스
 settings = Settings()
+settings.apply_to_environ()

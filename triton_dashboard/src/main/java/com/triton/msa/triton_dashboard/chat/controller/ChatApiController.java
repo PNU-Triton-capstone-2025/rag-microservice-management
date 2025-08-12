@@ -1,13 +1,13 @@
 package com.triton.msa.triton_dashboard.chat.controller;
 
-import com.triton.msa.triton_dashboard.chat.dto.ChatHistoryResponseDto;
+import com.triton.msa.triton_dashboard.chat.dto.RagHistoryResponseDto;
 import com.triton.msa.triton_dashboard.chat.dto.ChatPageResponseDto;
 import com.triton.msa.triton_dashboard.chat.dto.ProjectResponseDto;
-import com.triton.msa.triton_dashboard.chat.entity.ChatHistory;
-import com.triton.msa.triton_dashboard.chat.service.ChatHistoryService;
-import com.triton.msa.triton_dashboard.chat.service.RagService;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
+import com.triton.msa.triton_dashboard.rag.service.RagService;
+import com.triton.msa.triton_dashboard.rag_history.entity.RagHistory;
+import com.triton.msa.triton_dashboard.rag_history.service.RagHistoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -28,17 +28,17 @@ import java.util.List;
 public class ChatApiController {
 
     private final RagService ragService;
-    private final ChatHistoryService chatHistoryService;
+    private final RagHistoryService ragHistoryService;
     private final ProjectService projectService;
 
     @GetMapping
     public ResponseEntity<ChatPageResponseDto> chatPage(@PathVariable Long projectId, Model model) {
         Project project = projectService.getProject(projectId);
-        List<ChatHistory> historyEntities = chatHistoryService.getHistoryForProject(project);
+        List<RagHistory> historyEntities = ragHistoryService.getHistoryForProject(project);
 
         ProjectResponseDto projectResponseDto = new ProjectResponseDto(project.getId(), project.getName());
-        List<ChatHistoryResponseDto> histories = historyEntities.stream()
-                .map(ChatHistoryResponseDto::from)
+        List<RagHistoryResponseDto> histories = historyEntities.stream()
+                .map(RagHistoryResponseDto::from)
                 .toList();
 
         ChatPageResponseDto responseDto = new ChatPageResponseDto(projectResponseDto, histories);
@@ -52,27 +52,27 @@ public class ChatApiController {
     }
 
     @GetMapping("/history")
-    public ResponseEntity<List<ChatHistoryResponseDto>> getChatHistoryList(@PathVariable Long projectId) {
+    public ResponseEntity<List<RagHistoryResponseDto>> getChatHistoryList(@PathVariable Long projectId) {
         Project project = projectService.getProject(projectId);
-        List<ChatHistoryResponseDto> historyResponseDtos = chatHistoryService.getHistoryForProject(project)
+        List<RagHistoryResponseDto> historyResponseDtos = ragHistoryService.getHistoryForProject(project)
                 .stream()
-                .map(ChatHistoryResponseDto::from)
+                .map(RagHistoryResponseDto::from)
                 .toList();
 
         return ResponseEntity.ok(historyResponseDtos);
     }
 
     @GetMapping("/history/{historyId}")
-    public ResponseEntity<ChatHistoryResponseDto> getChatHistoryDetail(@PathVariable Long historyId) {
-        ChatHistory history = chatHistoryService.getHistoryById(historyId);
-        ChatHistoryResponseDto historyResponseDto = ChatHistoryResponseDto.from(history);
+    public ResponseEntity<RagHistoryResponseDto> getChatHistoryDetail(@PathVariable Long historyId) {
+        RagHistory history = ragHistoryService.getHistoryById(historyId);
+        RagHistoryResponseDto historyResponseDto = RagHistoryResponseDto.from(history);
 
         return ResponseEntity.ok(historyResponseDto);
     }
 
     @DeleteMapping("/history/{historyId}")
     public ResponseEntity<Void> deleteHistory(@PathVariable Long historyId, @PathVariable Long projectId) {
-        chatHistoryService.deleteHistory(historyId, projectId);
+        ragHistoryService.deleteHistory(historyId, projectId);
         return ResponseEntity.noContent().build();
     }
 }

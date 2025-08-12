@@ -1,15 +1,26 @@
 from flask import Flask, request, jsonify
+from datetime import datetime
+
 from embedding import embed_and_store
 from chain_query import query_rag
 from settings import settings
 
 app = Flask(__name__)
 
+# health check용 API
 @app.route("/health", methods=["GET"])
 def health_check():
     return jsonify({"status": "ok", "message": "Service is running"}), 200
 
-#ElasticSearch의 index에 해당하는 문서를 활용하여 RAG 기반 답변 생성하는 api
+@app.route("/", methods=["GET"])
+def status():
+    return jsonify({
+        "service": "RAG Flask Server",
+        "status": "running",
+        "timestamp": datetime.utcnow().isoformat() + "Z"
+    }), 200
+
+# ElasticSearch의 index에 해당하는 문서를 활용하여 RAG 기반 답변 생성하는 API
 @app.route("/api/get-rag-response", methods=["POST"])
 def get_rag_response():
     data = request.json
@@ -28,7 +39,7 @@ def get_rag_response():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
-#문서 embedding 후 ElasticSearch에 저장하는 api
+# 문서 embedding 후 ElasticSearch에 저장하는 API
 @app.route("/api/embedding", methods=["POST"])
 def embedding():
     data = request.json

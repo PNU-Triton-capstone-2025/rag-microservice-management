@@ -76,12 +76,11 @@ class UserControllerTest {
                 .andExpect(model().attributeExists("user"))
                 .andExpect(model().attribute("user", UserRegistrationDto.getEmpty()));
     }
-
     @Test
     @DisplayName("/register - 유효한 post 요청 시 리다이렉트")
     void registerAndRedirect() throws Exception {
         // given
-        UserRegistrationDto registrationDto = new UserRegistrationDto("testUser", "password123", "api-key", LlmModel.GPT_4O);
+        UserRegistrationDto registrationDto = new UserRegistrationDto("testUser", "password123", "api-key", "", "", "");
         when(userService.registerNewUser(any(UserRegistrationDto.class))).thenReturn(new User("test", "password", new ApiKeyInfo(), Collections.singleton(UserRole.USER)));
 
         // when & then
@@ -100,8 +99,8 @@ class UserControllerTest {
     @Test
     @DisplayName("API 키 유효성 검증 성공 - 200")
     void validateApiKey() throws Exception {
-        UserRegistrationDto dto = new UserRegistrationDto("user", "pass", "valid-key", LlmModel.GPT_4O);
-        doNothing().when(apiKeyValidator).validate(dto.aiServiceApiKey(), dto.llmModel());
+        UserRegistrationDto dto = new UserRegistrationDto("user", "pass", "valid-key", "", "", "");
+        doNothing().when(apiKeyValidator).validateAll(dto);
 
         mockMvc.perform(post("/validate-api-key")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -109,17 +108,17 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string("valid"));
 
-        verify(apiKeyValidator, times(1)).validate(dto.aiServiceApiKey(), dto.llmModel());
+        verify(apiKeyValidator, times(1)).validateAll(dto);
     }
 
     @Test
     @DisplayName("API 키 유효성 검증 실패 - 401")
     void validateApiKeyFailed() throws Exception {
         // given
-        UserRegistrationDto dto = new UserRegistrationDto("user", "pass", "invalid-key", LlmModel.GPT_4O);
+        UserRegistrationDto dto = new UserRegistrationDto("user", "pass", "invalid-key", "", "", "");
         String errMsg = "API 키가 유효하지 않습니다.";
 
-        doThrow(new IllegalArgumentException(errMsg)).when(apiKeyValidator).validate(dto.aiServiceApiKey(), dto.llmModel());
+        doThrow(new IllegalArgumentException(errMsg)).when(apiKeyValidator).validateAll(dto);
 
         // when & then
         mockMvc.perform(post("/validate-api-key")
@@ -128,6 +127,6 @@ class UserControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().string(errMsg));
 
-        verify(apiKeyValidator, times(1)).validate(dto.aiServiceApiKey(), dto.llmModel());
+        verify(apiKeyValidator, times(1)).validateAll(dto);
     }
 }

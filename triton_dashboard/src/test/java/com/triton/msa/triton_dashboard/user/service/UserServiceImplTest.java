@@ -28,7 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-/*
+
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserServiceImpl 단위 테스트")
 class UserServiceImplTest {
@@ -44,7 +44,7 @@ class UserServiceImplTest {
     @DisplayName("User 등록")
     void registerUser() {
         // given
-        UserRegistrationDto registrationDto = new UserRegistrationDto("newUser", "password", "apiKey", LlmModel.GPT_4O);
+        UserRegistrationDto registrationDto = new UserRegistrationDto("newUser", "password", "apiKey", "", "", "");
         String encodedPassword = "samplePassword";
         when(passwordEncoder.encode(registrationDto.password())).thenReturn(encodedPassword);
         when(userRepository.save(any(User.class))).thenReturn(new User(
@@ -66,10 +66,9 @@ class UserServiceImplTest {
                 .isEqualTo(registrationDto.username());
         assertThat(captured.getPassword())
                 .isEqualTo(encodedPassword);
-        assertThat(captured.getApiKeyInfo().getLlmModel())
-                .isEqualTo(registrationDto.llmModel());
     }
 
+    /*
     @Test
     @DisplayName("사용자 이름으로 User 조회")
     void getUser() {
@@ -115,6 +114,7 @@ class UserServiceImplTest {
         assertThat(userDetails.getAuthorities())
                 .anyMatch(a -> a.getAuthority().equals("Role_USER"));
     }
+    */
 
     @Test
     @DisplayName("존재하지 않는 사용자 이름 조회 - UsernameNotFoundException")
@@ -128,5 +128,3 @@ class UserServiceImplTest {
         });
     }
 }
-
- */

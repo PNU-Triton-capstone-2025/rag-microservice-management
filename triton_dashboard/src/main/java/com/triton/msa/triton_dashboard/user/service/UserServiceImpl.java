@@ -5,9 +5,13 @@ import com.triton.msa.triton_dashboard.user.entity.ApiKeyInfo;
 import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
 import com.triton.msa.triton_dashboard.user.entity.User;
 import com.triton.msa.triton_dashboard.user.entity.UserRole;
+import com.triton.msa.triton_dashboard.user.exception.InvalidPasswordException;
+import com.triton.msa.triton_dashboard.user.exception.UnauthorizedException;
 import com.triton.msa.triton_dashboard.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -61,5 +65,24 @@ public class UserServiceImpl implements UserService {
 
     public User getUser(String username) {
         return userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+    }
+
+    @Override
+    public void deleteCurrentUser(String rawPassword) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof UserDetails details)) {
+            throw new UnauthorizedException("로그인 정보가 없습니다.");
+        }
+
+        User user = userRepository.findByUsername(details.getUsername())
+                .orElseThrow(() -> new UnauthorizedException("사용자를 찾을 수 없습니다." + details.getUsername()));
+
+        if (rawPassword != null && !rawPassword.isBlank()) {
+            if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
+                throw new InvalidPasswordException("비밀번호가 일치하지 않습니다.");
+            }
+        }
+
+        userRepository.deleteById(user.getId());
     }
 }

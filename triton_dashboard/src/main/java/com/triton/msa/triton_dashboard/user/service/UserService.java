@@ -7,4 +7,5 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 public interface UserService extends UserDetailsService {
     User registerNewUser(UserRegistrationDto registrationDto);
     public User getUser(String username);
+    void deleteCurrentUser(String rawPassword);
 }

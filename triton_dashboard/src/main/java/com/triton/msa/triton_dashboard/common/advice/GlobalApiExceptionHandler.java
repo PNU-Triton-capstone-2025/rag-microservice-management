@@ -3,6 +3,8 @@ package com.triton.msa.triton_dashboard.common.advice;
 import com.triton.msa.triton_dashboard.ssh.exception.SshAuthenticationException;
 import com.triton.msa.triton_dashboard.ssh.exception.SshConnectionException;
 import com.triton.msa.triton_dashboard.ssh.exception.SshKeyFileException;
+import com.triton.msa.triton_dashboard.user.exception.InvalidPasswordException;
+import com.triton.msa.triton_dashboard.user.exception.UnauthorizedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +40,18 @@ public class GlobalApiExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleSshKeyFileException(SshKeyFileException ex) {
         log.error("Failed to generate temporary SSH key file", ex);
         return makeErrorResponseEntity(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<Map<String, Object>> handleUnauthorizedException(UnauthorizedException ex) {
+        log.error("Unauthorized exception: {}", ex.getMessage());
+        return makeErrorResponseEntity(ex.getMessage(), HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(InvalidPasswordException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidPasswordException(InvalidPasswordException ex) {
+        log.error("Invalid password exception: {}", ex.getMessage());
+        return makeErrorResponseEntity(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
     private ResponseEntity<Map<String, Object>> makeErrorResponseEntity(String msg, HttpStatus status) {

@@ -30,14 +30,11 @@ public class UserServiceImpl implements UserService {
     @Override @Transactional
     public User registerNewUser(UserRegistrationDto dto) {
         Set<ApiKeyInfo> keys = new HashSet<>();
-        if (dto.openaiApiKey()!=null && !dto.openaiApiKey().isBlank())
-            keys.add(new ApiKeyInfo(dto.openaiApiKey(), LlmProvider.OPENAI));
-        if (dto.anthropicApiKey()!=null && !dto.anthropicApiKey().isBlank())
-            keys.add(new ApiKeyInfo(dto.anthropicApiKey(), LlmProvider.ANTHROPIC));
-        if (dto.googleApiKey()!=null && !dto.googleApiKey().isBlank())
-            keys.add(new ApiKeyInfo(dto.googleApiKey(), LlmProvider.GOOGLE));
-        if (dto.grokApiKey()!=null && !dto.grokApiKey().isBlank())
-            keys.add(new ApiKeyInfo(dto.grokApiKey(), LlmProvider.GROK));
+        for (LlmProvider p : LlmProvider.values()) {
+            if (dto.apiKeyOf(p) != null && !dto.apiKeyOf(p).isBlank()) {
+                keys.add(new ApiKeyInfo(dto.apiKeys().get(p), p));
+            }
+        }
 
         User user = new User(
                 dto.username(),

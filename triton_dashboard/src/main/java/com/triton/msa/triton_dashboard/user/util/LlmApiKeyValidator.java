@@ -24,10 +24,10 @@ public class LlmApiKeyValidator {
         Map<String, Object> results = new LinkedHashMap<>();
         boolean allValid = true;
 
-        allValid &= validateOne("OPENAI", LlmProvider.OPENAI, dto.openaiApiKey(), results);
-        allValid &= validateOne("ANTHROPIC", LlmProvider.ANTHROPIC, dto.anthropicApiKey(), results);
-        allValid &= validateOne("GOOGLE", LlmProvider.GOOGLE, dto.googleApiKey(), results);
-        allValid &= validateOne("GROK", LlmProvider.GROK, dto.grokApiKey(), results);
+       for (LlmProvider p : LlmProvider.values()) {
+           String apiKey = dto.apiKeyOf(p);
+           allValid &= validateOne(p.name(), p, apiKey, results);
+       }
 
         if (!allValid) throw new ApiKeysValidationException(new ApiKeyValidationResponseDto(results), dto);
     }

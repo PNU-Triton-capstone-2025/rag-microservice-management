@@ -1,6 +1,7 @@
 ## API 명세
 
-## 사용자(User) API (`/api/users`)
+
+### 사용자(User) API (`/api/users`)
 
 | 기능           | HTTP Method | 엔드포인트                    | 요청 파라미터(타입/위치)                                                                                                                                                                 | 응답                                                                        |
 | :----------- | :---------: | :----------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------ |
@@ -11,7 +12,7 @@
 
 ---
 
-## 프로젝트(Project) API (`/api/projects`)
+### 프로젝트(Project) API (`/api/projects`)
 
 | 기능           | HTTP Method | 엔드포인트           | 요청 파라미터(타입/위치)                                                                                                                                                                                                                                             | 응답                                                                    |
 | :----------- | :---------: | :-------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------- |
@@ -20,7 +21,7 @@
 
 ---
 
-## 프라이빗 데이터(Private Data) API
+### 프라이빗 데이터(Private Data) API
 
 베이스 경로: `/api/projects/{projectId}/private-data`
 
@@ -32,7 +33,7 @@
 
 ---
 
-## RAG API
+### RAG API
 
 베이스 경로: `/api/projects/{projectId}/rag`
 
@@ -43,7 +44,7 @@
 
 ---
 
-## RAG 히스토리 API
+### RAG 히스토리 API
 
 베이스 경로: `/api/projects/{projectId}/rag/history`
 
@@ -55,74 +56,14 @@
 
 ---
 
-## SSH 연결 API (`/api/ssh`)
-
-| 기능             | HTTP Method | 엔드포인트                          | 요청 파라미터(타입/위치)             | 응답                                          |
-| :------------- | :---------: | :----------------------------- | :------------------------- | :------------------------------------------ |
-| 프로젝트 SSH 세션 생성 |    `POST`   | `/api/ssh/connect/{projectId}` | **Path** `projectId`: long | **200 OK**<br>Body: `{ sessionId: string }` |
-=======
-| 기능           | HTTP Method | 엔드포인트                    | 요청 파라미터(타입/위치)                                                                                                                                    | 응답                                                        |
-| :----------- | :---------: | :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ | :-------------------------------------------------------- |
-| 일반 회원가입      |    `POST`   | `/api/users/register`    | **Body(JSON)**<br>• `username`: string (필수)<br>• `password`: string (필수)<br>• `apiKeys`: object\<string(enum LlmProvider) → string(API Key)> (선택) | **201 Created**<br>Body: `{ id: long, username: string }` |
-| 회원 탈퇴        |   `DELETE`  | `/api/users/me`          | **Body(JSON)**<br>• `password`: string (필수)                                                                                                       | **204 No Content**                                        |
-| 비밀번호 변경      |   `PATCH`   | `/api/users/me/password` | **Body(JSON)**<br>• `currPassword`: string (필수)<br>• `newPassword`: string (필수)                                                                   | **204 No Content**                                        |
-| LLM API 키 변경 |   `PATCH`   | `/api/users/me/api-key`  | **Body(JSON)**<br>• `provider`: string(enum LlmProvider) (필수)<br>• `newApiKey`: string (필수)                                                       | **204 No Content**                                        |
-
-
----
-
-## 프로젝트(Project) API (`/api/projects`)
-
-| 기능           | HTTP Method | 엔드포인트           | 요청 파라미터(타입/위치)                                                                                                                                                                                                                   | 응답                                                 |
-| :----------- | :---------: | :-------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------- |
-| 내 프로젝트 목록 조회 |    `GET`    | `/api/projects` | (없음)                                                                                                                                                                                                                             | **200 OK**<br>Body: `[{ id: long, name: string }]` |
-| 프로젝트 생성      |    `POST`   | `/api/projects` | **Body(JSON)**<br>• `name`: string (필수)<br>• `sshInfoCreateRequestDto`: object (선택)<br>  • `sshIpAddress`: string (선택)<br>  • `username`: string (선택)<br>  • `pemFile`: null (※ 이 엔드포인트는 `@RequestBody` JSON만 수신. 파일은 업로드 불가/무시) | **201 Created** (Body 없음)                          |
-
-
----
-
-## 프라이빗 데이터(Private Data) API
-
-베이스 경로: `/api/projects/{projectId}/private-data`
-
-| 기능             | HTTP Method | 엔드포인트                                           | 요청 파라미터(타입/위치)                                                         | 응답                                                                                                               |
-| :------------- | :---------: | :---------------------------------------------- | :--------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
-| 프라이빗 데이터 목록 조회 |    `GET`    | `/api/projects/{projectId}/private-data`        | **Path** `projectId`: long                                             | **200 OK**<br>Body: `[{ id: long, projectId: long, filename: string, contentType: string, createdAt: instant }]` |
-| ZIP 업로드 & 저장   |    `POST`   | `/api/projects/{projectId}/private-data/upload` | **Path** `projectId`: long<br>**Form-Data** `file`: MultipartFile(ZIP) | **200 OK**<br>Body: `{ message: string, savedFilenames: string[], skippedFilenames: string[] }`                  |
-| 프라이빗 데이터 삭제    |   `DELETE`  | `/api/projects/{projectId}/private-data/{id}`   | **Path** `projectId`: long, `id`: long                                 | **204 No Content**                                                                                               |
-
----
-
-## RAG API
-
-베이스 경로: `/api/projects/{projectId}/rag`
-
-| 기능            | HTTP Method | 엔드포인트                                  | 요청 파라미터(타입/위치)                                          | 응답                                                                                                                                                  |
-| :------------ | :---------: | :------------------------------------- | :------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 채팅 페이지 데이터 조회 |    `GET`    | `/api/projects/{projectId}/rag`        | **Path** `projectId`: long                              | **200 OK**<br>Body: `{ project: { id: long, name: string }, history: [{ id: long, UserQuery: string, llmResponse: string, createdAt: datetime }] }` |
-| 채팅 스트림(SSE)   |    `GET`    | `/api/projects/{projectId}/rag/stream` | **Path** `projectId`: long<br>**Query** `query`: string | **200 OK**<br>`text/event-stream` (토큰/문자열 스트림)                                                                                                      |
-
----
-
-## RAG 히스토리 API
-
-베이스 경로: `/api/projects/{projectId}/rag/history`
-
-| 기능         | HTTP Method | 엔드포인트                                               | 요청 파라미터(타입/위치)                                | 응답                                                                                                |
-| :--------- | :---------: | :-------------------------------------------------- | :-------------------------------------------- | :------------------------------------------------------------------------------------------------ |
-| 히스토리 목록 조회 |    `GET`    | `/api/projects/{projectId}/rag/history`             | **Path** `projectId`: long                    | **200 OK**<br>Body: `[{ id: long, UserQuery: string, llmResponse: string, createdAt: datetime }]` |
-| 히스토리 단건 조회 |    `GET`    | `/api/projects/{projectId}/rag/history/{historyId}` | **Path** `projectId`: long, `historyId`: long | **200 OK**<br>Body: `{ id: long, UserQuery: string, llmResponse: string, createdAt: datetime }`   |
-| 히스토리 삭제    |   `DELETE`  | `/api/projects/{projectId}/rag/history/{historyId}` | **Path** `projectId`: long, `historyId`: long | **204 No Content**                                                                                |
-
----
-
-## SSH 연결 API (`/api/ssh`)
+### SSH 연결 API (`/api/ssh`)
 
 | 기능             | HTTP Method | 엔드포인트                          | 요청 파라미터(타입/위치)             | 응답                                          |
 | :------------- | :---------: | :----------------------------- | :------------------------- | :------------------------------------------ |
 | 프로젝트 SSH 세션 생성 |    `POST`   | `/api/ssh/connect/{projectId}` | **Path** `projectId`: long | **200 OK**<br>Body: `{ sessionId: string }` |
 
 ---
+
 
 ## RAG server 구동 방법
 

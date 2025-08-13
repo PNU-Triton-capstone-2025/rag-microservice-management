@@ -1,4 +1,4 @@
-package com.triton.msa.triton_dashboard.chat.dto;
+package com.triton.msa.triton_dashboard.rag_history.dto;
 
 import com.triton.msa.triton_dashboard.rag_history.entity.RagHistory;
 

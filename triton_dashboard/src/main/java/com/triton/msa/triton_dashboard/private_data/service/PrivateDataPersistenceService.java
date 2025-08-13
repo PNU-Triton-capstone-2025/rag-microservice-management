@@ -20,13 +20,13 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class PrivateDataPersistenceService {
 
     private final PrivateDataRepository privateDataRepository;
     private final ProjectService projectService;
     private final WebClient webClient;
 
-    @Transactional
     public boolean saveFile(Long projectId, ExtractedFile file, List<String> skipped) {
         if (privateDataRepository.existsByProjectIdAndFilename(projectId, file.filename())) {
             skipped.add(file.filename() + " (이미 저장된 파일)");
@@ -80,7 +80,6 @@ public class PrivateDataPersistenceService {
                 .block(); // block으로 하면 응답에 의존적인 것 같은데, subcribe로 바꾸는 게 맞는지
     }
 
-    @Transactional
     public void deletePrivateData(Long projectId, Long dataId) {
         PrivateData data = privateDataRepository.findByIdAndProjectId(dataId, projectId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 데이터가 존재하지 않습니다."));

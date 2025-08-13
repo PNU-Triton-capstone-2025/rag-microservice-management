@@ -41,14 +41,9 @@ public class UserApiController {
             return ResponseEntity.badRequest().body(errors);
         }
 
+        apiKeyValidator.validateAll(registrationDto);
         User newUser = userService.registerNewUser(registrationDto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(UserResponseDto.from(newUser));
-    }
-
-    @PostMapping("/validate-api-key")
-    public ResponseEntity<String> validateApiKey(@RequestBody UserRegistrationDto userRegistrationDto) {
-        apiKeyValidator.validateAll(userRegistrationDto);
-        return ResponseEntity.ok("API Key is valid.");
     }
 }

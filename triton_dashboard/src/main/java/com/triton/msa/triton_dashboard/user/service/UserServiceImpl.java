@@ -1,5 +1,6 @@
 package com.triton.msa.triton_dashboard.user.service;
 
+import com.triton.msa.triton_dashboard.common.jwt.JwtTokenProvider;
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
 import com.triton.msa.triton_dashboard.user.entity.ApiKeyInfo;
 import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
@@ -7,7 +8,11 @@ import com.triton.msa.triton_dashboard.user.entity.User;
 import com.triton.msa.triton_dashboard.user.entity.UserRole;
 import com.triton.msa.triton_dashboard.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,13 +26,15 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManagerBuilder authenticationManagerBuilder;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    @Override @Transactional
+    @Override
+    @Transactional
     public User registerNewUser(UserRegistrationDto dto) {
         Set<ApiKeyInfo> keys = new HashSet<>();
         for (LlmProvider p : LlmProvider.values()) {
@@ -46,6 +53,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
@@ -59,6 +67,17 @@ public class UserServiceImpl implements UserService {
         );
     }
 
+    @Override
+    public String authenticateAndGetToken(String username, String password) {
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
+
+        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        return jwtTokenProvider.createToken(authentication);
+    }
+
+    @Transactional(readOnly = true)
     public User getUser(String username) {
         return userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
     }

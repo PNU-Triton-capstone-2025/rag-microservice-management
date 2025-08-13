@@ -1,5 +1,7 @@
 package com.triton.msa.triton_dashboard.user.controller;
 
+import com.triton.msa.triton_dashboard.user.dto.ChangeApiKeyRequest;
+import com.triton.msa.triton_dashboard.user.dto.ChangePasswordRequestDto;
 import com.triton.msa.triton_dashboard.user.dto.UserDeleteRequestDto;
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
 import com.triton.msa.triton_dashboard.user.dto.UserResponseDto;
@@ -18,6 +20,7 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -63,6 +66,18 @@ public class UserApiController {
 
         new SecurityContextLogoutHandler().logout(request, response, SecurityContextHolder.getContext().getAuthentication());
 
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/me/password")
+    public ResponseEntity<Void> updatePassword(@RequestBody @Valid ChangePasswordRequestDto dto) {
+        userService.updatePassword(dto.currPassword(), dto.newPassword());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/me/api-key")
+    public ResponseEntity<Void> updateApiKey(@RequestBody @Valid ChangeApiKeyRequest dto) {
+        userService.updateApiKey(dto.provider(), dto.newApiKey());
         return ResponseEntity.noContent().build();
     }
 }

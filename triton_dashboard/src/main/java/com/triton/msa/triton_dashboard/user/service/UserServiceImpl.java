@@ -5,9 +5,11 @@ import com.triton.msa.triton_dashboard.user.entity.ApiKeyInfo;
 import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
 import com.triton.msa.triton_dashboard.user.entity.User;
 import com.triton.msa.triton_dashboard.user.entity.UserRole;
+import com.triton.msa.triton_dashboard.user.exception.InvalidApiKeyException;
 import com.triton.msa.triton_dashboard.user.exception.InvalidPasswordException;
 import com.triton.msa.triton_dashboard.user.exception.UnauthorizedException;
 import com.triton.msa.triton_dashboard.user.repository.UserRepository;
+import com.triton.msa.triton_dashboard.user.util.LlmApiKeyValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -30,6 +32,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LlmApiKeyValidator llmApiKeyValidator;
 
     @Override @Transactional
     public User registerNewUser(UserRegistrationDto dto) {
@@ -68,6 +71,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void deleteCurrentUser(String rawPassword) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !(auth.getPrincipal() instanceof UserDetails details)) {
@@ -84,5 +88,48 @@ public class UserServiceImpl implements UserService {
         }
 
         userRepository.deleteById(user.getId());
+    }
+
+    @Override
+    @Transactional
+    public void updatePassword(String currPassword, String newPassword) {
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new InvalidPasswordException("새 비밀번호가 비어있습니다.");
+        }
+
+        User me = getCurrentUserOrThrow();
+
+        if (!passwordEncoder.matches(currPassword, me.getPassword())) {
+            throw new InvalidPasswordException("현재 비밀번호가 일치하지 않습니다.");
+        }
+
+        me.updatePassword(passwordEncoder.encode(newPassword));
+    }
+
+    @Override
+    @Transactional
+    public void updateApiKey(LlmProvider provider, String newApiKey) {
+        if (provider == null) {
+            throw new InvalidApiKeyException("provider 입력은 필수입니다.");
+        }
+        if (newApiKey == null || newApiKey.isBlank()) {
+            throw new InvalidApiKeyException("새 API 키 입력은 필수입니다.")
+        }
+
+        llmApiKeyValidator.validateOne(provider, newApiKey);
+
+        User me = getCurrentUserOrThrow();
+
+        me.getApiKeys().removeIf(k -> k.getProvider() == provider);
+        me.getApiKeys().add(new ApiKeyInfo(newApiKey, provider));
+    }
+
+    private User getCurrentUserOrThrow() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof UserDetails ud)) {
+            throw new UnauthorizedException("로그인이 필요합니다.");
+        }
+        return userRepository.findByUsername(ud.getUsername())
+                .orElseThrow(() -> new UnauthorizedException("사용자를 찾을 수 없습니다."));
     }
 }

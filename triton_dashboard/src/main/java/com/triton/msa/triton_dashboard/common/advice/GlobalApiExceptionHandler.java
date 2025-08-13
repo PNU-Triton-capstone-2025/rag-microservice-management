@@ -3,6 +3,7 @@ package com.triton.msa.triton_dashboard.common.advice;
 import com.triton.msa.triton_dashboard.ssh.exception.SshAuthenticationException;
 import com.triton.msa.triton_dashboard.ssh.exception.SshConnectionException;
 import com.triton.msa.triton_dashboard.ssh.exception.SshKeyFileException;
+import com.triton.msa.triton_dashboard.user.exception.InvalidApiKeyException;
 import com.triton.msa.triton_dashboard.user.exception.InvalidPasswordException;
 import com.triton.msa.triton_dashboard.user.exception.UnauthorizedException;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +52,12 @@ public class GlobalApiExceptionHandler {
     @ExceptionHandler(InvalidPasswordException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidPasswordException(InvalidPasswordException ex) {
         log.error("Invalid password exception: {}", ex.getMessage());
+        return makeErrorResponseEntity(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(InvalidApiKeyException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidApiKeyException(InvalidApiKeyException ex) {
+        log.error("Invalid api key exception: {}", ex.getMessage());
         return makeErrorResponseEntity(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 

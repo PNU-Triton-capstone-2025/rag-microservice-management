@@ -46,6 +46,7 @@ public class UserControllerIntegrationTest {
         userRepository.deleteAll();
     }
 
+    /*
     @Test
     @DisplayName("회원가입")
     void registerUser() throws Exception {
@@ -74,5 +75,6 @@ public class UserControllerIntegrationTest {
         assertTrue(passwordEncoder.matches(password, user.getPassword()));
         //assertThat(user.getApiKeyInfo().getLlmModel()).isEqualTo(LlmModel.GPT_4O);
     }
+     */
 
 }

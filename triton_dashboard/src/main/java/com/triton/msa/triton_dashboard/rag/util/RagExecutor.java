@@ -1,4 +1,4 @@
-package com.triton.msa.triton_dashboard.rag.service;
+package com.triton.msa.triton_dashboard.rag.util;
 
 import com.triton.msa.triton_dashboard.rag_history.service.RagHistoryService;
 import com.triton.msa.triton_dashboard.rag.dto.RagRequestDto;
@@ -22,12 +22,11 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class RagService {
+public class RagExecutor {
 
     private final RestTemplate restTemplate;
     private final RagHistoryService ragHistoryService;
@@ -38,19 +37,19 @@ public class RagService {
     @Value("${rag.service.url}")
     private String ragServiceUrl;
 
-    public RagResponseDto generateDeploymentSpec(String username, Long projectId, String query) {
-        Project project = projectService.getProject(projectId);
-
-        RagRequestDto requestDto = new RagRequestDto(query);
-
-        RagResponseDto responseDto = restTemplate.postForObject(ragServiceUrl, requestDto, RagResponseDto.class);
-
-        if(responseDto != null) {
-            ragHistoryService.saveHistory(project, query, responseDto.response());
-        }
-
-        return responseDto;
-    }
+//    public RagResponseDto generateDeploymentSpec(String username, Long projectId, String query) {
+//        Project project = projectService.getProject(projectId);
+//
+//        RagRequestDto requestDto = new RagRequestDto(query);
+//
+//        RagResponseDto responseDto = restTemplate.postForObject(ragServiceUrl, requestDto, RagResponseDto.class);
+//
+//        if(responseDto != null) {
+//            ragHistoryService.saveHistory(project, query, responseDto.response());
+//        }
+//
+//        return responseDto;
+//    }
 
     public Mono<String> generateWithGeminiAsync(Long projectId, String prompt) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();

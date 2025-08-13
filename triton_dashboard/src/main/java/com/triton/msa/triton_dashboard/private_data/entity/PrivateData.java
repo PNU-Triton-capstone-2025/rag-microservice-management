@@ -6,22 +6,26 @@ import jakarta.persistence.*;
 import java.time.Instant;
 
 @Entity
+@Table(
+        name =  "private_data",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"project_id", "filename"}))
 public class PrivateData {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
+    @Column(nullable = false)
     private String filename;
+
     private String contentType;
 
-    @Column(nullable = false)
     private Instant createdAt;
 
-    protected PrivateData() {} // JPA 기본 생성자
+    protected PrivateData() {}
 
     public PrivateData(Project project, String filename, String contentType, Instant createdAt) {
         this.project = project;

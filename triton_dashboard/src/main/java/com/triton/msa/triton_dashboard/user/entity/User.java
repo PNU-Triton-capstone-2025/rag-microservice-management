@@ -41,4 +41,8 @@ public class User {
         this.apiKeys = apiKeys;
         this.roles = roles;
     }
+
+    public void updatePassword(String newPassword) {
+        this.password = newPassword;
+    }
 }

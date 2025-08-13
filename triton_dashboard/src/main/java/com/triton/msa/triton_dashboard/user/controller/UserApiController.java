@@ -1,7 +1,10 @@
 package com.triton.msa.triton_dashboard.user.controller;
 
+import com.triton.msa.triton_dashboard.user.dto.ChangeApiKeyRequest;
+import com.triton.msa.triton_dashboard.user.dto.ChangePasswordRequestDto;
 import com.triton.msa.triton_dashboard.user.dto.JwtAuthenticationResponseDto;
 import com.triton.msa.triton_dashboard.user.dto.TokenRefreshRequest;
+import com.triton.msa.triton_dashboard.user.dto.UserDeleteRequestDto;
 import com.triton.msa.triton_dashboard.user.dto.UserLoginRequest;
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
 import com.triton.msa.triton_dashboard.user.dto.UserResponseDto;
@@ -9,13 +12,19 @@ import com.triton.msa.triton_dashboard.user.entity.User;
 import com.triton.msa.triton_dashboard.user.service.TokenService;
 import com.triton.msa.triton_dashboard.user.service.UserService;
 import com.triton.msa.triton_dashboard.user.util.LlmApiKeyValidator;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -70,6 +79,31 @@ public class UserApiController {
     public ResponseEntity<String> validateApiKey(@RequestBody UserRegistrationDto userRegistrationDto) {
         apiKeyValidator.validateAll(userRegistrationDto);
         return ResponseEntity.ok("API Key is valid.");
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteUser(@RequestBody(required = false) UserDeleteRequestDto dto,
+                                           HttpServletRequest request,
+                                           HttpServletResponse response) {
+        final String password = (dto != null) ? dto.password() : null;
+
+        userService.deleteCurrentUser(password);
+
+        new SecurityContextLogoutHandler().logout(request, response, SecurityContextHolder.getContext().getAuthentication());
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/me/password")
+    public ResponseEntity<Void> updatePassword(@RequestBody @Valid ChangePasswordRequestDto dto) {
+        userService.updatePassword(dto.currPassword(), dto.newPassword());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/me/api-key")
+    public ResponseEntity<Void> updateApiKey(@RequestBody @Valid ChangeApiKeyRequest dto) {
+        userService.updateApiKey(dto.provider(), dto.newApiKey());
+        return ResponseEntity.noContent().build();
     }
 
     private ResponseEntity<Map<String, String>> manageBindingResultError(BindingResult bindingResult) {

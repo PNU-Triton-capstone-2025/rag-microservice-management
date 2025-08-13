@@ -11,6 +11,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class RagHistoryService {
 
     private final RagHistoryRepository chatHistoryRepository;
@@ -25,12 +26,10 @@ public class RagHistoryService {
         chatHistoryRepository.save(history);
     }
 
-    @Transactional(readOnly = true)
     public List<RagHistory> getHistoryForProject(Project project) {
         return chatHistoryRepository.findByProjectOrderByCreatedAtDesc(project);
     }
 
-    @Transactional(readOnly = true)
     public RagHistory getHistoryById(Long id) {
         return chatHistoryRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 채팅 이력을 찾을 수 없습니다."));

@@ -34,7 +34,8 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final LlmApiKeyValidator llmApiKeyValidator;
 
-    @Override @Transactional
+    @Override
+    @Transactional
     public User registerNewUser(UserRegistrationDto dto) {
         Set<ApiKeyInfo> keys = new HashSet<>();
         for (LlmProvider p : LlmProvider.values()) {
@@ -113,7 +114,7 @@ public class UserServiceImpl implements UserService {
             throw new InvalidApiKeyException("provider 입력은 필수입니다.");
         }
         if (newApiKey == null || newApiKey.isBlank()) {
-            throw new InvalidApiKeyException("새 API 키 입력은 필수입니다.")
+            throw new InvalidApiKeyException("새 API 키 입력은 필수입니다.");
         }
 
         llmApiKeyValidator.validateOne(provider, newApiKey);

@@ -1,6 +1,7 @@
 package com.triton.msa.triton_dashboard.user.controller;
 
 import com.triton.msa.triton_dashboard.user.dto.JwtAuthenticationResponseDto;
+import com.triton.msa.triton_dashboard.user.dto.TokenRefreshRequest;
 import com.triton.msa.triton_dashboard.user.dto.UserLoginRequest;
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
 import com.triton.msa.triton_dashboard.user.dto.UserResponseDto;
@@ -56,6 +57,12 @@ public class UserApiController {
         }
         JwtAuthenticationResponseDto responseDto = tokenService.authenticateAndGetToken(loginRequest.username(), loginRequest.password());
 
+        return ResponseEntity.ok(responseDto);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<JwtAuthenticationResponseDto> refreshToken(@Valid @RequestBody TokenRefreshRequest request) {
+        JwtAuthenticationResponseDto responseDto = tokenService.reissueToken(request.refreshToken());
         return ResponseEntity.ok(responseDto);
     }
 

@@ -4,5 +4,7 @@ public record JwtAuthenticationResponseDto(
         String accessToken,
         String refreshToken
 ) {
-
+    public String getTokenType() {
+        return "Bearer";
+    }
 }

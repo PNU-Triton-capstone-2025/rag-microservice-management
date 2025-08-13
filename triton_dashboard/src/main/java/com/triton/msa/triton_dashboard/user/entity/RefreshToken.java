@@ -31,6 +31,10 @@ public class RefreshToken {
         this.token = token;
     }
 
+    public String retrieveToken() {
+        return this.token;
+    }
+
     public RefreshToken updateToken(String newToken) {
         this.token = newToken;
         return this;

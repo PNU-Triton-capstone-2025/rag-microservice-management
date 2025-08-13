@@ -64,7 +64,7 @@ public class SecurityConfig {
                 .permitAll()
         )
         .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**", "/validate-api-key", "/api/ssh/**", "/login", "/logout"))
+                .ignoringRequestMatchers("/h2-console/**", "/validate-api-key", "/api/ssh/**", "/login", "/logout", "/register"))
         .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
 
         return http.build();

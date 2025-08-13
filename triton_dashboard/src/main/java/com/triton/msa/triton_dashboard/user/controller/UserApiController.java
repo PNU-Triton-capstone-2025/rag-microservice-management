@@ -1,5 +1,8 @@
 package com.triton.msa.triton_dashboard.user.controller;
 
+import com.triton.msa.triton_dashboard.common.jwt.JwtTokenProvider;
+import com.triton.msa.triton_dashboard.user.dto.JwtAuthenticationResponseDto;
+import com.triton.msa.triton_dashboard.user.dto.UserLoginRequest;
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
 import com.triton.msa.triton_dashboard.user.dto.UserResponseDto;
 import com.triton.msa.triton_dashboard.user.entity.User;
@@ -10,6 +13,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +33,8 @@ import java.util.stream.Collectors;
 public class UserApiController {
     private final UserService userService;
     private final LlmApiKeyValidator apiKeyValidator;
+    private final JwtTokenProvider tokenProvider;
+    private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUserAccount(
@@ -33,12 +42,7 @@ public class UserApiController {
             BindingResult bindingResult
     ) {
         if(bindingResult.hasErrors()) {
-            Map<String, String> errors = bindingResult.getFieldErrors().stream()
-                    .collect(Collectors.toMap(
-                            FieldError::getField,
-                            DefaultMessageSourceResolvable::getDefaultMessage
-                    ));
-            return ResponseEntity.badRequest().body(errors);
+            return manageBindingResultError(bindingResult);
         }
 
         User newUser = userService.registerNewUser(registrationDto);
@@ -46,9 +50,36 @@ public class UserApiController {
         return ResponseEntity.status(HttpStatus.CREATED).body(UserResponseDto.from(newUser));
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<?> login(
+            @Valid @RequestBody UserLoginRequest loginRequest,
+            BindingResult bindingResult
+    ) {
+        if (bindingResult.hasErrors()) {
+            return manageBindingResultError(bindingResult);
+        }
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginRequest.username(), loginRequest.password());
+
+        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String jwt = tokenProvider.createToken(authentication);
+
+        return ResponseEntity.ok(new JwtAuthenticationResponseDto(jwt));
+    }
+
     @PostMapping("/validate-api-key")
     public ResponseEntity<String> validateApiKey(@RequestBody UserRegistrationDto userRegistrationDto) {
         apiKeyValidator.validateAll(userRegistrationDto);
         return ResponseEntity.ok("API Key is valid.");
+    }
+
+    private ResponseEntity<Map<String, String>> manageBindingResultError(BindingResult bindingResult) {
+        Map<String, String> errors = bindingResult.getFieldErrors().stream()
+                .collect(Collectors.toMap(
+                        FieldError::getField,
+                        DefaultMessageSourceResolvable::getDefaultMessage
+                ));
+        return ResponseEntity.badRequest().body(errors);
     }
 }

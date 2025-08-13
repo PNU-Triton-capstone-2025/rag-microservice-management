@@ -28,15 +28,19 @@ import java.util.stream.Collectors;
 public class JwtTokenProvider {
     private final Key key;
     private final long tokenTimeoutMs;
+    private final long refreshTokenTimeoutMs;
 
     public JwtTokenProvider(
             @Value("${jwt.secret}")
             String secretkey,
             @Value("${jwt.tokenTimeoutSec}")
-            long tokenTimeoutSec
+            long tokenTimeoutSec,
+            @Value("${jwt.refreshTokenTimeoutSec}")
+            long refreshTokenTimeoutSec
     ) {
         this.key = Keys.hmacShaKeyFor(secretkey.getBytes(StandardCharsets.UTF_8));
         this.tokenTimeoutMs = tokenTimeoutSec * 1000;
+        this.refreshTokenTimeoutMs = refreshTokenTimeoutSec * 1000;
     }
 
     public String createToken(Authentication authentication) {
@@ -52,6 +56,17 @@ public class JwtTokenProvider {
                 .claim("auth", authorities)
                 .signWith(key, SignatureAlgorithm.HS512)
                 .setExpiration(validity)
+                .compact();
+    }
+
+    public String createRefreshToken(Authentication authentication) {
+        Date now = new Date();
+        Date validity = new Date(now.getTime() + this.refreshTokenTimeoutMs);
+
+        return Jwts.builder()
+                .setSubject(authentication.getName())
+                .setExpiration(validity)
+                .signWith(key, SignatureAlgorithm.HS512)
                 .compact();
     }
 
@@ -73,6 +88,10 @@ public class JwtTokenProvider {
 
         UserDetails principal = new User(claims.getSubject(), "", authorities);
         return new UsernamePasswordAuthenticationToken(principal, token, authorities);
+    }
+
+    public String getUsernameFromToken(String token) {
+        return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody().getSubject();
     }
 
     public String resolveToken(HttpServletRequest request) {

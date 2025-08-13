@@ -1,13 +1,18 @@
 package com.triton.msa.triton_dashboard.common.config;
 
+import com.triton.msa.triton_dashboard.common.jwt.JwtAuthenticationFilter;
+import com.triton.msa.triton_dashboard.common.jwt.JwtTokenProvider;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -17,7 +22,9 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+    private final JwtTokenProvider jwtTokenProvider;
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -41,31 +48,27 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.cors(Customizer.withDefaults());
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**")
                 .permitAll()
-                .requestMatchers("/", "/register", "/login", "/validate-api-key")
+                .requestMatchers("/", "/register", "/login", "/validate-api-key", "/ws/ssh/**")
                 .permitAll()
                 .requestMatchers("/h2-console/**")
                 .permitAll()
                 .anyRequest().authenticated()
         )
-        .formLogin(form -> form
-                .loginPage("/login")
-                .defaultSuccessUrl("/projects", true)
-                .permitAll()
-        )
-        .logout(logout -> logout
-                .logoutUrl("/logout")
-                .logoutSuccessUrl("/")
-                .invalidateHttpSession(true)
-                .permitAll()
-        )
-        .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**", "/validate-api-key", "/api/ssh/**", "/login", "/logout", "/register"))
-        .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
+        .formLogin(login -> login.disable())
+        .logout(logout -> logout.disable())
+        .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
+        .addFilterBefore(
+                        new JwtAuthenticationFilter(jwtTokenProvider),
+                        UsernamePasswordAuthenticationFilter.class
+        );
 
         return http.build();
     }

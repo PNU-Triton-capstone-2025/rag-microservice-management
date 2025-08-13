@@ -32,15 +32,4 @@ public class UserController {
         model.addAttribute("user", UserRegistrationDto.getEmpty());
         return "register";
     }
-
-    @PostMapping("/register")
-    public String registerUserAccount(@ModelAttribute("user") @Valid UserRegistrationDto dto,
-                                      BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) return "register";
-
-        apiKeyValidator.validateAll(dto);
-        userService.registerNewUser(dto);
-
-        return "redirect:/login/?success";
-    }
 }

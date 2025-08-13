@@ -38,6 +38,7 @@ public class UserApiController {
             return manageBindingResultError(bindingResult);
         }
 
+        apiKeyValidator.validateAll(registrationDto);
         User newUser = userService.registerNewUser(registrationDto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(UserResponseDto.from(newUser));

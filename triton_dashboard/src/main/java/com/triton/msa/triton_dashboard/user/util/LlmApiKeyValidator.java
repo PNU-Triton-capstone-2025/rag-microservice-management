@@ -4,6 +4,7 @@ import com.triton.msa.triton_dashboard.user.dto.ApiKeyValidationResponseDto;
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
 import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
 import com.triton.msa.triton_dashboard.user.exception.ApiKeysValidationException;
+import com.triton.msa.triton_dashboard.user.exception.InvalidApiKeyException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -32,7 +33,7 @@ public class LlmApiKeyValidator {
         if (!allValid) throw new ApiKeysValidationException(new ApiKeyValidationResponseDto(results), dto);
     }
 
-    // 비어있으면 스킵, 아니면 provider 별 ping 수행
+    // 내부 호출용. 비어있으면 스킵, 아니면 provider 별 ping 수행
     private boolean validateOne(String name, LlmProvider provider, String apiKey, Map<String, Object> results) {
         if (apiKey == null || apiKey.isBlank()) {
             results.put(name, "skipped");
@@ -50,6 +51,14 @@ public class LlmApiKeyValidator {
         } catch (Exception e) {
             results.put(name, e);
             return false;
+        }
+    }
+
+    // 외부 호출용. (API 키 변경 등)
+    public void validateOne(LlmProvider provider, String apiKey) {
+        boolean isValid = validateOne(provider.name(), provider, apiKey, new LinkedHashMap<>());
+        if (!isValid) {
+            throw new InvalidApiKeyException("API 키 검증에 실패했습니다.");
         }
     }
 

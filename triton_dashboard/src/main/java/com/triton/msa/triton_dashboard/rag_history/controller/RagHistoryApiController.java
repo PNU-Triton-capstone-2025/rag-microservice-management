@@ -1,0 +1,47 @@
+package com.triton.msa.triton_dashboard.rag_history.controller;
+
+import com.triton.msa.triton_dashboard.rag_history.dto.RagHistoryResponseDto;
+import com.triton.msa.triton_dashboard.rag_history.entity.RagHistory;
+import com.triton.msa.triton_dashboard.rag_history.service.RagHistoryService;
+import com.triton.msa.triton_dashboard.project.entity.Project;
+import com.triton.msa.triton_dashboard.project.service.ProjectService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@Controller
+@RequestMapping("/api/projects/{projectId}/rag/history")
+@RequiredArgsConstructor
+public class RagHistoryApiController {
+
+    private final RagHistoryService ragHistoryService;
+    private final ProjectService projectService;
+
+    @GetMapping
+    public ResponseEntity<List<RagHistoryResponseDto>> getChatHistoryList(@PathVariable Long projectId) {
+        Project project = projectService.getProject(projectId);
+        List<RagHistoryResponseDto> historyResponseDtos = ragHistoryService.getHistoryForProject(project)
+                .stream()
+                .map(RagHistoryResponseDto::from)
+                .toList();
+
+        return ResponseEntity.ok(historyResponseDtos);
+    }
+
+    @GetMapping("/{historyId}")
+    public ResponseEntity<RagHistoryResponseDto> getChatHistoryDetail(@PathVariable Long historyId) {
+        RagHistory history = ragHistoryService.getHistoryById(historyId);
+        RagHistoryResponseDto historyResponseDto = RagHistoryResponseDto.from(history);
+
+        return ResponseEntity.ok(historyResponseDto);
+    }
+
+    @DeleteMapping("/{historyId}")
+    public ResponseEntity<Void> deleteHistory(@PathVariable Long historyId, @PathVariable Long projectId) {
+        ragHistoryService.deleteHistory(historyId, projectId);
+        return ResponseEntity.noContent().build();
+    }
+}

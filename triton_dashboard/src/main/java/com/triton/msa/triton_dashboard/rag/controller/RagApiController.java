@@ -1,0 +1,48 @@
+package com.triton.msa.triton_dashboard.rag.controller;
+
+import com.triton.msa.triton_dashboard.rag.dto.ChatPageResponseDto;
+import com.triton.msa.triton_dashboard.rag.dto.ProjectResponseDto;
+import com.triton.msa.triton_dashboard.rag_history.dto.RagHistoryResponseDto;
+import com.triton.msa.triton_dashboard.project.entity.Project;
+import com.triton.msa.triton_dashboard.project.service.ProjectService;
+import com.triton.msa.triton_dashboard.rag.service.RagService;
+import com.triton.msa.triton_dashboard.rag_history.entity.RagHistory;
+import com.triton.msa.triton_dashboard.rag_history.service.RagHistoryService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+
+import java.util.List;
+
+@Controller
+@RequestMapping("/api/projects/{projectId}/rag")
+@RequiredArgsConstructor
+public class RagApiController {
+
+    private final RagService ragService;
+    private final ProjectService projectService;
+    private final RagHistoryService ragHistoryService;
+
+    @GetMapping
+    public ResponseEntity<ChatPageResponseDto> chatPage(@PathVariable Long projectId) {
+        Project project = projectService.getProject(projectId);
+        List<RagHistory> historyEntities = ragHistoryService.getHistoryForProject(project);
+
+        ProjectResponseDto projectResponseDto = new ProjectResponseDto(project.getId(), project.getName());
+        List<RagHistoryResponseDto> histories = historyEntities.stream()
+                .map(RagHistoryResponseDto::from)
+                .toList();
+
+        ChatPageResponseDto responseDto = new ChatPageResponseDto(projectResponseDto, histories);
+
+        return ResponseEntity.ok(responseDto);
+    }
+
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> streamChatResponse(@PathVariable Long projectId, @RequestParam String query) {
+        return ragService.streamChatResponse(projectId, query);
+    }
+}

@@ -4,150 +4,137 @@
   <meta charset="UTF-8">
   <title>Register</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- 아이콘 (눈 모양 등) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-  <style>
-    .api-key-input { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace; }
-    .provider-card { border: 1px solid #ececec; border-radius: 12px; padding: 16px; }
-    .provider-header { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-    .status-badge { min-width: 92px; text-align:center; }
-  </style>
 </head>
-<body>
-<div class="container">
-  <div class="row justify-content-center mt-5">
-    <div class="col-md-7 col-lg-6">
-      <div class="card-body">
-        <h3 class="card-title text-center mb-4">Triton 계정 생성</h3>
+<body class="bg-light">
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-9 col-xxl-8">
 
-        <form th:action="@{/register}" th:object="${user}" method="post" id="regForm" autocomplete="off">
-          <!-- 기본 정보 -->
-          <div class="mb-3">
-            <label class="form-label">Username</label>
-            <input type="text" class="form-control" th:field="*{username}" required autocomplete="username">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Password</label>
-            <input type="password" class="form-control" th:field="*{password}" required autocomplete="new-password">
-          </div>
-
-          <!-- API 키 검증 에러 -->
-          <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
-
-          <h5 class="mt-4 mb-2">LLM API 키 (선택 입력 · 비어있으면 스킵)</h5>
-          <p class="text-muted small mb-3">회원가입 버튼 클릭 시, 일괄 검증합니다.</p>
-
-          <!-- OpenAI -->
-          <div class="provider-card mb-3">
-            <div class="provider-header">
-              <img alt="" width="20" height="20" src="https://fav.farm/🟦" />
-              <strong class="me-2">OpenAI</strong>
-              <span class="badge status-badge"
-                    th:classappend="${validation != null and validation.results['OPENAI'] == 'valid'} ? ' text-bg-success'
-                                   : (${validation != null and validation.results['OPENAI'] == 'skipped'} ? ' text-bg-secondary'
-                                   : (${validation != null and validation.results['OPENAI'] != null} ? ' text-bg-danger' : ' text-bg-light') )"
-                    th:text="${validation != null and validation.results['OPENAI'] != null ? validation.results['OPENAI'] : '상태 미확인'}">
-              </span>
-            </div>
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-key"></i></span>
-              <input type="password" class="form-control api-key-input"
-                     th:classappend="${validation != null and validation.results['OPENAI'] != null and validation.results['OPENAI'].startsWith('error')} ? ' is-invalid' : ''"
-                     th:field="*{openaiApiKey}" placeholder="발급받은 API Key" inputmode="latin" autocapitalize="off" spellcheck="false">
-              <button class="btn btn-outline-secondary toggle-visibility" type="button"><i class="bi bi-eye"></i></button>
-            </div>
-            <div class="invalid-feedback"
-                 th:if="${validation != null and validation.results['OPENAI'] != null and validation.results['OPENAI'].startsWith('error')}"
-                 th:text="${validation.results['OPENAI']}">잘못된 키</div>
-          </div>
-
-          <!-- Anthropic -->
-          <div class="provider-card mb-3">
-            <div class="provider-header">
-              <img alt="" width="20" height="20" src="https://fav.farm/🟪" />
-              <strong class="me-2">Anthropic</strong>
-              <span class="badge status-badge"
-                    th:classappend="${validation != null and validation.results['ANTHROPIC'] == 'valid'} ? ' text-bg-success'
-                                   : (${validation != null and validation.results['ANTHROPIC'] == 'skipped'} ? ' text-bg-secondary'
-                                   : (${validation != null and validation.results['ANTHROPIC'] != null} ? ' text-bg-danger' : ' text-bg-light') )"
-                    th:text="${validation != null and validation.results['ANTHROPIC'] != null ? validation.results['ANTHROPIC'] : '상태 미확인'}">
-              </span>
-            </div>
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-key"></i></span>
-              <input type="password" class="form-control api-key-input"
-                     th:classappend="${validation != null and validation.results['ANTHROPIC'] != null and validation.results['ANTHROPIC'].startsWith('error')} ? ' is-invalid' : ''"
-                     th:field="*{anthropicApiKey}" placeholder="발급받은 API Key" inputmode="latin" autocapitalize="off" spellcheck="false">
-              <button class="btn btn-outline-secondary toggle-visibility" type="button"><i class="bi bi-eye"></i></button>
-            </div>
-            <div class="invalid-feedback"
-                 th:if="${validation != null and validation.results['ANTHROPIC'] != null and validation.results['ANTHROPIC'].startsWith('error')}"
-                 th:text="${validation.results['ANTHROPIC']}">잘못된 키</div>
-          </div>
-
-          <!-- Google -->
-          <div class="provider-card mb-3">
-            <div class="provider-header">
-              <img alt="" width="20" height="20" src="https://fav.farm/🟩" />
-              <strong class="me-2">Google (Gemini)</strong>
-              <span class="badge status-badge"
-                    th:classappend="${validation != null and validation.results['GOOGLE'] == 'valid'} ? ' text-bg-success'
-                                   : (${validation != null and validation.results['GOOGLE'] == 'skipped'} ? ' text-bg-secondary'
-                                   : (${validation != null and validation.results['GOOGLE'] != null} ? ' text-bg-danger' : ' text-bg-light') )"
-                    th:text="${validation != null and validation.results['GOOGLE'] != null ? validation.results['GOOGLE'] : '상태 미확인'}">
-              </span>
-            </div>
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-key"></i></span>
-              <input type="password" class="form-control api-key-input"
-                     th:classappend="${validation != null and validation.results['GOOGLE'] != null and validation.results['GOOGLE'].startsWith('error')} ? ' is-invalid' : ''"
-                     th:field="*{googleApiKey}" placeholder="발급받은 API Key" inputmode="latin" autocapitalize="off" spellcheck="false">
-              <button class="btn btn-outline-secondary toggle-visibility" type="button"><i class="bi bi-eye"></i></button>
-            </div>
-            <div class="invalid-feedback"
-                 th:if="${validation != null and validation.results['GOOGLE'] != null and validation.results['GOOGLE'].startsWith('error')}"
-                 th:text="${validation.results['GOOGLE']}">잘못된 키</div>
-          </div>
-
-          <!-- Grok -->
-          <div class="provider-card mb-3">
-            <div class="provider-header">
-              <img alt="" width="20" height="20" src="https://fav.farm/⬛️" />
-              <strong class="me-2">Grok</strong>
-              <span class="badge status-badge"
-                    th:classappend="${validation != null and validation.results['GROK'] == 'valid'} ? ' text-bg-success'
-                                   : (${validation != null and validation.results['GROK'] == 'skipped'} ? ' text-bg-secondary'
-                                   : (${validation != null and validation.results['GROK'] != null} ? ' text-bg-danger' : ' text-bg-light') )"
-                    th:text="${validation != null and validation.results['GROK'] != null ? validation.results['GROK'] : '상태 미확인'}">
-              </span>
-            </div>
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-key"></i></span>
-              <input type="password" class="form-control api-key-input"
-                     th:classappend="${validation != null and validation.results['GROK'] != null and validation.results['GROK'].startsWith('error')} ? ' is-invalid' : ''"
-                     th:field="*{grokApiKey}" placeholder="발급받은 API Key" inputmode="latin" autocapitalize="off" spellcheck="false">
-              <button class="btn btn-outline-secondary toggle-visibility" type="button"><i class="bi bi-eye"></i></button>
-            </div>
-            <div class="invalid-feedback"
-                 th:if="${validation != null and validation.results['GROK'] != null and validation.results['GROK'].startsWith('error')}"
-                 th:text="${validation.results['GROK']}">잘못된 키</div>
-          </div>
-
-          <!-- 회원가입 버튼 -->
-          <button type="submit" class="btn btn-primary w-100">Register</button>
-
-          <div class="text-center mt-3">
-            <a th:href="@{/login}">이미 계정이 있으신가요? 로그인</a>
-          </div>
-        </form>
+      <div class="bg-primary text-white rounded-3 p-4 mb-3">
+        <h2 class="h3 mb-1">Triton 계정 생성</h2>
+        <p class="mb-0 opacity-75">아이디/비밀번호만으로도 가입 가능하며, API 키는 나중에 마이페이지에서 추가할 수 있어요.</p>
       </div>
+
+      <!-- 본문 카드 -->
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <form th:action="@{/register}" th:object="${user}" method="post" id="regForm" autocomplete="off">
+            <!-- 서버 전역 에러/메시지 -->
+            <div th:if="${errorMessage}" class="alert alert-danger mb-4" th:text="${errorMessage}"></div>
+
+            <!-- 기본 정보 -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Username</label>
+              <input type="text" class="form-control" th:field="*{username}" required autocomplete="username" placeholder="사용하실 아이디">
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label fw-semibold">Password</label>
+              <input type="password" class="form-control" th:field="*{password}" required autocomplete="new-password" placeholder="영문+숫자 8자 이상" id="passwordInput">
+            </div>
+
+            <!-- 비밀번호 스트렝스-->
+            <div class="progress mb-3" role="progressbar" aria-label="password strength">
+              <div class="progress-bar" id="pwBar" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+
+            <h5 class="mt-4 mb-2">LLM API 키 <span class="text-muted fs-6">(선택 입력 · 비어있으면 스킵)</span></h5>
+            <p class="text-muted small mb-3">회원가입 버튼 클릭 시, 입력된 키만 일괄 검증합니다.</p>
+
+            <!-- Providers grid -->
+            <div class="row g-3 row-cols-1 row-cols-md-2">
+              <th:block th:each="p : ${T(com.triton.msa.triton_dashboard.user.entity.LlmProvider).values()}">
+                <div class="col">
+                  <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                      <!-- 헤더 -->
+                      <div class="d-flex align-items-center gap-2 mb-2">
+                        <strong th:text="${p}">PROVIDER</strong>
+                        <span class="badge"
+                              th:classappend="${
+                                validation != null and validation.results[p.name()] == 'valid'   ? ' text-bg-success' :
+                                validation != null and validation.results[p.name()] == 'skipped' ? ' text-bg-secondary' :
+                                validation != null and validation.results[p.name()] != null      ? ' text-bg-danger'    :
+                                                                                                 ' text-bg-light text-dark'
+                              }"
+                              th:text="${validation != null and validation.results[p.name()] != null ? validation.results[p.name()] : '상태 미확인'}">
+                        </span>
+                      </div>
+
+                      <!-- 입력 -->
+                      <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-key"></i></span>
+                        <input type="password"
+                               class="form-control"
+                               th:field="*{apiKeys[__${p}__]}"
+                               th:attr="data-provider=${p.name()}"
+                               th:classappend="${validation != null and validation.results[p.name()] != null
+                                 and #strings.startsWith(validation.results[p.name()], 'error')} ? ' is-invalid' : ''"
+                               placeholder="발급받은 API Key"
+                               inputmode="latin" autocapitalize="off" spellcheck="false" autocomplete="off">
+                        <button class="btn btn-outline-secondary toggle-one" type="button" title="보기/숨기기">
+                          <i class="bi bi-eye"></i>
+                        </button>
+                      </div>
+
+                      <div class="invalid-feedback"
+                           th:if="${validation != null and validation.results[p.name()] != null and #strings.startsWith(validation.results[p.name()], 'error')}"
+                           th:text="${validation.results[p.name()]}">
+                        잘못된 키
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </th:block>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" class="btn btn-primary w-100 mt-4" id="submitBtn">
+              <span class="btn-text">Register</span>
+              <span class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+            </button>
+
+            <div class="text-center mt-3">
+              <a th:href="@{/login}">이미 계정이 있으신가요? 로그인</a>
+            </div>
+          </form>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
 <script>
-  // 가리기/보이기 토글
-  document.querySelectorAll('.toggle-visibility').forEach(btn => {
+  // 비밀번호 스트렝스
+  (function () {
+    const input = document.getElementById('passwordInput');
+    const bar = document.getElementById('pwBar');
+    if (!input || !bar) return;
+
+    const score = (v) => {
+      let s = 0;
+      if (!v) return 0;
+      if (v.length >= 8) s += 40;
+      if (/[A-Z]/.test(v) && /[a-z]/.test(v)) s += 25;
+      if (/\d/.test(v)) s += 20;
+      if (/[^A-Za-z0-9]/.test(v)) s += 15;
+      return Math.min(100, s);
+    };
+
+    input.addEventListener('input', () => {
+      const val = score(input.value);
+      bar.style.width = val + '%';
+      bar.classList.toggle('bg-success', val >= 60);
+      bar.classList.toggle('bg-warning', val >= 30 && val < 60);
+      bar.classList.toggle('bg-danger', val < 30);
+      bar.setAttribute('aria-valuenow', String(val));
+    });
+  })();
+
+  // 보기/숨기기 & 지우기
+  document.querySelectorAll('.toggle-one').forEach(btn => {
     btn.addEventListener('click', () => {
       const input = btn.parentElement.querySelector('input');
       const icon = btn.querySelector('i');
@@ -155,19 +142,6 @@
       input.type = isPwd ? 'text' : 'password';
       icon.classList.toggle('bi-eye');
       icon.classList.toggle('bi-eye-slash');
-    });
-  });
-
-  // 붙여넣기/입력 시 공백, 줄바꿈, 따옴표 정리
-  document.querySelectorAll('.api-key-input').forEach(inp => {
-    inp.addEventListener('paste', e => {
-      e.preventDefault();
-      const text = (e.clipboardData || window.clipboardData).getData('text');
-      inp.value = text.replace(/\s+/g, '').replace(/^['"]|['"]$/g, '');
-      inp.dispatchEvent(new Event('input'));
-    });
-    inp.addEventListener('blur', () => {
-      inp.value = inp.value.replace(/\s+/g, '').replace(/^['"]|['"]$/g, '');
     });
   });
 </script>

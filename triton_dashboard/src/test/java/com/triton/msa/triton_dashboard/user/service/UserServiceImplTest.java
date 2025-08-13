@@ -19,6 +19,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -44,7 +47,8 @@ class UserServiceImplTest {
     @DisplayName("User 등록")
     void registerUser() {
         // given
-        UserRegistrationDto registrationDto = new UserRegistrationDto("newUser", "password", "apiKey", "", "", "");
+        Map<LlmProvider, String> map = new EnumMap<>(LlmProvider.class);
+        UserRegistrationDto registrationDto = new UserRegistrationDto("newUser", "password", map);
         String encodedPassword = "samplePassword";
         when(passwordEncoder.encode(registrationDto.password())).thenReturn(encodedPassword);
         when(userRepository.save(any(User.class))).thenReturn(new User(
@@ -68,7 +72,6 @@ class UserServiceImplTest {
                 .isEqualTo(encodedPassword);
     }
 
-    /*
     @Test
     @DisplayName("사용자 이름으로 User 조회")
     void getUser() {
@@ -76,7 +79,7 @@ class UserServiceImplTest {
         User user = new User(
                 "newUser",
                 "encodedPassword",
-                new ApiKeyInfo(),
+                Collections.emptySet(),
                 Collections.singleton(UserRole.USER)
         );
 
@@ -97,7 +100,7 @@ class UserServiceImplTest {
         User user = new User(
                 "newUser",
                 "encodedPassword",
-                new ApiKeyInfo(),
+                Collections.emptySet(),
                 Collections.singleton(UserRole.USER)
         );
 
@@ -114,7 +117,6 @@ class UserServiceImplTest {
         assertThat(userDetails.getAuthorities())
                 .anyMatch(a -> a.getAuthority().equals("Role_USER"));
     }
-    */
 
     @Test
     @DisplayName("존재하지 않는 사용자 이름 조회 - UsernameNotFoundException")

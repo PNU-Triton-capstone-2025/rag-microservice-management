@@ -5,6 +5,7 @@ import com.triton.msa.triton_dashboard.user.dto.UserLoginRequest;
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
 import com.triton.msa.triton_dashboard.user.dto.UserResponseDto;
 import com.triton.msa.triton_dashboard.user.entity.User;
+import com.triton.msa.triton_dashboard.user.service.TokenService;
 import com.triton.msa.triton_dashboard.user.service.UserService;
 import com.triton.msa.triton_dashboard.user.util.LlmApiKeyValidator;
 import jakarta.validation.Valid;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 public class UserApiController {
     private final UserService userService;
     private final LlmApiKeyValidator apiKeyValidator;
+    private final TokenService tokenService;
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUserAccount(
@@ -52,9 +54,9 @@ public class UserApiController {
         if (bindingResult.hasErrors()) {
             return manageBindingResultError(bindingResult);
         }
-        String jwt = userService.authenticateAndGetToken(loginRequest.username(), loginRequest.password());
+        JwtAuthenticationResponseDto responseDto = tokenService.authenticateAndGetToken(loginRequest.username(), loginRequest.password());
 
-        return ResponseEntity.ok(new JwtAuthenticationResponseDto(jwt));
+        return ResponseEntity.ok(responseDto);
     }
 
     @PostMapping("/validate-api-key")

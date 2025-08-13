@@ -30,8 +30,6 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManagerBuilder authenticationManagerBuilder;
-    private final JwtTokenProvider jwtTokenProvider;
 
     @Override
     @Transactional
@@ -65,16 +63,6 @@ public class UserServiceImpl implements UserService {
                         .map(role -> new SimpleGrantedAuthority("Role_" + role.name()))
                         .collect(Collectors.toList())
         );
-    }
-
-    @Override
-    public String authenticateAndGetToken(String username, String password) {
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
-
-        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        return jwtTokenProvider.createToken(authentication);
     }
 
     @Transactional(readOnly = true)

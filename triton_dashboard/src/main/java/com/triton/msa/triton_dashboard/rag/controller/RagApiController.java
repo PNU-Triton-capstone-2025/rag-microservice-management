@@ -5,7 +5,7 @@ import com.triton.msa.triton_dashboard.rag.dto.ProjectResponseDto;
 import com.triton.msa.triton_dashboard.rag_history.dto.RagHistoryResponseDto;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
-import com.triton.msa.triton_dashboard.rag.service.RagService;
+import com.triton.msa.triton_dashboard.rag.util.RagExecutor;
 import com.triton.msa.triton_dashboard.rag_history.entity.RagHistory;
 import com.triton.msa.triton_dashboard.rag_history.service.RagHistoryService;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RagApiController {
 
-    private final RagService ragService;
+    private final RagExecutor ragExecutor;
     private final ProjectService projectService;
     private final RagHistoryService ragHistoryService;
 
@@ -43,6 +43,6 @@ public class RagApiController {
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> streamChatResponse(@PathVariable Long projectId, @RequestParam String query) {
-        return ragService.streamChatResponse(projectId, query);
+        return ragExecutor.streamChatResponse(projectId, query);
     }
 }

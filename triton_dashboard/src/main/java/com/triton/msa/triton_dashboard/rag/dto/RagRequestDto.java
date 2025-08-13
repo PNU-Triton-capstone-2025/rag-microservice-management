@@ -1,6 +1,8 @@
 package com.triton.msa.triton_dashboard.rag.dto;
 
 public record RagRequestDto(
-        String query
-) {
-}
+        String provider,
+        String model,
+        String query,
+        String queryType
+) {}

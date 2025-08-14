@@ -28,7 +28,7 @@ class LogDeployerServiceTest {
         try(ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
             assertThat(zis.getNextEntry().getName()).isEqualTo("01-namespace.yaml");
             assertThat(zis.getNextEntry().getName()).isEqualTo("02-filebeat-config.yaml");
-            assertThat(zis.getNextEntry().getName()).isEqualTo("03-filebeat.yaml");
+            assertThat(zis.getNextEntry().getName()).isEqualTo("03-filebeat-daemonset.yml");
             assertThat(zis.getNextEntry().getName()).isEqualTo("05-logstash.yaml");
 
             assertThat(zis.getNextEntry().getName()).isEqualTo("04-logstash-config.yaml");

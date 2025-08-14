@@ -1,7 +1,6 @@
 package com.triton.msa.triton_dashboard.log_deployer.service;
 
 import com.triton.msa.triton_dashboard.log_deployer.dto.LogDeployerRequestDto;
-import org.aspectj.apache.bcel.util.ClassPath;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
@@ -20,7 +19,7 @@ public class LogDeployerService {
         ZipOutputStream zos = new ZipOutputStream(baos)) {
             addToZipFromResource(zos, "01-namespace.yaml", "log_templates/namespace.yaml");
             addToZipFromResource(zos, "02-filebeat-config.yaml", "log_templates/filebeat-config.yaml");
-            addToZipFromResource(zos, "03-filebeat.yaml", "log_templates/filebeat.yaml");
+            addToZipFromResource(zos, "03-filebeat-daemonset.yml", "log_templates/filebeat-daemonset.yml");
             addToZipFromResource(zos, "05-logstash.yaml", "log_templates/logstash.yaml");
 
             String logstashConfigContent = generateLogstashConfig(projectId);

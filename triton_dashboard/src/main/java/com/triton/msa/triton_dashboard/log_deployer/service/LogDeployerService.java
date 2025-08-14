@@ -1,5 +1,6 @@
 package com.triton.msa.triton_dashboard.log_deployer.service;
 
+import com.triton.msa.triton_dashboard.log_deployer.dto.LogDeployerRequestDto;
 import org.aspectj.apache.bcel.util.ClassPath;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,7 @@ import java.util.zip.ZipOutputStream;
 @Service
 public class LogDeployerService {
 
-    public byte[] generateDeploymentZip(Long projectId) throws IOException {
+    public byte[] generateDeploymentZip(Long projectId, LogDeployerRequestDto requestDto) throws IOException {
         try(ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ZipOutputStream zos = new ZipOutputStream(baos)) {
             addToZipFromResource(zos, "01-namespace.yaml", "log_templates/namespace.yaml");

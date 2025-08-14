@@ -1,5 +1,6 @@
 package com.triton.msa.triton_dashboard.log_deployer.service;
 
+import com.triton.msa.triton_dashboard.log_deployer.dto.LogDeployerRequestDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -19,7 +20,7 @@ class LogDeployerServiceTest {
     void generateDeploymentZip() throws IOException{
         Long projectId = 123L;
 
-        byte[] zipBytes = logDeployerService.generateDeploymentZip(projectId);
+        byte[] zipBytes = logDeployerService.generateDeploymentZip(projectId, new LogDeployerRequestDto("logging", 5044));
 
         assertThat(zipBytes).isNotNull();
         assertThat(zipBytes.length).isGreaterThan(0);

@@ -1,6 +1,7 @@
 package com.triton.msa.triton_dashboard.log_deployer.service;
 
-import org.aspectj.apache.bcel.util.ClassPath;
+import com.triton.msa.triton_dashboard.log_deployer.dto.LogDeployerCustomDto;
+import com.triton.msa.triton_dashboard.log_deployer.exception.LogDeploymentException;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
@@ -8,41 +9,55 @@ import org.springframework.util.StreamUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 @Service
 public class LogDeployerService {
-
-    public byte[] generateDeploymentZip(Long projectId) throws IOException {
+    public byte[] generateDeploymentZip(LogDeployerCustomDto customDto) {
         try(ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ZipOutputStream zos = new ZipOutputStream(baos)) {
-            addToZipFromResource(zos, "01-namespace.yaml", "log_templates/namespace.yaml");
-            addToZipFromResource(zos, "02-filebeat-config.yaml", "log_templates/filebeat-config.yaml");
-            addToZipFromResource(zos, "03-filebeat.yaml", "log_templates/filebeat.yaml");
-            addToZipFromResource(zos, "05-logstash.yaml", "log_templates/logstash.yaml");
 
-            String logstashConfigContent = generateLogstashConfig(projectId);
-            addToZipFromString(zos, "04-logstash-config.yaml", logstashConfigContent);
+            Map<String, String> templates = makeTemplate();
 
+            for (Map.Entry<String, String> entry : templates.entrySet()) {
+                addContent(zos, entry.getKey(), entry.getValue(), customDto);
+            }
             zos.finish();
             return baos.toByteArray();
         }
+        catch (IOException ex) {
+            throw new LogDeploymentException("로그 배포용 ZIP 파일 생성에 실패했습니다.", ex);
+        }
     }
 
-    private String generateLogstashConfig(Long projectId) throws IOException {
-        ClassPathResource resource = new ClassPathResource("log_templates/logstash-config.yaml");
-        String template = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
-        return template.formatted(projectId);
+    private static Map<String, String> makeTemplate() {
+        Map<String, String> templates = new LinkedHashMap<>();
+
+        templates.put("01-namespace.yml", "log_templates/namespace.yml");
+        templates.put("02-filebeat-rbac.yml", "log_templates/filebeat-rbac.yml");
+        templates.put("03-filebeat-config.yml", "log_templates/filebeat-config.yml");
+        templates.put("04-filebeat-daemonset.yml", "log_templates/filebeat-daemonset.yml");
+        templates.put("05-logstash-config.yml", "log_templates/logstash-config.yml");
+        templates.put("06-logstash-deployment.yml", "log_templates/logstash-deployment.yml");
+        return templates;
     }
 
-    private void addToZipFromResource(ZipOutputStream zos, String fileName, String resourcePath) throws IOException {
+    private void addContent(ZipOutputStream zos, String filename, String resourcePath, LogDeployerCustomDto customDto) throws IOException {
+        String processedContent = customizeTemplate(resourcePath, customDto);
+        addToZipFromString(zos, filename, processedContent);
+    }
+
+    private String customizeTemplate(String resourcePath, LogDeployerCustomDto customDto) throws IOException {
         ClassPathResource resource = new ClassPathResource(resourcePath);
+        String template = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
 
-        ZipEntry zipEntry = new ZipEntry(fileName);
-        zos.putNextEntry(zipEntry);
-        StreamUtils.copy(resource.getInputStream(), zos);
-        zos.closeEntry();
+        return template
+                .replace("${NAMESPACE}", customDto.namespace())
+                .replace("${LOGSTASH_PORT}", String.valueOf(customDto.logstashPort()))
+                .replace("${PROJECT_ID}", String.valueOf(customDto.projectId()));
     }
 
     private void addToZipFromString(ZipOutputStream zos, String fileName, String content) throws IOException {

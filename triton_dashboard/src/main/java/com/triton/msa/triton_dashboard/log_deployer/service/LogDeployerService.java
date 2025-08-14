@@ -18,7 +18,7 @@ public class LogDeployerService {
         try(ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ZipOutputStream zos = new ZipOutputStream(baos)) {
             addToZipFromResource(zos, "01-namespace.yaml", "log_templates/namespace.yaml");
-            addToZipFromResource(zos, "02-filebeat-config.yaml", "log_templates/filebeat-config.yaml");
+            addToZipFromResource(zos, "02-filebeat-config.yml", "log_templates/filebeat-config.yml");
             addToZipFromResource(zos, "03-filebeat-daemonset.yml", "log_templates/filebeat-daemonset.yml");
             addToZipFromResource(zos, "05-logstash.yaml", "log_templates/logstash.yaml");
 

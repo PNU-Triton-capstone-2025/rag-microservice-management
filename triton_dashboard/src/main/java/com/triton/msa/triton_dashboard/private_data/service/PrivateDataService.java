@@ -2,7 +2,7 @@ package com.triton.msa.triton_dashboard.private_data.service;
 
 import com.triton.msa.triton_dashboard.private_data.ExtractedFile;
 import com.triton.msa.triton_dashboard.private_data.dto.PrivateDataResponseDto;
-import com.triton.msa.triton_dashboard.private_data.dto.UploadResultDto;
+import com.triton.msa.triton_dashboard.private_data.dto.PrivateDataUploadResultDto;
 import com.triton.msa.triton_dashboard.private_data.util.FileTypeUtil;
 import com.triton.msa.triton_dashboard.private_data.util.ZipExtractor;
 import com.triton.msa.triton_dashboard.private_data.repository.PrivateDataRepository;
@@ -23,10 +23,10 @@ public class PrivateDataService {
     private final PrivateDataRepository privateDataRepository;
     private final ZipExtractor zipExtractor;
 
-    public UploadResultDto unzipAndSaveFiles(Long projectId, MultipartFile file) {
+    public PrivateDataUploadResultDto unzipAndSaveFiles(Long projectId, MultipartFile file) {
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".zip")) {
-            return new UploadResultDto("지원되지 않는 파일 형식입니다. .zip 파일만 업로드해주세요.", List.of(), List.of());
+            return new PrivateDataUploadResultDto("지원되지 않는 파일 형식입니다. .zip 파일만 업로드해주세요.", List.of(), List.of());
         }
 
         List<String> saved = new ArrayList<>();
@@ -44,15 +44,18 @@ public class PrivateDataService {
                 }
             }
 
-            return new UploadResultDto("업로드 완료", saved, skipped);
+            return new PrivateDataUploadResultDto("업로드 완료", saved, skipped);
 
         } catch (IOException e) {
-            return new UploadResultDto("압축 해제 실패: " + e.getMessage(), List.of(), List.of());
+            return new PrivateDataUploadResultDto("압축 해제 실패: " + e.getMessage(), List.of(), List.of());
         }
     }
 
     @Transactional(readOnly = true)
     public List<PrivateDataResponseDto> getPrivateDataList(Long projectId) {
-        return privateDataRepository.findDtosByProjectId(projectId);
+        return privateDataRepository.getPrivateDataDtosByProjectId(projectId)
+                .stream()
+                .map(PrivateDataResponseDto::from)
+                .toList();
     }
 }

@@ -2,10 +2,12 @@ package com.triton.msa.triton_dashboard.private_data.entity;
 
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.time.Instant;
 
 @Entity
+@Getter
 @Table(
         name =  "private_data",
         uniqueConstraints = @UniqueConstraint(columnNames = {"project_id", "filename"}))
@@ -33,6 +35,4 @@ public class PrivateData {
         this.contentType = contentType;
         this.createdAt = createdAt;
     }
-
-    public String filename() { return filename; }
 }

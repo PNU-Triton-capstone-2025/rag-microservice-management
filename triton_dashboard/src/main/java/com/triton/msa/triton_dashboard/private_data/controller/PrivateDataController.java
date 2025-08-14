@@ -1,8 +1,7 @@
 package com.triton.msa.triton_dashboard.private_data.controller;
 
 import com.triton.msa.triton_dashboard.private_data.dto.PrivateDataResponseDto;
-import com.triton.msa.triton_dashboard.private_data.dto.UploadResultDto;
-import com.triton.msa.triton_dashboard.private_data.entity.PrivateData;
+import com.triton.msa.triton_dashboard.private_data.dto.PrivateDataUploadResultDto;
 import com.triton.msa.triton_dashboard.private_data.service.PrivateDataPersistenceService;
 import com.triton.msa.triton_dashboard.private_data.service.PrivateDataService;
 import com.triton.msa.triton_dashboard.project.entity.Project;
@@ -43,14 +42,14 @@ public class PrivateDataController {
             @RequestParam("file") MultipartFile file,
             RedirectAttributes redirectAttributes
     ) {
-        UploadResultDto result;
+        PrivateDataUploadResultDto result;
 
         try {
             result = privateDataService.unzipAndSaveFiles(projectId, file);
         } catch (MaxUploadSizeExceededException e) {
-            result = new UploadResultDto("업로드 용량 초과: 10MB 이하의 zip 파일만 업로드 가능합니다.", List.of(), List.of());
+            result = new PrivateDataUploadResultDto("업로드 용량 초과: 10MB 이하의 zip 파일만 업로드 가능합니다.", List.of(), List.of());
         } catch (IllegalArgumentException e) {
-            result = new UploadResultDto(e.getMessage(), List.of(), List.of());
+            result = new PrivateDataUploadResultDto(e.getMessage(), List.of(), List.of());
         }
 
         redirectAttributes.addFlashAttribute("uploadResult", result);

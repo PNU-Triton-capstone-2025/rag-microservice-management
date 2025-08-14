@@ -1,7 +1,7 @@
 package com.triton.msa.triton_dashboard.private_data.controller;
 
 import com.triton.msa.triton_dashboard.private_data.dto.PrivateDataResponseDto;
-import com.triton.msa.triton_dashboard.private_data.dto.UploadResultDto;
+import com.triton.msa.triton_dashboard.private_data.dto.PrivateDataUploadResultDto;
 import com.triton.msa.triton_dashboard.private_data.service.PrivateDataPersistenceService;
 import com.triton.msa.triton_dashboard.private_data.service.PrivateDataService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +21,7 @@ import java.util.List;
 @RequestMapping("/api/projects/{projectId}/private-data")
 @RequiredArgsConstructor
 public class PrivateDataApiController {
+
     private final PrivateDataService privateDataService;
     private final PrivateDataPersistenceService privateDataPersistenceService;
 
@@ -31,12 +32,12 @@ public class PrivateDataApiController {
         return ResponseEntity.ok(privateDataList);
     }
 
-    @PostMapping("/upload")
-    public ResponseEntity<UploadResultDto> uploadZip(
+    @PostMapping(value = "/upload", consumes = "multipart/form-data")
+    public ResponseEntity<PrivateDataUploadResultDto> uploadZip(
             @PathVariable("projectId") Long projectId,
-            @RequestParam("file")MultipartFile file
+            @RequestParam("file") MultipartFile zipFile
     ) {
-        UploadResultDto resultDto = privateDataService.unzipAndSaveFiles(projectId, file);
+        PrivateDataUploadResultDto resultDto = privateDataService.unzipAndSaveFiles(projectId, zipFile);
         return ResponseEntity.ok(resultDto);
     }
 

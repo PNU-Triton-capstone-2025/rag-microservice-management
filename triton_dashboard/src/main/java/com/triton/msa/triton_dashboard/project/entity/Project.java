@@ -13,7 +13,6 @@ import java.util.List;
 
 @Entity
 @Getter
-@Setter
 public class Project {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,6 +36,10 @@ public class Project {
 
     public void updateSshInfo(SshInfo sshInfo) {
         this.sshInfo = sshInfo;
+    }
+
+    public void linkUser(User user) {
+        this.user = user;
     }
 
     protected Project() {

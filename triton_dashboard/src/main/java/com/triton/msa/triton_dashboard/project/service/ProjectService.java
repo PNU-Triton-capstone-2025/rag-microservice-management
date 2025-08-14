@@ -50,10 +50,10 @@ public class ProjectService {
         );
 
         Project project = new Project(requestDto.name());
-        project.setSshInfo(sshInfo);
+        project.updateSshInfo(sshInfo);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
-        project.setUser(user);
+        user.addProject(project);
         projectRepository.save(project);
     }
 

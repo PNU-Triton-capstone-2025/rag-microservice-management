@@ -1,7 +1,6 @@
 package com.triton.msa.triton_dashboard.log_deployer.service;
 
 import com.triton.msa.triton_dashboard.log_deployer.dto.LogDeployerCustomDto;
-import com.triton.msa.triton_dashboard.log_deployer.dto.LogDeployerRequestDto;
 import com.triton.msa.triton_dashboard.log_deployer.exception.LogDeploymentException;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;

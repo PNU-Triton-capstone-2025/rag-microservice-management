@@ -1,7 +1,8 @@
-package com.triton.msa.triton_dashboard.log_deployer.service;
+package com.triton.msa.triton_dashboard.log_deployer.controller;
 
 import com.triton.msa.triton_dashboard.log_deployer.dto.LogDeployerCustomDto;
 import com.triton.msa.triton_dashboard.log_deployer.dto.LogDeployerRequestDto;
+import com.triton.msa.triton_dashboard.log_deployer.service.LogDeployerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -11,8 +12,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/projects/{projectId}/deploy")

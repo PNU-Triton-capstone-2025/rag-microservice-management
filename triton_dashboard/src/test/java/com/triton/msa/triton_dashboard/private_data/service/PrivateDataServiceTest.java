@@ -1,118 +1,79 @@
-/*
 package com.triton.msa.triton_dashboard.private_data.service;
 
 import com.triton.msa.triton_dashboard.private_data.ExtractedFile;
-import com.triton.msa.triton_dashboard.private_data.dto.PrivateDataResponseDto;
-import com.triton.msa.triton_dashboard.private_data.dto.UploadResultDto;
-import com.triton.msa.triton_dashboard.private_data.util.ZipExtractor;
-import com.triton.msa.triton_dashboard.private_data.entity.PrivateData;
-import com.triton.msa.triton_dashboard.project.entity.Project;
+import com.triton.msa.triton_dashboard.private_data.dto.PrivateDataUploadResultDto;
+import com.triton.msa.triton_dashboard.private_data.exception.UnsupportedFileTypeException;
 import com.triton.msa.triton_dashboard.private_data.repository.PrivateDataRepository;
-import com.triton.msa.triton_dashboard.project.service.ProjectService;
+import com.triton.msa.triton_dashboard.private_data.util.ZipExtractor;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class PrivateDataServiceTest {
 
-    @Mock
-    private ProjectService projectService;
-
-    @Mock
-    private PrivateDataRepository privateDataRepository;
+    @InjectMocks
+    private PrivateDataService privateDataService;
 
     @Mock
     private ZipExtractor zipExtractor;
 
     @Mock
-    private RestTemplate restTemplate;
+    private PrivateDataPersistenceService privateDataPersistenceService;
 
-    @InjectMocks
-    private PrivateDataService privateDataService;
+    @Mock
+    private PrivateDataRepository privateDataRepository;
 
     @Test
-    void unzipAndSaveFiles() throws IOException {
+    @DisplayName("정상적인 ZIP 파일 업로드 시 성공적으로 처리 결과를 반환한다")
+    void unzipAndSaveFiles_Success() {
         // given
         Long projectId = 1L;
-        MultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", new byte[10]);
+        MockMultipartFile multipartFile = new MockMultipartFile("file", "test.zip", "application/zip", "content".getBytes());
 
-        ExtractedFile extractedFile = new ExtractedFile("doc.txt", "file content", Instant.now());
-        List<ExtractedFile> extractedFiles = List.of(extractedFile);
+        ExtractedFile validFile = new ExtractedFile("config.yml", "key: value", Instant.now());
+        ExtractedFile forbiddenFile = new ExtractedFile("hack.sh", "echo hello", Instant.now());
+        List<ExtractedFile> extractedFiles = List.of(validFile,forbiddenFile);
 
-        Map<String, Object> esResponse = Map.of("_id", "123");
-        ResponseEntity<Map> responseEntity = ResponseEntity.ok(esResponse);
-
-        when(zipExtractor.extract(any(), any())).thenReturn(extractedFiles);
-        when(projectService.getProject(projectId)).thenReturn(new Project());
+        when(zipExtractor.extract(eq(multipartFile), any(List.class))).thenReturn(extractedFiles);
+        when(privateDataPersistenceService.saveFile(eq(projectId), eq(validFile), any(List.class))).thenReturn(true);
 
         // when
-        UploadResultDto result = privateDataService.unzipAndSaveFiles(projectId, file);
+        PrivateDataUploadResultDto result = privateDataService.unzipAndSaveFiles(projectId, multipartFile);
 
         // then
-        assertEquals("업로드 완료", result.message());
-        assertTrue(result.savedFilenames().contains("doc.txt"));
-        assertTrue(result.skippedFilenames().isEmpty());
+        assertThat(result.message()).isEqualTo("업로드 완료 (성공 1건, 스킵 1건)");
+        assertThat(result.savedFilenames()).hasSize(1);
+        assertThat(result.savedFilenames().get(0).filename()).isEqualTo(validFile.filename());
+
+        assertThat(result.skippedFilenames()).hasSize(1);
+        assertThat(result.skippedFilenames().get(0).filename()).isEqualTo(forbiddenFile.filename());
+        assertThat(result.skippedFilenames().get(0).reason()).isEqualTo("허용되지 않음");
     }
 
-//    @Test
-//    void deletePrivateData() {
-//        // given
-//        Long projectId = 1L;
-//        Long dataId = 100L;
-//
-//        Project dummyProject = new Project();
-//        PrivateData mockData = new PrivateData(dummyProject, "dummy.txt", "text/plain", Instant.now());
-//
-//        when(privateDataRepository.findByIdAndProjectId(dataId, projectId))
-//                .thenReturn(java.util.Optional.of(mockData));
-//
-//        // when
-//        privateDataService.deletePrivateData(projectId, dataId);
-//
-//        // then
-//        // 실제 데이터 있어야 통과해서 테스트 코드는 통과 안하지만, 실제로 삭제되는거 확인함.
-//        verify(restTemplate).delete("http://localhost:30920/project-" + projectId + "/_doc/" + esId);
-//
-//        verify(privateDataRepository).deleteById(dataId);
-//    }
-
     @Test
-    void getPrivateDataList() {
+    @DisplayName("ZIP 파일이 아닌 경우 UnsupportedFileTypeException을 던진다")
+    void unzipAndSaveFiles_ThrowsException_WhenNotZip() {
         // given
         Long projectId = 1L;
+        MockMultipartFile multipartFile = new MockMultipartFile("file", "test.txt", "text/plain", "content".getBytes());
 
-        Project dummyProject = new Project(); // 필요하면 mock(Project.class)도 가능
-        Instant now = Instant.now();
-        PrivateData data1 = new PrivateData(dummyProject, "a.txt", "text/plain", now);
-        PrivateData data2 = new PrivateData(dummyProject, "b.txt", "text/plain", now);
-
-        List<PrivateData> mockList = List.of(data1, data2);
-
-        when(privateDataRepository.findByProjectId(projectId)).thenReturn(mockList);
-
-        // when
-        List<PrivateDataResponseDto> result = privateDataService.getPrivateDataList(projectId);
-
-        // then
-        assertEquals(2, result.size());
-        verify(privateDataRepository).findByProjectId(projectId);
+        // when & then
+        assertThrows(UnsupportedFileTypeException.class, () -> {
+            privateDataService.unzipAndSaveFiles(projectId, multipartFile);
+        });
     }
 }
-*/

@@ -21,13 +21,13 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class PrivateDataPersistenceService {
 
     private final PrivateDataRepository privateDataRepository;
     private final ProjectService projectService;
     private final WebClient webClient;
 
+    @Transactional
     public boolean saveFile(Long projectId, ExtractedFile file, List<UploadedFileResultDto> skipped) {
         if (privateDataRepository.existsByProjectIdAndFilename(projectId, file.filename())) {
             skipped.add(new UploadedFileResultDto(file.filename(), "이미 저장된 파일"));
@@ -81,6 +81,7 @@ public class PrivateDataPersistenceService {
                 .block();
     }
 
+    @Transactional
     public void deletePrivateData(Long projectId, Long dataId) {
         PrivateData data = privateDataRepository.findByIdAndProjectId(dataId, projectId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 데이터가 존재하지 않습니다."));
@@ -112,6 +113,5 @@ public class PrivateDataPersistenceService {
         } catch (Exception e) {
             throw new ElasticsearchDeleteException("서버 연결 오류로 삭제하지 못했습니다.");
         }
-
     }
 }

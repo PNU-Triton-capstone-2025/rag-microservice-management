@@ -4,6 +4,8 @@ import com.triton.msa.triton_dashboard.private_data.ExtractedFile;
 import com.triton.msa.triton_dashboard.private_data.dto.UploadedFileResultDto;
 import com.triton.msa.triton_dashboard.private_data.dto.PrivateDataResponseDto;
 import com.triton.msa.triton_dashboard.private_data.dto.PrivateDataUploadResultDto;
+import com.triton.msa.triton_dashboard.private_data.exception.PrivateDataUnzipException;
+import com.triton.msa.triton_dashboard.private_data.exception.UnsupportedFileTypeException;
 import com.triton.msa.triton_dashboard.private_data.util.FileTypeUtil;
 import com.triton.msa.triton_dashboard.private_data.util.ZipExtractor;
 import com.triton.msa.triton_dashboard.private_data.repository.PrivateDataRepository;
@@ -25,31 +27,51 @@ public class PrivateDataService {
     private final ZipExtractor zipExtractor;
 
     public PrivateDataUploadResultDto unzipAndSaveFiles(Long projectId, MultipartFile file) {
-        String originalFilename = file.getOriginalFilename();
-        if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".zip")) {
-            return new PrivateDataUploadResultDto("지원되지 않는 파일 형식입니다. .zip 파일만 업로드해주세요.", List.of(), List.of());
-        }
+        // zip 파일인지 확인
+        checkSupportedFileType(file);
 
         List<UploadedFileResultDto> saved = new ArrayList<>();
         List<UploadedFileResultDto> skipped = new ArrayList<>();
 
-        try {
-            List<ExtractedFile> extractedFiles = zipExtractor.extract(file, skipped);
+        // zip 파일 압축 해제
+        List<ExtractedFile> extractedFiles = unzipPrivateData(file, skipped);
 
-            for (ExtractedFile doc : extractedFiles) {
-                if (FileTypeUtil.isAllowed(doc.filename())) {
-                    boolean isSuccess = privateDataPersistenceService.saveFile(projectId, doc, skipped);
-                    if (isSuccess) saved.add(new UploadedFileResultDto(doc.filename(), "저장 성공"));
-                } else {
-                    skipped.add(new UploadedFileResultDto(doc.filename(), "허용되지 않음"));
-                }
-            }
+        // 압축 해제된 파일들 저장 후, 결과 리턴
+        return saveUnzippedFiles(projectId, extractedFiles, skipped, saved);
+    }
 
-            return new PrivateDataUploadResultDto("업로드 완료", saved, skipped);
-
-        } catch (IOException e) {
-            return new PrivateDataUploadResultDto("압축 해제 실패: " + e.getMessage(), List.of(), List.of());
+    private void checkSupportedFileType(MultipartFile file) {
+        String originalFilename = file.getOriginalFilename();
+        if (file.isEmpty()) {
+            throw new UnsupportedFileTypeException("파일이 비어있습니다.");
         }
+        if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".zip")) {
+            throw new UnsupportedFileTypeException("지원되지 않는 파일 형식입니다. .zip 파일만 업로드해주세요.");
+        }
+    }
+
+    private List<ExtractedFile> unzipPrivateData(MultipartFile file, List<UploadedFileResultDto> skipped) {
+        try {
+            return zipExtractor.extract(file, skipped);
+        } catch (IOException e) {
+            throw new PrivateDataUnzipException(e.getMessage());
+        }
+    }
+
+    private PrivateDataUploadResultDto saveUnzippedFiles(Long projectId, List<ExtractedFile> extractedFiles, List<UploadedFileResultDto> skipped, List<UploadedFileResultDto> saved) {
+        for (ExtractedFile doc : extractedFiles) {
+            if (FileTypeUtil.isAllowed(doc.filename())) {
+                boolean isSuccess = privateDataPersistenceService.saveFile(projectId, doc, skipped);
+                if (isSuccess) saved.add(new UploadedFileResultDto(doc.filename(), "저장 성공"));
+            } else {
+                skipped.add(new UploadedFileResultDto(doc.filename(), "허용되지 않음"));
+            }
+        }
+
+        int s = saved.size(), k = skipped.size();
+        return new PrivateDataUploadResultDto(
+                "업로드 완료 (성공 %d건, 스킵 %d건)".formatted(s, k), saved, skipped
+        );
     }
 
     @Transactional(readOnly = true)

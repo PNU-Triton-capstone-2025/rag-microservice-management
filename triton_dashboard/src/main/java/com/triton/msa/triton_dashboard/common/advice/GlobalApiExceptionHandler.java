@@ -1,5 +1,7 @@
 package com.triton.msa.triton_dashboard.common.advice;
 
+import com.triton.msa.triton_dashboard.private_data.exception.PrivateDataUnzipException;
+import com.triton.msa.triton_dashboard.private_data.exception.UnsupportedFileTypeException;
 import com.triton.msa.triton_dashboard.ssh.exception.SshAuthenticationException;
 import com.triton.msa.triton_dashboard.ssh.exception.SshConnectionException;
 import com.triton.msa.triton_dashboard.ssh.exception.SshKeyFileException;
@@ -58,6 +60,18 @@ public class GlobalApiExceptionHandler {
     @ExceptionHandler(InvalidApiKeyException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidApiKeyException(InvalidApiKeyException ex) {
         log.error("Invalid api key exception: {}", ex.getMessage());
+        return makeErrorResponseEntity(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(PrivateDataUnzipException.class)
+    public ResponseEntity<Map<String, Object>> handlePrivateDataUnzipException(PrivateDataUnzipException ex) {
+        log.error("Private data unzip exception: {}", ex.getMessage());
+        return makeErrorResponseEntity(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(UnsupportedFileTypeException.class)
+    public  ResponseEntity<Map<String, Object>> handleUnsupportedFileTypeException(UnsupportedFileTypeException ex) {
+        log.error("Unsupported file type exception: {}", ex.getMessage());
         return makeErrorResponseEntity(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 

@@ -1,6 +1,7 @@
 package com.triton.msa.triton_dashboard.private_data.service;
 
 import com.triton.msa.triton_dashboard.private_data.ExtractedFile;
+import com.triton.msa.triton_dashboard.private_data.dto.UploadedFileResultDto;
 import com.triton.msa.triton_dashboard.private_data.dto.PrivateDataResponseDto;
 import com.triton.msa.triton_dashboard.private_data.dto.PrivateDataUploadResultDto;
 import com.triton.msa.triton_dashboard.private_data.util.FileTypeUtil;
@@ -29,8 +30,8 @@ public class PrivateDataService {
             return new PrivateDataUploadResultDto("지원되지 않는 파일 형식입니다. .zip 파일만 업로드해주세요.", List.of(), List.of());
         }
 
-        List<String> saved = new ArrayList<>();
-        List<String> skipped = new ArrayList<>();
+        List<UploadedFileResultDto> saved = new ArrayList<>();
+        List<UploadedFileResultDto> skipped = new ArrayList<>();
 
         try {
             List<ExtractedFile> extractedFiles = zipExtractor.extract(file, skipped);
@@ -38,9 +39,9 @@ public class PrivateDataService {
             for (ExtractedFile doc : extractedFiles) {
                 if (FileTypeUtil.isAllowed(doc.filename())) {
                     boolean isSuccess = privateDataPersistenceService.saveFile(projectId, doc, skipped);
-                    if (isSuccess) saved.add(doc.filename());
+                    if (isSuccess) saved.add(new UploadedFileResultDto(doc.filename(), "저장 성공"));
                 } else {
-                    skipped.add(doc.filename() + " (허용되지 않음)");
+                    skipped.add(new UploadedFileResultDto(doc.filename(), "허용되지 않음"));
                 }
             }
 

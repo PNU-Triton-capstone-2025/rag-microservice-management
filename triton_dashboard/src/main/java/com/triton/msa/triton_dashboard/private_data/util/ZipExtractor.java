@@ -1,6 +1,7 @@
 package com.triton.msa.triton_dashboard.private_data.util;
 
 import com.triton.msa.triton_dashboard.private_data.ExtractedFile;
+import com.triton.msa.triton_dashboard.private_data.dto.UploadedFileResultDto;
 import com.triton.msa.triton_dashboard.private_data.exception.ZipSlipException;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
@@ -26,7 +27,7 @@ public class ZipExtractor {
 
     private final Tika tika = new Tika();
 
-    public List<ExtractedFile> extract(MultipartFile file, List<String> skipped) throws IOException {
+    public List<ExtractedFile> extract(MultipartFile file, List<UploadedFileResultDto> skipped) throws IOException {
         Path tempDir = Files.createTempDirectory("upload-zip");
 
         try (InputStream inputStream = file.getInputStream();
@@ -49,13 +50,13 @@ public class ZipExtractor {
                 try {
                     String content = extractContent(filename, newFile);
                     if (content == null || content.isBlank()) {
-                        skipped.add(filename + " (추출된 데이터 없음)");
+                        skipped.add(new UploadedFileResultDto(filename, "추출된 데이터 없음"));
                         continue;
                     }
 
                     files.add(new ExtractedFile(filename, content, Instant.now()));
                 } catch (IOException | TikaException e) {
-                    skipped.add(filename + " (본문 추출에 실패했습니다)");
+                    skipped.add(new UploadedFileResultDto(filename, "본문 추출에 실패했습니다"));
                 }
             }
 

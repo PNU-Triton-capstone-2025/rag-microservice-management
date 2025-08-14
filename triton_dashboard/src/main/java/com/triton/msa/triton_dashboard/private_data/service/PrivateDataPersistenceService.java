@@ -1,6 +1,7 @@
 package com.triton.msa.triton_dashboard.private_data.service;
 
 import com.triton.msa.triton_dashboard.private_data.ExtractedFile;
+import com.triton.msa.triton_dashboard.private_data.dto.UploadedFileResultDto;
 import com.triton.msa.triton_dashboard.private_data.entity.PrivateData;
 import com.triton.msa.triton_dashboard.private_data.exception.ElasticsearchDeleteException;
 import com.triton.msa.triton_dashboard.private_data.repository.PrivateDataRepository;
@@ -27,9 +28,9 @@ public class PrivateDataPersistenceService {
     private final ProjectService projectService;
     private final WebClient webClient;
 
-    public boolean saveFile(Long projectId, ExtractedFile file, List<String> skipped) {
+    public boolean saveFile(Long projectId, ExtractedFile file, List<UploadedFileResultDto> skipped) {
         if (privateDataRepository.existsByProjectIdAndFilename(projectId, file.filename())) {
-            skipped.add(file.filename() + " (이미 저장된 파일)");
+            skipped.add(new UploadedFileResultDto(file.filename(), "이미 저장된 파일"));
             return false;
         }
 
@@ -39,7 +40,7 @@ public class PrivateDataPersistenceService {
         try {
             saveToElasticsearch(projectId, file, contentType);
         } catch (Exception e) {
-            skipped.add(file.filename() + " (시스템 오류로 저장되지 않았습니다.)");
+            skipped.add(new UploadedFileResultDto(file.filename(), "시스템 오류로 저장되지 않았습니다."));
             return false;
         }
 
@@ -48,7 +49,7 @@ public class PrivateDataPersistenceService {
             saveToDatabase(projectId, file, contentType);
         } catch (Exception e) {
             deleteFromElasticsearch(projectId, file.filename());
-            skipped.add(file.filename() + " (시스템 오류로 저장되지 않았습니다.)");
+            skipped.add(new UploadedFileResultDto(file.filename(), "시스템 오류로 저장되지 않았습니다."));
             return false;
         }
 
@@ -77,14 +78,14 @@ public class PrivateDataPersistenceService {
                 .bodyValue(document)
                 .retrieve()
                 .bodyToMono(Void.class)
-                .block(); // block으로 하면 응답에 의존적인 것 같은데, subcribe로 바꾸는 게 맞는지
+                .block();
     }
 
     public void deletePrivateData(Long projectId, Long dataId) {
         PrivateData data = privateDataRepository.findByIdAndProjectId(dataId, projectId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 데이터가 존재하지 않습니다."));
 
-        deleteFromElasticsearch(projectId, data.filename());
+        deleteFromElasticsearch(projectId, data.getFilename());
         privateDataRepository.deleteById(dataId);
     }
 
@@ -107,7 +108,7 @@ public class PrivateDataPersistenceService {
                     .bodyValue(deleteQuery)
                     .retrieve()
                     .bodyToMono(Void.class)
-                    .block(); // block으로 하면 응답에 의존적인 것 같은데, subcribe로 바꾸는 게 맞는지
+                    .block();
         } catch (Exception e) {
             throw new ElasticsearchDeleteException("서버 연결 오류로 삭제하지 못했습니다.");
         }

@@ -29,7 +29,7 @@ class LogDeployerServiceTest {
             assertThat(zis.getNextEntry().getName()).isEqualTo("01-namespace.yaml");
             assertThat(zis.getNextEntry().getName()).isEqualTo("02-filebeat-config.yml");
             assertThat(zis.getNextEntry().getName()).isEqualTo("03-filebeat-daemonset.yml");
-            assertThat(zis.getNextEntry().getName()).isEqualTo("05-logstash.yaml");
+            assertThat(zis.getNextEntry().getName()).isEqualTo("05-logstash-deployment.yaml");
 
             assertThat(zis.getNextEntry().getName()).isEqualTo("04-logstash-config.yaml");
 

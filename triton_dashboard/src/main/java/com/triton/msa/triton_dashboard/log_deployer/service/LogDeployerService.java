@@ -20,7 +20,7 @@ public class LogDeployerService {
             addToZipFromResource(zos, "01-namespace.yaml", "log_templates/namespace.yaml");
             addToZipFromResource(zos, "02-filebeat-config.yml", "log_templates/filebeat-config.yml");
             addToZipFromResource(zos, "03-filebeat-daemonset.yml", "log_templates/filebeat-daemonset.yml");
-            addToZipFromResource(zos, "05-logstash.yaml", "log_templates/logstash.yaml");
+            addToZipFromResource(zos, "05-logstash-deployment.yaml", "log_templates/logstash-deployment.yaml");
 
             String logstashConfigContent = generateLogstashConfig(projectId);
             addToZipFromString(zos, "04-logstash-config.yaml", logstashConfigContent);

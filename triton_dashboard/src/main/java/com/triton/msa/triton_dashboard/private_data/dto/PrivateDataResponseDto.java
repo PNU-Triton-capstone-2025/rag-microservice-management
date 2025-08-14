@@ -8,4 +8,14 @@ public record PrivateDataResponseDto(
         String filename,
         String contentType,
         Instant createdAt
-) {}
+) {
+    public static PrivateDataResponseDto from(ProjectPrivateDataDto dto) {
+        return new PrivateDataResponseDto(
+            dto.id(),
+            dto.projectId(),
+            dto.filename(),
+            dto.contentType(),
+            dto.createdAt()
+        );
+    }
+}

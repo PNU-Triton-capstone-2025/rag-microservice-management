@@ -1,6 +1,6 @@
 package com.triton.msa.triton_dashboard.common.advice;
 
-import com.triton.msa.triton_dashboard.private_data.exception.ElasticsearchDeleteException;
+import com.triton.msa.triton_dashboard.private_data.exception.PrivateDataDeleteException;
 import com.triton.msa.triton_dashboard.private_data.exception.ZipSlipException;
 import com.triton.msa.triton_dashboard.user.dto.ApiKeyValidationResponseDto;
 import com.triton.msa.triton_dashboard.user.exception.ApiKeysValidationException;
@@ -11,14 +11,13 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ElasticsearchDeleteException.class)
-    public String handleElasticsearchDeleteException(ElasticsearchDeleteException e,
+    @ExceptionHandler(PrivateDataDeleteException.class)
+    public String handleElasticsearchDeleteException(PrivateDataDeleteException e,
                                                      HttpServletRequest request,
                                                      RedirectAttributes redirectAttributes) {
 

@@ -1,5 +1,6 @@
 package com.triton.msa.triton_dashboard.log_deployer.service;
 
+import com.triton.msa.triton_dashboard.log_deployer.dto.LogDeployerCustomDto;
 import com.triton.msa.triton_dashboard.log_deployer.dto.LogDeployerRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -21,7 +22,7 @@ public class DeployController {
 
     @GetMapping("/download-config")
     public ResponseEntity<byte[]> downloadConfig(@PathVariable Long projectId) throws IOException {
-        byte[] zipBytes = logDeployerService.generateDeploymentZip(projectId, new LogDeployerRequestDto("logging", 5044));
+        byte[] zipBytes = logDeployerService.generateDeploymentZip(new LogDeployerCustomDto(projectId, "logging", 5044));
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);

@@ -1,6 +1,6 @@
 package com.triton.msa.triton_dashboard.log_deployer.service;
 
-import com.triton.msa.triton_dashboard.log_deployer.dto.LogDeployerRequestDto;
+import com.triton.msa.triton_dashboard.log_deployer.dto.LogDeployerCustomDto;
 import org.apache.tika.metadata.HttpHeaders;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,7 +36,7 @@ class DeployControllerTest {
         byte[] dummyZipBytes = "dummy-zip-content".getBytes();
 
 
-        given(logDeployerService.generateDeploymentZip(projectId, new LogDeployerRequestDto("logging", 5044))).willReturn(dummyZipBytes);
+        given(logDeployerService.generateDeploymentZip(new LogDeployerCustomDto(projectId, "logging", 5044))).willReturn(dummyZipBytes);
 
         ResultActions resultActions = mockMvc.perform(get("/projects/{projectId}/deploy/download-config", projectId));
 

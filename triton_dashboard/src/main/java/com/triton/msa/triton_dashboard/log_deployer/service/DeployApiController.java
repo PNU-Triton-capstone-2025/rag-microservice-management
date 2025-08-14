@@ -1,5 +1,6 @@
 package com.triton.msa.triton_dashboard.log_deployer.service;
 
+import com.triton.msa.triton_dashboard.log_deployer.dto.LogDeployerCustomDto;
 import com.triton.msa.triton_dashboard.log_deployer.dto.LogDeployerRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -23,8 +24,12 @@ public class DeployApiController {
     public ResponseEntity<byte[]> downloadConfig(
             @PathVariable Long projectId,
             @RequestBody LogDeployerRequestDto requestDto
-    ) throws IOException {
-        byte[] zipBytes = logDeployerService.generateDeploymentZip(projectId, requestDto);
+    ) {
+        byte[] zipBytes = logDeployerService.generateDeploymentZip(new LogDeployerCustomDto(
+                projectId,
+                requestDto.namespace(),
+                requestDto.logstashPort()
+        ));
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);

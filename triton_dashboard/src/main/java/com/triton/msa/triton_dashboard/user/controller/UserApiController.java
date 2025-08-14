@@ -2,10 +2,14 @@ package com.triton.msa.triton_dashboard.user.controller;
 
 import com.triton.msa.triton_dashboard.user.dto.ChangeApiKeyRequest;
 import com.triton.msa.triton_dashboard.user.dto.ChangePasswordRequestDto;
+import com.triton.msa.triton_dashboard.user.dto.JwtAuthenticationResponseDto;
+import com.triton.msa.triton_dashboard.user.dto.TokenRefreshRequest;
 import com.triton.msa.triton_dashboard.user.dto.UserDeleteRequestDto;
+import com.triton.msa.triton_dashboard.user.dto.UserLoginRequest;
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
 import com.triton.msa.triton_dashboard.user.dto.UserResponseDto;
 import com.triton.msa.triton_dashboard.user.entity.User;
+import com.triton.msa.triton_dashboard.user.service.TokenService;
 import com.triton.msa.triton_dashboard.user.service.UserService;
 import com.triton.msa.triton_dashboard.user.util.LlmApiKeyValidator;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,6 +39,7 @@ import java.util.stream.Collectors;
 public class UserApiController {
     private final UserService userService;
     private final LlmApiKeyValidator apiKeyValidator;
+    private final TokenService tokenService;
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUserAccount(
@@ -42,18 +47,38 @@ public class UserApiController {
             BindingResult bindingResult
     ) {
         if(bindingResult.hasErrors()) {
-            Map<String, String> errors = bindingResult.getFieldErrors().stream()
-                    .collect(Collectors.toMap(
-                            FieldError::getField,
-                            DefaultMessageSourceResolvable::getDefaultMessage
-                    ));
-            return ResponseEntity.badRequest().body(errors);
+            return manageBindingResultError(bindingResult);
         }
 
         apiKeyValidator.validateAll(registrationDto);
         User newUser = userService.registerNewUser(registrationDto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(UserResponseDto.from(newUser));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(
+            @Valid @RequestBody UserLoginRequest loginRequest,
+            BindingResult bindingResult
+    ) {
+        if (bindingResult.hasErrors()) {
+            return manageBindingResultError(bindingResult);
+        }
+        JwtAuthenticationResponseDto responseDto = tokenService.authenticateAndGetToken(loginRequest.username(), loginRequest.password());
+
+        return ResponseEntity.ok(responseDto);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<JwtAuthenticationResponseDto> refreshToken(@Valid @RequestBody TokenRefreshRequest request) {
+        JwtAuthenticationResponseDto responseDto = tokenService.reissueToken(request.refreshToken());
+        return ResponseEntity.ok(responseDto);
+    }
+
+    @PostMapping("/validate-api-key")
+    public ResponseEntity<String> validateApiKey(@RequestBody UserRegistrationDto userRegistrationDto) {
+        apiKeyValidator.validateAll(userRegistrationDto);
+        return ResponseEntity.ok("API Key is valid.");
     }
 
     @DeleteMapping("/me")
@@ -79,5 +104,14 @@ public class UserApiController {
     public ResponseEntity<Void> updateApiKey(@RequestBody @Valid ChangeApiKeyRequest dto) {
         userService.updateApiKey(dto.provider(), dto.newApiKey());
         return ResponseEntity.noContent().build();
+    }
+
+    private ResponseEntity<Map<String, String>> manageBindingResultError(BindingResult bindingResult) {
+        Map<String, String> errors = bindingResult.getFieldErrors().stream()
+                .collect(Collectors.toMap(
+                        FieldError::getField,
+                        DefaultMessageSourceResolvable::getDefaultMessage
+                ));
+        return ResponseEntity.badRequest().body(errors);
     }
 }

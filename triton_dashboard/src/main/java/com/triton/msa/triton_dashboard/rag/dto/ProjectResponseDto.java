@@ -6,7 +6,7 @@ public record ProjectResponseDto(
         Long id,
         String name
 ) {
-    public static ProjectResponseDto from(Project entity) {
-        return new ProjectResponseDto(entity.getId(), entity.getName());
+    public static ProjectResponseDto from(Project project) {
+        return new ProjectResponseDto(project.fetchId(), project.fetchName());
     }
 }

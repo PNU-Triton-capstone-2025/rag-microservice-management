@@ -5,18 +5,15 @@ import com.triton.msa.triton_dashboard.private_data.entity.PrivateData;
 import com.triton.msa.triton_dashboard.ssh.entity.SshInfo;
 import com.triton.msa.triton_dashboard.user.entity.User;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Getter
 public class Project {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long Id;
+    private long id;
 
     @Column(nullable = false)
     private String name;
@@ -40,6 +37,18 @@ public class Project {
 
     public void linkUser(User user) {
         this.user = user;
+    }
+
+    public Long fetchId() {
+        return id;
+    }
+
+    public String fetchName() {
+        return name;
+    }
+
+    public SshInfo fetchSshInfo() {
+        return sshInfo;
     }
 
     protected Project() {

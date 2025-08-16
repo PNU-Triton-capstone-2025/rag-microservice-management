@@ -33,6 +33,11 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Project> projects = new ArrayList<>();
 
+    public void addProject(Project project) {
+        projects.add(project);
+        project.linkUser(this);
+    }
+
     protected User() {}
 
     public User(String username, String password, Set<ApiKeyInfo> apiKeys, Set<UserRole> roles) {

@@ -5,15 +5,11 @@ import com.triton.msa.triton_dashboard.private_data.entity.PrivateData;
 import com.triton.msa.triton_dashboard.ssh.entity.SshInfo;
 import com.triton.msa.triton_dashboard.user.entity.User;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Getter
-@Setter
 public class Project {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,8 +18,8 @@ public class Project {
     @Column(nullable = false)
     private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Embedded
@@ -37,6 +33,22 @@ public class Project {
 
     public void updateSshInfo(SshInfo sshInfo) {
         this.sshInfo = sshInfo;
+    }
+
+    public void linkUser(User user) {
+        this.user = user;
+    }
+
+    public Long fetchId() {
+        return id;
+    }
+
+    public String fetchName() {
+        return name;
+    }
+
+    public SshInfo fetchSshInfo() {
+        return sshInfo;
     }
 
     protected Project() {

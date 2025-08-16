@@ -3,6 +3,7 @@ package com.triton.msa.triton_dashboard.project.service;
 import com.triton.msa.triton_dashboard.project.dto.ProjectCreateRequestDto;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.repository.ProjectRepository;
+import com.triton.msa.triton_dashboard.ssh.dto.SshInfoCreateRequestDto;
 import com.triton.msa.triton_dashboard.ssh.entity.SshInfo;
 import com.triton.msa.triton_dashboard.user.entity.User;
 import com.triton.msa.triton_dashboard.user.repository.UserRepository;
@@ -31,34 +32,43 @@ public class ProjectService {
 
     @Transactional
     public void createProject(ProjectCreateRequestDto requestDto, String username) {
-        MultipartFile pemFile = requestDto.sshInfoCreateRequestDto().pemFile();
-        String pemKeyContent = "";
-
-        if(pemFile != null && !pemFile.isEmpty()) {
-            try{
-                pemKeyContent = new String(pemFile.getBytes(), StandardCharsets.UTF_8);
-            }
-            catch (IOException ex) {
-                log.error("Failed to read pem file", ex);
-            }
-        }
-
-        SshInfo sshInfo = new SshInfo(
-                requestDto.sshInfoCreateRequestDto().sshIpAddress(),
-                requestDto.sshInfoCreateRequestDto().username(),
-                pemKeyContent
-        );
+        SshInfo sshInfo = buildSshInfo(requestDto.sshInfoCreateRequestDto());
 
         Project project = new Project(requestDto.name());
-        project.setSshInfo(sshInfo);
+        project.updateSshInfo(sshInfo);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
-        project.setUser(user);
+        user.addProject(project);
         projectRepository.save(project);
     }
 
     @Transactional(readOnly = true)
     public Project getProject(Long projectId) {
         return projectRepository.findById(projectId).orElseThrow(() -> new IllegalArgumentException("Invalid project ID: " + projectId));
+    }
+
+    private SshInfo buildSshInfo(SshInfoCreateRequestDto requestDto) {
+        String pemKeyContent = makeStringPemKey(requestDto.pemFile());
+
+        return new SshInfo(
+                requestDto.sshIpAddress(),
+                requestDto.username(),
+                pemKeyContent
+        );
+    }
+
+    private String makeStringPemKey(MultipartFile pemFile) {
+        String pemKeyContent = "";
+        if(pemFile == null || pemFile.isEmpty()) {
+            return pemKeyContent;
+        }
+
+        try{
+            pemKeyContent = new String(pemFile.getBytes(), StandardCharsets.UTF_8);
+        }
+        catch (IOException ex) {
+            log.error("Failed to read pem file", ex);
+        }
+        return pemKeyContent;
     }
 }

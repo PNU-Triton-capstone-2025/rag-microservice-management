@@ -26,7 +26,7 @@ public class SshApiController {
     public ResponseEntity<Map<String, String>> initiateSshConnection(@PathVariable Long projectId) {
         Project project = projectService.getProject(projectId);
 
-        String sessionId = sshService.startSshSession(project.getSshInfo());
+        String sessionId = sshService.startSshSession(project.fetchSshInfo());
 
         return ResponseEntity.ok(Map.of("sessionId", sessionId));
     }

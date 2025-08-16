@@ -44,7 +44,6 @@ public class LlmApiKeyValidator {
                 case OPENAI -> pingOpenAI(apiKey);
                 case ANTHROPIC -> pingAnthropic(apiKey);
                 case GOOGLE -> pingGoogle(apiKey);
-                case GROK -> pingGrok(apiKey);
             }
             results.put(name, "valid");
             return true;

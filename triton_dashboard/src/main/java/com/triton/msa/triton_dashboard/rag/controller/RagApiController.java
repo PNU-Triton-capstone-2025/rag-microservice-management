@@ -31,7 +31,7 @@ public class RagApiController {
         Project project = projectService.getProject(projectId);
         List<RagHistory> historyEntities = ragHistoryService.getHistoryForProject(project);
 
-        ProjectResponseDto projectResponseDto = new ProjectResponseDto(project.getId(), project.getName());
+        ProjectResponseDto projectResponseDto = new ProjectResponseDto(project.fetchId(), project.fetchName());
         List<RagHistoryResponseDto> histories = historyEntities.stream()
                 .map(RagHistoryResponseDto::from)
                 .toList();

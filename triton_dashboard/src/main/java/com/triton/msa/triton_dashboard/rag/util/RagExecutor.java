@@ -55,7 +55,7 @@ public class RagExecutor {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         String apiKey = userService.getUser(username)
                 .getApiKeys().stream()
-                .filter(k -> k.getProvider() == LlmProvider.GOOGLE)
+                .filter(k -> k.getProvider() == LlmProvider.GEMINI)
                 .map(ApiKeyInfo::getApiKey)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("GOOGLE API 키가 없습니다."));

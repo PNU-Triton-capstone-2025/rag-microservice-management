@@ -6,8 +6,7 @@ public enum LlmModel {
     CLAUDE_3_OPUS("claude-3-opus", LlmProvider.ANTHROPIC),
     CLAUDE_3_HAIKU("claude-3-haiku", LlmProvider.ANTHROPIC),
     GEMINI_15_FLASH("gemini-1.5-flash", LlmProvider.GOOGLE),
-    GEMINI_PRO("gemini-pro", LlmProvider.GOOGLE),
-    GROK_1("grok-1", LlmProvider.GROK);
+    GEMINI_PRO("gemini-pro", LlmProvider.GOOGLE);
 
     private final String modelName;
     private final LlmProvider provider;

@@ -39,5 +39,16 @@
     </div>
   </div>
 </div>
+<script th:inline="javascript">
+  const accessToken = /*[[${accessToken}]]*/ null;
+
+  if (accessToken) {
+    const expiryDate = new Date();
+    expiryDate.setTime(expiryDate.getTime() + (60 * 60 * 1000));
+
+    document.cookie =  `Authorization=Bearer ${accessToken}; expires=${expiryDate.toUTCString()}; path=/`;
+    window.location.href = "/projects";
+  }
+</script>
 </body>
 </html>

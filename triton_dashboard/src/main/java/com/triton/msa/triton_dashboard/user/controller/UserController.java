@@ -6,6 +6,8 @@ import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
 import com.triton.msa.triton_dashboard.user.service.TokenService;
 import com.triton.msa.triton_dashboard.user.service.UserService;
 import com.triton.msa.triton_dashboard.user.util.LlmApiKeyValidator;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -34,13 +36,25 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public String handleLogin(@ModelAttribute UserLoginRequest loginRequest, Model model) {
+    public String handleLogin(
+            @ModelAttribute UserLoginRequest loginRequest,
+            Model model,
+            HttpServletResponse response
+    ) {
         JwtAuthenticationResponseDto responseDto = tokenService.authenticateAndGetToken(
                 loginRequest.username(),
                 loginRequest.password()
         );
 
-        model.addAttribute("tokenInfo", responseDto);
+        Cookie refreshTokenCookie = new Cookie("refreshToken", responseDto.refreshToken());
+        refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setSecure(true);
+        refreshTokenCookie.setPath("/");
+        refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
+
+        response.addCookie(refreshTokenCookie);
+
+        model.addAttribute("accessToken", responseDto.accessToken());
         return "login";
     }
 

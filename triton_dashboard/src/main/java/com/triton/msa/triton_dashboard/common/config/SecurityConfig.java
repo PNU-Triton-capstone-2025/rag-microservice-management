@@ -5,6 +5,7 @@ import com.triton.msa.triton_dashboard.common.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -55,6 +56,7 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**")
                 .permitAll()
+                .requestMatchers(HttpMethod.POST, "/login", "/register", "/api/users/**").permitAll()
                 .requestMatchers("/", "/register", "/login", "/api/users/**", "/validate-api-key", "/ws/ssh/**")
                 .permitAll()
                 .requestMatchers("/h2-console/**")

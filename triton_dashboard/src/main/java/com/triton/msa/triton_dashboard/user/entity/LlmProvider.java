@@ -5,8 +5,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum LlmProvider {
     OPENAI,
-    ANTHROPIC,
-    GOOGLE;
+    CLAUDE,
+    GEMINI;
 
     @JsonCreator
     public static LlmProvider fromString(String value) {

@@ -34,7 +34,7 @@ public class LlmApiKeyValidator {
     }
 
     // 내부 호출용. 비어있으면 스킵, 아니면 provider 별 ping 수행
-    private boolean validateOne(String name, LlmProvider provider, String apiKey, Map<String, Object> results) {
+    public boolean validateOne(String name, LlmProvider provider, String apiKey, Map<String, Object> results) {
         if (apiKey == null || apiKey.isBlank()) {
             results.put(name, "skipped");
             return true;
@@ -42,8 +42,8 @@ public class LlmApiKeyValidator {
         try {
             switch (provider) {
                 case OPENAI -> pingOpenAI(apiKey);
-                case ANTHROPIC -> pingAnthropic(apiKey);
-                case GOOGLE -> pingGoogle(apiKey);
+                case CLAUDE -> pingAnthropic(apiKey);
+                case GEMINI -> pingGoogle(apiKey);
             }
             results.put(name, "valid");
             return true;

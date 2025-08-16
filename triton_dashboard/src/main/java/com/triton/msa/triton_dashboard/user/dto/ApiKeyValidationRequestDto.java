@@ -1,11 +1,12 @@
 package com.triton.msa.triton_dashboard.user.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
 
-public record ChangeApiKeyRequest(
+public record ApiKeyValidationRequestDto(
         LlmProvider provider,
-        @JsonProperty("new_api_key")
-        String newApiKey
+        @JsonProperty("api_key")
+        String apiKey
 ) {
 }

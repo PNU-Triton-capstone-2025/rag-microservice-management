@@ -54,7 +54,7 @@ class UserServiceImplTest {
         when(userRepository.save(any(User.class))).thenReturn(new User(
                 "newUser",
                 "password",
-                Set.of(new ApiKeyInfo("", LlmProvider.GROK)),
+                Set.of(new ApiKeyInfo("", LlmProvider.GEMINI)),
                 Collections.singleton(UserRole.USER)
         ));
 

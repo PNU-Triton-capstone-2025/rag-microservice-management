@@ -1,5 +1,6 @@
 package com.triton.msa.triton_dashboard.user.controller;
 
+import com.triton.msa.triton_dashboard.user.dto.ApiKeyValidationRequestDto;
 import com.triton.msa.triton_dashboard.user.dto.ChangeApiKeyRequest;
 import com.triton.msa.triton_dashboard.user.dto.ChangePasswordRequestDto;
 import com.triton.msa.triton_dashboard.user.dto.JwtAuthenticationResponseDto;
@@ -16,6 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,12 +32,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
+@Slf4j
 public class UserApiController {
     private final UserService userService;
     private final LlmApiKeyValidator apiKeyValidator;
@@ -76,9 +80,24 @@ public class UserApiController {
     }
 
     @PostMapping("/validate-api-key")
-    public ResponseEntity<String> validateApiKey(@RequestBody UserRegistrationDto userRegistrationDto) {
-        apiKeyValidator.validateAll(userRegistrationDto);
-        return ResponseEntity.ok("API Key is valid.");
+    public ResponseEntity<String> validateApiKey(@RequestBody ApiKeyValidationRequestDto apiKeyValidationRequestDto) {
+        Map<String, Object> result = new HashMap<>();
+        apiKeyValidator.validateOne(
+                apiKeyValidationRequestDto.provider().toString(),
+                apiKeyValidationRequestDto.provider(),
+                apiKeyValidationRequestDto.apiKey(),
+                result
+        );
+        if("valid".equals(result.get(apiKeyValidationRequestDto.provider().toString())))
+        {
+            log.error(apiKeyValidationRequestDto.provider().toString());
+            return ResponseEntity.ok("valid");
+        }
+        else{
+            log.error("not valid");
+            log.error(result.toString());
+            return ResponseEntity.badRequest().body("not valid");
+        }
     }
 
     @DeleteMapping("/me")

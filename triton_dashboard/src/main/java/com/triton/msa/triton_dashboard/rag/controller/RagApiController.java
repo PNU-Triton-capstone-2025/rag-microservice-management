@@ -31,12 +31,11 @@ public class RagApiController {
         Project project = projectService.getProject(projectId);
         List<RagHistory> historyEntities = ragHistoryService.getHistoryForProject(project);
 
-        ProjectResponseDto projectResponseDto = new ProjectResponseDto(project.fetchId(), project.fetchName());
         List<RagHistoryResponseDto> histories = historyEntities.stream()
                 .map(RagHistoryResponseDto::from)
                 .toList();
 
-        ChatPageResponseDto responseDto = new ChatPageResponseDto(projectResponseDto, histories);
+        ChatPageResponseDto responseDto = new ChatPageResponseDto(ProjectResponseDto.from(project), histories);
 
         return ResponseEntity.ok(responseDto);
     }

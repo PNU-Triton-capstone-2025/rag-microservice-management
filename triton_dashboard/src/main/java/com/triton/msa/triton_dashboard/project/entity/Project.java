@@ -5,7 +5,9 @@ import com.triton.msa.triton_dashboard.private_data.entity.PrivateData;
 import com.triton.msa.triton_dashboard.ssh.entity.SshInfo;
 import com.triton.msa.triton_dashboard.user.entity.User;
 import jakarta.persistence.*;
+import org.springframework.data.annotation.CreatedDate;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +33,10 @@ public class Project {
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PrivateData> privateData = new ArrayList<>();
 
+    @CreatedDate
+    @Column(updatable = false, nullable = false)
+    private LocalDateTime createdAt;
+
     public void updateSshInfo(SshInfo sshInfo) {
         this.sshInfo = sshInfo;
     }
@@ -49,6 +55,10 @@ public class Project {
 
     public SshInfo fetchSshInfo() {
         return sshInfo;
+    }
+
+    public LocalDateTime fetchCreatedAt() {
+        return this.createdAt;
     }
 
     protected Project() {

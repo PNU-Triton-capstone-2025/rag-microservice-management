@@ -1,0 +1,40 @@
+version: '3'
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      # - ES_JAVA_OPTS=-Xms512m -Xmx512m   # 메모리 타이트하면 주석 해제
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+
+  rag-flask:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag-flask
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200   # ← RAG에서 사용할 ES 주소(스킴 포함)
+    env_file:
+      - .env                                     # OPENAI_API_KEY 등 민감정보는 여기서 주입
+    ports:
+      - "8000:8000"
+    depends_on:
+      - elasticsearch
+
+volumes:
+  esdata:

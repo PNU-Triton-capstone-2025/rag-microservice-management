@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -98,6 +99,16 @@ public class JwtTokenProvider {
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
+        }
+
+        Cookie[] cookies = request.getCookies();
+        if(cookies != null) {
+            return Arrays.stream(cookies)
+                    .filter(cookie -> "Authorization".equals(cookie.getName()))
+                    .map(Cookie::getValue)
+                    .findFirst()
+                    .map(value -> value.startsWith("Bearer ") ? value.substring(7) : value)
+                    .orElse(null);
         }
         return null;
     }

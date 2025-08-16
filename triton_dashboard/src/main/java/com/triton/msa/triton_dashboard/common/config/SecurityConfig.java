@@ -24,7 +24,7 @@ import java.util.List;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private final JwtTokenProvider jwtTokenProvider;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -67,7 +67,7 @@ public class SecurityConfig {
         .logout(logout -> logout.disable())
         .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
         .addFilterBefore(
-                        new JwtAuthenticationFilter(jwtTokenProvider),
+                        jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
         );
 

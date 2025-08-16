@@ -1,5 +1,6 @@
 package com.triton.msa.triton_dashboard.user.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
 import jakarta.validation.constraints.NotEmpty;
 
@@ -9,6 +10,7 @@ import java.util.Map;
 public record UserRegistrationDto(
         @NotEmpty String username,
         @NotEmpty String password,
+        @JsonProperty("api_keys")
         Map<LlmProvider, String> apiKeys
 ) {
     private final static String DEFAULT_USERNAME = "user_default";

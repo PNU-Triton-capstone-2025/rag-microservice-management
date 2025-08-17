@@ -41,7 +41,8 @@ public class ProjectController {
     @PostMapping
     public String createProject(
             @ModelAttribute("newProject") ProjectCreateRequestDto requestDto,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
         projectService.createProject(requestDto, userDetails.getUsername());
 
         return "redirect:/projects";

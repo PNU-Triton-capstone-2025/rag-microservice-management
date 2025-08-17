@@ -22,7 +22,7 @@
 
 | 기능 | HTTP Method | 엔드포인트 | 요청 JSON 예시 | 응답 |
 | :--- | :---: | :--- | :--- | :--- |
-| 내 프로젝트 목록 조회 | `GET` | `/` | (없음) | **200 OK** Body: `[{ "id": 1, "name": "Project A" }]` |
+| 내 프로젝트 목록 조회 | `GET` | `/` | (없음) | **200 OK** Body: `json [  {    "id": 1,    "name": "Project A",    "ssh_ip_address": "192.168.1.100",    "created_at": "2025-08-17T10:30:00"  }]` |
 | 프로젝트 생성 | `POST` | `/` | ```json {  "name": "My New Project", "ssh_info": {    "ssh_ip_address": "192.168.1.10",    "username": "ubuntu",    "pem_file": null  }}``` | **201 Created** |
 
 ---
@@ -43,7 +43,7 @@
 
 | 기능 | HTTP Method | 엔드포인트 | 요청 파라미터 | 응답 |
 | :--- | :---: | :--- | :--- | :--- |
-| 채팅 페이지 데이터 조회 | `GET` | `/` | **Path**: `projectId` | **200 OK** Body: `{ "project": { "id": 1, "name": "Project A" }, "history": [{ "id": 1, "user_query": "...", "llm_response": "...", "created_at": "..." }] }` |
+| 채팅 페이지 데이터 조회 | `GET` | `/` | **Path**: `projectId` | **200 OK** Body: `{ "project": {    "id": 1,    "name": "Project A",    "ssh_ip_address": "192.168.1.100",    "created_at": "2025-08-17T10:30:00"  }, "history": [{ "id": 1, "user_query": "...", "llm_response": "...", "created_at": "..." }] }` |
 | 채팅 스트림(SSE) | `GET` | `/stream` | **Path**: `projectId` **Query**: `query` | **200 OK** `text/event-stream` Body: `{ "user_query": "...", "response": "..." }` 스트림 |
 
 ---
@@ -53,8 +53,8 @@
 
 | 기능 | HTTP Method | 엔드포인트 | 요청 파라미터 | 응답 |
 | :--- | :---: | :--- | :--- | :--- |
-| 히스토리 목록 조회 | `GET` | `/` | **Path**: `projectId` | **200 OK** Body: `[{ "id": 1, "user_query": "...", "llm_response": "...", "created_at": "..." }]` |
-| 히스토리 단건 조회 | `GET` | `/{historyId}` | **Path**: `projectId`, `historyId` | **200 OK** Body: `{ "id": 1, "user_query": "...", "llm_response": "...", "created_at": "..." }` |
+| 히스토리 목록 조회 | `GET` | `/` | **Path**: `projectId` | **200 OK** Body: `[{ "id": 1, "title": "content_title", "user_query": "...", "llm_response": "...", "created_at": "..." }]` |
+| 히스토리 단건 조회 | `GET` | `/{historyId}` | **Path**: `projectId`, `historyId` | **200 OK** Body: `{ "id": 1, "title": "content_title", "user_query": "...", "llm_response": "...", "created_at": "..." }` |
 | 히스토리 삭제 | `DELETE` | `/{historyId}` | **Path**: `projectId`, `historyId` | **204 No Content** |
 
 ---

@@ -15,7 +15,7 @@
         </div>
 
         <div class="row">
-            <div th:if="${projects.isEmpty()}" class="col">
+            <div th:if="${#lists.isEmpty(projects)}" class="col">
                 <p>기존 프로젝트가 없습니다. 새 프로젝트를 생성해 보세요!</p>
             </div>
             <div th:each="project : ${projects}" class="col-md-4 mb-4">

@@ -1,7 +1,7 @@
 package com.triton.msa.triton_dashboard.rag.controller;
 
 import com.triton.msa.triton_dashboard.rag.dto.ChatPageResponseDto;
-import com.triton.msa.triton_dashboard.rag.dto.ProjectResponseDto;
+import com.triton.msa.triton_dashboard.project.dto.ProjectResponseDto;
 import com.triton.msa.triton_dashboard.rag_history.dto.RagHistoryResponseDto;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;

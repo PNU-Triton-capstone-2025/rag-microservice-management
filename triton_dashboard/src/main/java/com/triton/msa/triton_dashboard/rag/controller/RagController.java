@@ -1,5 +1,6 @@
 package com.triton.msa.triton_dashboard.rag.controller;
 
+import com.triton.msa.triton_dashboard.project.dto.ProjectResponseDto;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
 import com.triton.msa.triton_dashboard.rag.util.RagExecutor;
@@ -21,7 +22,7 @@ public class RagController {
     @GetMapping
     public String ragPage(@PathVariable Long projectId, Model model) {
         Project project = projectService.getProject(projectId);
-        model.addAttribute("project", project);
+        model.addAttribute("project", ProjectResponseDto.from(project));
 
         return "projects/rag";
     }

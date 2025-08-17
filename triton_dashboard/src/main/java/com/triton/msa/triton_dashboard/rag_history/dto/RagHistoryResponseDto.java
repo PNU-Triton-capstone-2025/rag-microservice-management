@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 
 public record RagHistoryResponseDto(
     Long id,
+    String title,
     @JsonProperty("user_query")
     String UserQuery,
     @JsonProperty("llm_response")
@@ -17,6 +18,7 @@ public record RagHistoryResponseDto(
     public static RagHistoryResponseDto from(RagHistory entity) {
         return new RagHistoryResponseDto(
                 entity.getId(),
+                entity.getTitle(),
                 entity.getUserQuery(),
                 entity.getLlmResponse(),
                 entity.getCreatedAt()

@@ -4,6 +4,7 @@ import com.triton.msa.triton_dashboard.private_data.dto.PrivateDataResponseDto;
 import com.triton.msa.triton_dashboard.private_data.dto.PrivateDataUploadResultDto;
 import com.triton.msa.triton_dashboard.private_data.service.PrivateDataPersistenceService;
 import com.triton.msa.triton_dashboard.private_data.service.PrivateDataService;
+import com.triton.msa.triton_dashboard.project.dto.ProjectResponseDto;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,7 @@ public class PrivateDataController {
         Project project = projectService.getProject(projectId);
         List<PrivateDataResponseDto> privateDataList = privateDataService.getPrivateDataList(projectId);
 
-        model.addAttribute("project", project);
+        model.addAttribute("project", ProjectResponseDto.from(project));
         model.addAttribute("privateDataList", privateDataList);
 
         return "projects/private-data";
@@ -43,15 +44,7 @@ public class PrivateDataController {
             RedirectAttributes redirectAttributes
     ) {
         PrivateDataUploadResultDto result;
-
-        try {
-            result = privateDataService.unzipAndSaveFiles(projectId, file);
-        } catch (MaxUploadSizeExceededException e) {
-            result = new PrivateDataUploadResultDto("업로드 용량 초과: 10MB 이하의 zip 파일만 업로드 가능합니다.", List.of(), List.of());
-        } catch (IllegalArgumentException e) {
-            result = new PrivateDataUploadResultDto(e.getMessage(), List.of(), List.of());
-        }
-
+        result = privateDataService.unzipAndSaveFiles(projectId, file);
         redirectAttributes.addFlashAttribute("uploadResult", result);
         return "redirect:/projects/" + projectId + "/private-data";
     }

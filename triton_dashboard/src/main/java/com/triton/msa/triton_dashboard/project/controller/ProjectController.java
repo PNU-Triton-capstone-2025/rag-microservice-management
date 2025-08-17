@@ -1,6 +1,7 @@
 package com.triton.msa.triton_dashboard.project.controller;
 
 import com.triton.msa.triton_dashboard.project.dto.ProjectCreateRequestDto;
+import com.triton.msa.triton_dashboard.project.dto.ProjectResponseDto;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
 import com.triton.msa.triton_dashboard.user.entity.User;
@@ -25,7 +26,11 @@ public class ProjectController {
     @GetMapping
     public String showProjectList(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         User user = userService.getUser(userDetails.getUsername());
-        List<Project> userProjects = projectService.getUserProjects(user);
+        List<ProjectResponseDto> userProjects = projectService
+                .getUserProjects(user)
+                .stream()
+                .map(ProjectResponseDto::from)
+                .toList();
 
         model.addAttribute("projects", userProjects);
 

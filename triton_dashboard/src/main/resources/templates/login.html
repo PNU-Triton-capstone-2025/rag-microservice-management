@@ -46,7 +46,7 @@
     const expiryDate = new Date();
     expiryDate.setTime(expiryDate.getTime() + (60 * 60 * 1000));
 
-    document.cookie =  `Authorization=Bearer ${accessToken}; expires=${expiryDate.toUTCString()}; path=/`;
+    document.cookie =  `Authorization=${accessToken}; expires=${expiryDate.toUTCString()}; path=/`;
     window.location.href = "/projects";
   }
 </script>

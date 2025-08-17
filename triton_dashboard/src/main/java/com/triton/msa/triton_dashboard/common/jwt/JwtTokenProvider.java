@@ -107,7 +107,6 @@ public class JwtTokenProvider {
                     .filter(cookie -> "Authorization".equals(cookie.getName()))
                     .map(Cookie::getValue)
                     .findFirst()
-                    .map(value -> value.startsWith("Bearer ") ? value.substring(7) : value)
                     .orElse(null);
         }
         return null;

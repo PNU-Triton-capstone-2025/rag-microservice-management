@@ -64,8 +64,24 @@ msa_k8s_prompt = PromptTemplate(
     """
 )
 
+test = PromptTemplate(
+    input_variables=["context", "question"],
+    template="""
+        아래 문맥은 질문에 관련된 문서에서 발췌한 정보입니다. 아래 질문에 대한 답변을 생성하세요.
+        
+        문맥:
+        {context}
+        
+        질문:
+        {question}
+
+        답변:
+    """
+)
+
 prompts = {
     "yaml_generation": yaml_generation_prompt,
     "yaml_edit": yaml_edit_prompt,
-    "msa_k8s": msa_k8s_prompt  
+    "msa_k8s": msa_k8s_prompt,
+    "test": test
 }

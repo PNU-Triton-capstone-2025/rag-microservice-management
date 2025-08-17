@@ -13,13 +13,13 @@ def get_embedding_model():
     
 def get_chat_llm(provider, llm):
     if provider == Provider.openai.value:
-        return ChatOpenAI(model_name = llm)
+        return ChatOpenAI(model_name = llm, streaming=True)
 
     if provider == Provider.anthropic.value:
-        return ChatAnthropic(model = llm)
+        return ChatAnthropic(model = llm, streaming=True)
 
     if provider == Provider.gemini.value:
-        return ChatGoogleGenerativeAI(model = llm)
+        return ChatGoogleGenerativeAI(model = llm, disable_streaming=False)
     
 def get_vectorstore(index_name, embedding_model):
     vectorstore = ElasticsearchStore(

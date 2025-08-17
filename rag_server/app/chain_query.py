@@ -1,9 +1,15 @@
 import chain_components
 from langchain.chains import RetrievalQA
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 def query_rag(question: str, index_name: str, query_type: str, provider: str, llm: str) -> dict:
     rag_chain = create_rag_chain(index_name, query_type, provider, llm)
-    result = rag_chain(question)
+    callbacks = [StreamingStdOutCallbackHandler()]
+    
+    result = rag_chain.invoke(
+        {"query": question},
+        config={"callbacks": callbacks}
+    )
     
     #question: 사용자 질문, answer: RAG 기반 답변, sources: 참조한 문서
     return {
@@ -35,6 +41,6 @@ def create_rag_chain(index_name: str, query_type: str, provider: str, llm: str):
         retriever=retriever,
         return_source_documents=True,
         chain_type="stuff",
-        chain_type_kwargs={"prompt": prompt_tmpl}
+        chain_type_kwargs={"prompt": prompt_tmpl},
     )
     return rag_chain

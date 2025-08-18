@@ -34,23 +34,6 @@ public class RagExecutor {
     private final UserService userService;
     private final WebClient webClient;
 
-    @Value("${rag.service.url}")
-    private String ragServiceUrl;
-
-//    public RagResponseDto generateDeploymentSpec(String username, Long projectId, String query) {
-//        Project project = projectService.getProject(projectId);
-//
-//        RagRequestDto requestDto = new RagRequestDto(query);
-//
-//        RagResponseDto responseDto = restTemplate.postForObject(ragServiceUrl, requestDto, RagResponseDto.class);
-//
-//        if(responseDto != null) {
-//            ragHistoryService.saveHistory(project, query, responseDto.response());
-//        }
-//
-//        return responseDto;
-//    }
-
     public Mono<String> generateWithGeminiAsync(Long projectId, String prompt) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         String apiKey = userService.getUser(username)

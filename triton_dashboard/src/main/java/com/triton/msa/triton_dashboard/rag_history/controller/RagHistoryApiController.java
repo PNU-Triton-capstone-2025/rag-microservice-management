@@ -1,10 +1,12 @@
 package com.triton.msa.triton_dashboard.rag_history.controller;
 
 import com.triton.msa.triton_dashboard.rag_history.dto.RagHistoryResponseDto;
+import com.triton.msa.triton_dashboard.rag_history.dto.RagHistorySaveRequestDto;
 import com.triton.msa.triton_dashboard.rag_history.entity.RagHistory;
 import com.triton.msa.triton_dashboard.rag_history.service.RagHistoryService;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -30,6 +32,16 @@ public class RagHistoryApiController {
 
         return ResponseEntity.ok(historyResponseDtos);
     }
+
+    @PostMapping
+    public ResponseEntity<Void> save(@PathVariable("projectId") Long projectId,
+                                     @Valid @RequestBody RagHistorySaveRequestDto dto) {
+        Project project = projectService.getProject(projectId);
+        ragHistoryService.saveHistory(project, dto.userQuery(), dto.llmResponse());
+
+        return ResponseEntity.ok().build();
+    }
+
 
     @GetMapping("/{historyId}")
     public ResponseEntity<RagHistoryResponseDto> getChatHistoryDetail(@PathVariable Long historyId) {

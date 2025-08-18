@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -76,64 +77,57 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void deleteCurrentUser(String rawPassword) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof UserDetails details)) {
-            throw new UnauthorizedException("로그인 정보가 없습니다.");
-        }
-
-        User user = userRepository.findByUsername(details.getUsername())
-                .orElseThrow(() -> new UnauthorizedException("사용자를 찾을 수 없습니다." + details.getUsername()));
+    public void deleteCurrentUser(String username, String rawPassword) {
+        User user = getUser(username);
 
         if (rawPassword != null && !rawPassword.isBlank()) {
             if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
                 throw new InvalidPasswordException("비밀번호가 일치하지 않습니다.");
             }
         }
-
         userRepository.deleteById(user.getId());
     }
 
     @Override
     @Transactional
-    public void updatePassword(String currPassword, String newPassword) {
+    public void updatePassword(String username, String currPassword, String newPassword) {
         if (newPassword == null || newPassword.isBlank()) {
             throw new InvalidPasswordException("새 비밀번호가 비어있습니다.");
         }
-
-        User me = getCurrentUserOrThrow();
+        User me = getUser(username);
 
         if (!passwordEncoder.matches(currPassword, me.getPassword())) {
             throw new InvalidPasswordException("현재 비밀번호가 일치하지 않습니다.");
         }
-
         me.updatePassword(passwordEncoder.encode(newPassword));
     }
 
     @Override
     @Transactional
-    public void updateApiKey(LlmProvider provider, String newApiKey) {
+    public void updateApiKey(String username, LlmProvider provider, String newApiKey) {
         if (provider == null) {
             throw new InvalidApiKeyException("provider 입력은 필수입니다.");
         }
         if (newApiKey == null || newApiKey.isBlank()) {
             throw new InvalidApiKeyException("새 API 키 입력은 필수입니다.");
         }
-
         llmApiKeyValidator.validateOne(provider, newApiKey);
 
-        User me = getCurrentUserOrThrow();
+        User me = getUser(username);
 
         me.getApiKeys().removeIf(k -> k.getProvider() == provider);
         me.getApiKeys().add(new ApiKeyInfo(newApiKey, provider));
     }
 
-    private User getCurrentUserOrThrow() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof UserDetails ud)) {
-            throw new UnauthorizedException("로그인이 필요합니다.");
-        }
-        return userRepository.findByUsername(ud.getUsername())
-                .orElseThrow(() -> new UnauthorizedException("사용자를 찾을 수 없습니다."));
+    @Override
+    @Transactional(readOnly = true)
+    public String getCurrentUserApiKey(String username, LlmProvider provider) {
+        User me = getUser(username);
+
+        return me.getApiKeys().stream()
+                .filter(apiKeyInfo -> apiKeyInfo.getProvider() == provider)
+                .map(ApiKeyInfo::getApiKey)
+                .findFirst()
+                .orElseThrow(() -> new InvalidApiKeyException(provider.toValue() + " 에 해당하는 API KEY가 없습니다."));
     }
 }

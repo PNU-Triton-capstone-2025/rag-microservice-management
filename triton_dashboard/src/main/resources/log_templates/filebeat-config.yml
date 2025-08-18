@@ -6,14 +6,22 @@ metadata:
   labels:
     k8s-app: filebeat
 data:
-  filebeat.yaml: |
-    filebeat.autodiscover:
-      providers:
-        - type: kubernetes
-          hints.enabled: true
+  filebeat.yml: |
+    filebeat.inputs:
+      - type: container
+        paths:
+          - /var/lib/docker/containers/*/*.log
+        
+        # 범용적인 멀티라인 설정
+        multiline.type: pattern
+        multiline.pattern: '^[[:space:]]' # 패턴: 공백(space) 또는 탭(tab)으로 시작하는 라인
+        multiline.negate: false
+        multiline.match: after
     processors:
       - add_kubernetes_metadata:
-          in_cluster: true
-  
+          host: ${NODE_NAME}
+          matchers:
+            - logs_path:
+                logs_path: "/var/lib/docker/containers/"    
     output.logstash:
-      hosts: ["logstash.${NAMESPACE}.svc.cluster.local:${LOGSTASH_PORT}"]
+      hosts: ["logstash.logging.svc.cluster.local:${LOGSTASH_PORT}"]

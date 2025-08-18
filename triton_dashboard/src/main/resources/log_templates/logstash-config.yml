@@ -10,9 +10,74 @@ data:
         port => ${LOGSTASH_PORT}
       }
     }
-    output {
-      elasticsearch {
-        hosts => ["http://elasticsearch.default.svc.cluster.local:9200"]
-        index => "project-${PROJECT_ID}-logs-%%{+YYYY.MM.dd}"
+    filter {
+      # 1단계: 로그가 JSON 형식인지 먼저 확인합니다. (메시지가 '{'로 시작하는 경우)
+      if [message] =~ /^{.*}$/ {
+        json {
+          source => "message"
+          add_tag => [ "json_parsed" ]
+          # 성공적으로 파싱되면 원본 message 필드를 제거합니다.
+          remove_field => ["message"]
+        }
+      }
+      # 2단계: JSON 파싱에 실패했거나 해당되지 않는 경우, Spring Boot 형식인지 확인합니다.
+      else {
+        grok {
+          # 여러 일반적인 로그 패턴을 순서대로 시도합니다.
+          # 가장 먼저 Spring Boot 패턴을 시도합니다.
+          match => { "message" => "%{TIMESTAMP_ISO8601:log_timestamp}\s+%{LOGLEVEL:log_level}\s+%{NUMBER:pid:int}\s+---\s+\[%{DATA:thread_name}\]\s+%{JAVACLASS:class_name}\s*:\s+%{GREEDYDATA:log_message}" }
+          add_tag => [ "grok_parsed_spring" ]
+          # 성공 시 원본 필드를 깔끔하게 정리합니다.
+          remove_field => ["message"]
+        }
+      }
+
+      # 3단계: Spring Boot 패턴에도 맞지 않으면, Nginx access log 형식인지 확인합니다.
+      if "grok_parsed_spring" not in [tags] and "json_parsed" not in [tags] {
+        grok {
+          match => { "message" => '%{IPORHOST:clientip} %{USER:ident} %{USER:auth} \[%{HTTPDATE:timestamp}\] "%{WORD:verb} %{DATA:request} HTTP/%{NUMBER:httpversion}" %{NUMBER:response:int} %{NUMBER:bytes:int} "%{DATA:referrer}" "%{DATA:agent}"' }
+          add_tag => [ "grok_parsed_nginx" ]
+          remove_field => ["message"]
+        }
+      }
+
+      # --- 파싱된 로그 후처리 ---
+
+      # Grok으로 파싱된 로그들의 타임스탬프를 Logstash의 기본 타임스탬프로 설정합니다.
+      if "grok_parsed_spring" in [tags] {
+        date {
+          match => [ "log_timestamp", "ISO8601" ]
+          target => "@timestamp"
+          remove_field => ["log_timestamp"]
+        }
+      } else if "grok_parsed_nginx" in [tags] {
+        date {
+          match => [ "timestamp", "dd/MMM/yyyy:HH:mm:ss Z" ]
+          target => "@timestamp"
+          remove_field => ["timestamp"]
+        }
+      }
+
+      # 모든 파싱에 실패한 경우, 나중에 분석할 수 있도록 태그를 추가합니다.
+      if "json_parsed" not in [tags] and "grok_parsed_spring" not in [tags] and "grok_parsed_nginx" not in [tags] {
+        mutate {
+          add_tag => ["_parsefailure"]
+        }
       }
     }
+    output {
+      elasticsearch {
+        hosts => ["http://host.docker.internal:9200"]
+        index => "project-1-logs-%{+YYYY.MM.dd}"
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-yml-config
+  namespace: logging
+data:
+  logstash.yml: |
+    http.host: "0.0.0.0"
+    xpack.monitoring.enabled: false

@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.LinkedHashMap;
@@ -23,21 +24,22 @@ public class LlmApiKeyValidator {
 
     public void validateAll(UserRegistrationDto dto) {
         Map<String, Object> results = new LinkedHashMap<>();
-        boolean allValid = true;
 
        for (LlmProvider p : LlmProvider.values()) {
            String apiKey = dto.apiKeyOf(p);
-           allValid &= validateOne(p.name(), p, apiKey, results);
+           validateOne(p, apiKey, results);
        }
 
-        if (!allValid) throw new ApiKeysValidationException(new ApiKeyValidationResponseDto(results), dto);
+        if (results.values().stream().anyMatch(result -> result instanceof Exception)) {
+            throw new ApiKeysValidationException(new ApiKeyValidationResponseDto(results), dto);
+        }
     }
 
     // 내부 호출용. 비어있으면 스킵, 아니면 provider 별 ping 수행
-    public boolean validateOne(String name, LlmProvider provider, String apiKey, Map<String, Object> results) {
+    private void validateOne(LlmProvider provider, String apiKey, Map<String, Object> results) {
         if (apiKey == null || apiKey.isBlank()) {
-            results.put(name, "skipped");
-            return true;
+            results.put(provider.name(), "skipped");
+            return;
         }
         try {
             switch (provider) {
@@ -45,70 +47,67 @@ public class LlmApiKeyValidator {
                 case CLAUDE -> pingAnthropic(apiKey);
                 case GEMINI -> pingGoogle(apiKey);
             }
-            results.put(name, "valid");
-            return true;
+            results.put(provider.name(), "valid");
         } catch (Exception e) {
-            results.put(name, e);
-            return false;
+            results.put(provider.name(), e);
         }
     }
 
     // 외부 호출용. (API 키 변경 등)
     public void validateOne(LlmProvider provider, String apiKey) {
-        boolean isValid = validateOne(provider.name(), provider, apiKey, new LinkedHashMap<>());
-        if (!isValid) {
-            throw new InvalidApiKeyException("API 키 검증에 실패했습니다.");
+        if (apiKey == null || apiKey.isBlank()) {
+            return;
+        }
+
+        Mono<Void> validationMono = switch (provider) {
+            case OPENAI -> pingOpenAI(apiKey);
+            case CLAUDE -> pingAnthropic(apiKey);
+            case GEMINI -> pingGoogle(apiKey);
+        };
+
+        try {
+            validationMono.block();
+        } catch (Exception e) {
+            throw new InvalidApiKeyException("API 키 검증에 실패했습니다: " + e.getMessage());
         }
     }
 
-    /** OpenAI: GET /v1/models (Authorization: Bearer) */
-    private void pingOpenAI(String apiKey) {
-        webClient.get()
+    private Mono<Void> pingOpenAI(String apiKey) {
+        return webClient.get()
                 .uri("https://api.openai.com/v1/models")
-                .headers(h -> setBearer(h, apiKey))
-                .accept(MediaType.APPLICATION_JSON)
+                .headers(h -> h.setBearerAuth(apiKey))
                 .retrieve()
-                .toBodilessEntity()
-                .timeout(Duration.ofSeconds(8))
-                .block(); // 실패 시 예외 throw
+                .bodyToMono(Void.class)
+                .timeout(Duration.ofSeconds(8));
     }
 
-    /** Anthropic: GET /v1/models (Authorization + anthropic-version) */
-    private void pingAnthropic(String apiKey) {
-        webClient.get()
+    private Mono<Void> pingAnthropic(String apiKey) {
+        return webClient.get()
                 .uri("https://api.anthropic.com/v1/models")
                 .headers(h -> {
-                    setBearer(h, apiKey);
+                    h.setBearerAuth(apiKey);
                     h.set("anthropic-version", "2023-06-01");
                 })
-                .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
-                .toBodilessEntity()
-                .timeout(Duration.ofSeconds(8))
-                .block();
+                .bodyToMono(Void.class)
+                .timeout(Duration.ofSeconds(8));
     }
 
-    /** Google (Gemini): GET /v1beta/models?key= */
-    private void pingGoogle(String apiKey) {
-        webClient.get()
+    private Mono<Void> pingGoogle(String apiKey) {
+        return webClient.get()
                 .uri("https://generativelanguage.googleapis.com/v1beta/models?key=" + apiKey)
-                .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
-                .toBodilessEntity()
-                .timeout(Duration.ofSeconds(8))
-                .block();
+                .bodyToMono(Void.class)
+                .timeout(Duration.ofSeconds(8));
     }
 
-    /** Grok(xAI): GET /v1/models (Authorization: Bearer) */
-    private void pingGrok(String apiKey) {
-        webClient.get()
+    private Mono<Void> pingGrok(String apiKey) {
+        return webClient.get()
                 .uri("https://api.x.ai/v1/models")
-                .headers(h -> setBearer(h, apiKey))
-                .accept(MediaType.APPLICATION_JSON)
+                .headers(h -> h.setBearerAuth(apiKey))
                 .retrieve()
-                .toBodilessEntity()
-                .timeout(Duration.ofSeconds(8))
-                .block();
+                .bodyToMono(Void.class)
+                .timeout(Duration.ofSeconds(8));
     }
 
     /* -------------------- Helpers -------------------- */

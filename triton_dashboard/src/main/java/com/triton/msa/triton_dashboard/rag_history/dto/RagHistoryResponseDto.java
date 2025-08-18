@@ -9,7 +9,7 @@ public record RagHistoryResponseDto(
     Long id,
     String title,
     @JsonProperty("user_query")
-    String UserQuery,
+    String userQuery,
     @JsonProperty("llm_response")
     String llmResponse,
     @JsonProperty("created_at")

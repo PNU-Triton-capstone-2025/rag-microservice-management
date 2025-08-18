@@ -11,25 +11,26 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class RagHistoryService {
 
     private final RagHistoryRepository chatHistoryRepository;
 
     @Transactional
-    public void saveHistory(Project project, String query, String response) {
+    public Long saveHistory(Project project, String query, String response) {
         int maxLen = 20;
         String title = query.substring(0, Math.min(query.length(), maxLen));
         if (query.length() > maxLen) title += "...";
         RagHistory history = new RagHistory(project, title, query, response);
 
-        chatHistoryRepository.save(history);
+        return chatHistoryRepository.save(history).getId();
     }
 
+    @Transactional(readOnly = true)
     public List<RagHistory> getHistoryForProject(Project project) {
         return chatHistoryRepository.findByProjectOrderByCreatedAtDesc(project);
     }
 
+    @Transactional(readOnly = true)
     public RagHistory getHistoryById(Long id) {
         return chatHistoryRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 채팅 이력을 찾을 수 없습니다."));

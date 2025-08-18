@@ -6,15 +6,16 @@
 
 **베이스 경로**: `/api/users`
 
-| 기능 | HTTP Method | 엔드포인트 | 요청 JSON 예시 | 응답 |
-| :--- | :---: | :--- | :--- | :--- |
-| 일반 회원가입 | `POST` | `/register` | ```json`{`  "username": "newUser",`  "password": "password123",`  "api_keys": {`    "OPENAI": "sk-...",`    "GEMINI": "..."`  `}`}` ``` | **201 Created** Body: `{ "id": 1, "username": "newUser" }` |
-| 로그인 | `POST` | `/login` | ```json`{`  "username": "testuser",`  "password": "password123"``}` ``` | **200 OK** Body: `{ "access_token": "...", "refresh_token": "..." }` |
-| 토큰 재발급 | `POST` | `/refresh` | ```json`{`  "refresh_token": "eyJhbGciOiJI..."``}` ``` | **200 OK** Body: `{ "access_token": "...", "refresh_token": "..." }` |
-| LLM API 키 유효성 검사 | `POST` | `/validate-api-key` | ```json`{`  "provider": "OPENAI",`  "api_key": "sk-..."``}` ``` | **200 OK** Body: `"valid"` |
-| 회원 탈퇴 | `DELETE` | `/me` | ```json`{`  "password": "password123"``}` ``` | **204 No Content** |
-| 비밀번호 변경 | `PATCH` | `/me/password` | ```json`{`  "curr_password": "current_password",`  "new_password": "new_strong_password"``}` ``` | **204 No Content** |
-| LLM API 키 변경 | `PATCH` | `/me/api-key` | ```json`{`  "provider": "OPENAI",`  "new_api_key": "sk-newkey..."``}` ``` | **204 No Content** |
+| 기능               | HTTP Method | 엔드포인트                         | 요청                                                                                                                | 응답                                                                   |
+| :--------------- | :---------: | :---------------------------- | :---------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------- |
+| 일반 회원가입          |    `POST`   | `/register`                   | Body: `{ "username": "newUser", "password": "password123", "api_keys": { "OPENAI": "sk-...", "GEMINI": "..." } }` | **201 Created** Body: `{ "id": 1, "username": "newUser" }`           |
+| 로그인              |    `POST`   | `/login`                      | Body: `{ "username": "testuser", "password": "password123" }`                                                     | **200 OK** Body: `{ "access_token": "...", "refresh_token": "..." }` |
+| 토큰 재발급           |    `POST`   | `/refresh`                    | Body: `{ "refresh_token": "eyJhbGciOiJI..." }`                                                                    | **200 OK** Body: `{ "access_token": "...", "refresh_token": "..." }` |
+| LLM API 키 유효성 검사 |    `POST`   | `/validate-api-key`           | Body: `{ "provider": "OPENAI", "api_key": "sk-..." }`                                                             | **200 OK** Body: `"valid"`                                           |
+| LLM API 키 조회  |    `GET`    | `/me/api-key?provider=OPENAI` | Query: `provider` (예: OPENAI, GEMINI, CLAUDE)                                                                     | **200 OK** Body: `{ "openai": "sk-..." }`                            |
+| 회원 탈퇴            |   `DELETE`  | `/me`                         | Body: `{ "password": "password123" }`                                                                             | **204 No Content**                                                   |
+| 비밀번호 변경          |   `PATCH`   | `/me/password`                | Body: `{ "curr_password": "current_password", "new_password": "new_strong_password" }`                            | **204 No Content**                                                   |
+| LLM API 키 변경     |   `PATCH`   | `/me/api-key`                 | Body: `{ "provider": "OPENAI", "new_api_key": "sk-newkey..." }`                                                   | **204 No Content**                                                   |
 ---
 
 ### **프로젝트(Project) API**
@@ -51,11 +52,13 @@
 ### **RAG 히스토리 API**
 **베이스 경로**: `/api/projects/{projectId}/rag/history`
 
-| 기능 | HTTP Method | 엔드포인트 | 요청 파라미터 | 응답 |
-| :--- | :---: | :--- | :--- | :--- |
-| 히스토리 목록 조회 | `GET` | `/` | **Path**: `projectId` | **200 OK** Body: `[{ "id": 1, "title": "content_title", "user_query": "...", "llm_response": "...", "created_at": "..." }]` |
-| 히스토리 단건 조회 | `GET` | `/{historyId}` | **Path**: `projectId`, `historyId` | **200 OK** Body: `{ "id": 1, "title": "content_title", "user_query": "...", "llm_response": "...", "created_at": "..." }` |
-| 히스토리 삭제 | `DELETE` | `/{historyId}` | **Path**: `projectId`, `historyId` | **204 No Content** |
+| 기능 | HTTP Method | 엔드포인트 | 요청 파라미터 / JSON                                                                                                                         | 응답                                                                                                                             |
+| :--------- | :---------: | :------------- | :------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
+| 히스토리 목록 조회 |    `GET`    | `/`            | **Path**: `projectId`                                                                                                                  | **200 OK** Body:<br>`[{ "id": 1, "title": "content_title", "user_query": "...", "llm_response": "...", "created_at": "..." }]` |
+| 히스토리 단건 조회 |    `GET`    | `/{historyId}` | **Path**: `projectId`, `historyId`                                                                                                     | **200 OK** Body:<br>`{ "id": 1, "title": "content_title", "user_query": "...", "llm_response": "...", "created_at": "..." }`   |
+| 히스토리 저장 |    `POST`   | `/`            | **Path**: `projectId`<br>**Body JSON**:<br>`json { "title": "content_title", "user_query": "사용자 질문", "llm_response": "프론트에서 생성된 답변" }` | **201 Created** Body:<br>`{ "id": 123 }`                                                                                       |
+| 히스토리 삭제 |   `DELETE`  | `/{historyId}` | **Path**: `projectId`, `historyId`                                                                                                     | **204 No Content**                                                                                                             |
+
 
 ---
 

@@ -5,10 +5,13 @@ import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
 import com.triton.msa.triton_dashboard.user.entity.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
+import java.util.Map;
+
 public interface UserService extends UserDetailsService {
     User registerNewUser(UserRegistrationDto registrationDto);
-    public User getUser(String username);
-    void deleteCurrentUser(String rawPassword);
-    void updatePassword(String rawPassword, String newPassword);
-    void updateApiKey(LlmProvider provider, String newApiKey);
+    User getUser(String username);
+    void deleteCurrentUser(String username, String rawPassword);
+    void updatePassword(String username, String rawPassword, String newPassword);
+    void updateApiKey(String username, LlmProvider provider, String newApiKey);
+    String getCurrentUserApiKey(String username, LlmProvider provider);
 }

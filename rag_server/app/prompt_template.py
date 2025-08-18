@@ -1,4 +1,5 @@
 from langchain.prompts import PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 
 yaml_generation_prompt = PromptTemplate(
     input_variables=["context", "question"],
@@ -64,9 +65,9 @@ msa_k8s_prompt = PromptTemplate(
     """
 )
 
-test = PromptTemplate(
-    input_variables=["context", "question"],
-    template="""
+test = chat_prompt = ChatPromptTemplate.from_messages([
+    ("system", "너는 주어진 문맥을 바탕으로만 답하는 도우미야."),
+    ("human", """
         아래 문맥은 질문에 관련된 문서에서 발췌한 정보입니다. 아래 질문에 대한 답변을 생성하세요.
         
         문맥:
@@ -76,8 +77,8 @@ test = PromptTemplate(
         {question}
 
         답변:
-    """
-)
+    """),
+])
 
 prompts = {
     "yaml_generation": yaml_generation_prompt,

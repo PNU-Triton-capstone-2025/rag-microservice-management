@@ -6,7 +6,7 @@ metadata:
   labels:
     k8s-app: filebeat
 data:
-  filebeat.yaml: |
+  filebeat.yml: |
     filebeat.autodiscover:
       providers:
         - type: kubernetes
@@ -14,6 +14,6 @@ data:
     processors:
       - add_kubernetes_metadata:
           in_cluster: true
-  
+    
     output.logstash:
-      hosts: ["logstash.${NAMESPACE}.svc.cluster.local:${LOGSTASH_PORT}"]
+      hosts: ["logstash.logging.svc.cluster.local:${LOGSTASH_PORT}"]

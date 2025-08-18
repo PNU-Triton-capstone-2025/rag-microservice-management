@@ -81,23 +81,12 @@ public class UserApiController {
 
     @PostMapping("/validate-api-key")
     public ResponseEntity<String> validateApiKey(@RequestBody ApiKeyValidationRequestDto apiKeyValidationRequestDto) {
-        Map<String, Object> result = new HashMap<>();
         apiKeyValidator.validateOne(
-                apiKeyValidationRequestDto.provider().toString(),
                 apiKeyValidationRequestDto.provider(),
-                apiKeyValidationRequestDto.apiKey(),
-                result
+                apiKeyValidationRequestDto.apiKey()
         );
-        if("valid".equals(result.get(apiKeyValidationRequestDto.provider().toString())))
-        {
-            log.error(apiKeyValidationRequestDto.provider().toString());
-            return ResponseEntity.ok("valid");
-        }
-        else{
-            log.error("not valid");
-            log.error(result.toString());
-            return ResponseEntity.badRequest().body("not valid");
-        }
+
+        return ResponseEntity.ok("API key is valid (or skipped if empty)");
     }
 
     @DeleteMapping("/me")

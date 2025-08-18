@@ -16,13 +16,13 @@ public class RagHistoryService {
     private final RagHistoryRepository chatHistoryRepository;
 
     @Transactional
-    public void saveHistory(Project project, String query, String response) {
+    public Long saveHistory(Project project, String query, String response) {
         int maxLen = 20;
         String title = query.substring(0, Math.min(query.length(), maxLen));
         if (query.length() > maxLen) title += "...";
         RagHistory history = new RagHistory(project, title, query, response);
 
-        chatHistoryRepository.save(history);
+        return chatHistoryRepository.save(history).getId();
     }
 
     @Transactional(readOnly = true)

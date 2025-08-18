@@ -24,21 +24,22 @@ public class LlmApiKeyValidator {
 
     public void validateAll(UserRegistrationDto dto) {
         Map<String, Object> results = new LinkedHashMap<>();
-        boolean allValid = true;
 
        for (LlmProvider p : LlmProvider.values()) {
            String apiKey = dto.apiKeyOf(p);
-           allValid &= validateOne(p, apiKey, results);
+           validateOne(p, apiKey, results);
        }
 
-        if (!allValid) throw new ApiKeysValidationException(new ApiKeyValidationResponseDto(results), dto);
+        if (results.values().stream().anyMatch(result -> result instanceof Exception)) {
+            throw new ApiKeysValidationException(new ApiKeyValidationResponseDto(results), dto);
+        }
     }
 
     // 내부 호출용. 비어있으면 스킵, 아니면 provider 별 ping 수행
-    private boolean validateOne(LlmProvider provider, String apiKey, Map<String, Object> results) {
+    private void validateOne(LlmProvider provider, String apiKey, Map<String, Object> results) {
         if (apiKey == null || apiKey.isBlank()) {
             results.put(provider.name(), "skipped");
-            return true;
+            return;
         }
         try {
             switch (provider) {
@@ -47,10 +48,8 @@ public class LlmApiKeyValidator {
                 case GEMINI -> pingGoogle(apiKey);
             }
             results.put(provider.name(), "valid");
-            return true;
         } catch (Exception e) {
             results.put(provider.name(), e);
-            return false;
         }
     }
 

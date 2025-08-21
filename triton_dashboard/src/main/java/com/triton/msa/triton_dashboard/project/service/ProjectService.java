@@ -47,6 +47,11 @@ public class ProjectService {
         return projectRepository.findById(projectId).orElseThrow(() -> new IllegalArgumentException("Invalid project ID: " + projectId));
     }
 
+    @Transactional(readOnly = true)
+    public List<Project> getProjects() {
+        return projectRepository.findAll();
+    }
+
     private SshInfo buildSshInfo(SshInfoCreateRequestDto requestDto) {
         String pemKeyContent = makeStringPemKey(requestDto.pemFile());
 

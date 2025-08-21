@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -21,29 +22,35 @@ import java.util.Map;
 public class LogMonitoringService {
     private final ElasticsearchClient esClient;
 
-    public List<String> getActiveServices(Long projectId) throws IOException {
-        SearchResponse<Void> response = esClient.search(s -> s
-                .index("project-" + projectId + "-logs-*")
-                .size(0)
-                .aggregations("services", a -> a
-                        .terms(t -> t
-                                .field("kubernetes.container.name.keyword")
-                        )
-                ),
-                Void.class
-        );
+    public List<String> getServices(Long projectId) {
+        try {
+            SearchResponse<Void> response = esClient.search(s -> s
+                            .index("project-" + projectId + "-logs-*")
+                            .size(0)
+                            .aggregations("services", a -> a
+                                    .terms(t -> t
+                                            .field("kubernetes.container.name.keyword")
+                                    )
+                            ),
+                    Void.class
+            );
 
-        return response.aggregations()
-                .get("services")
-                .sterms()
-                .buckets()
-                .array()
-                .stream()
-                .map(bucket -> bucket.key().stringValue())
-                .toList();
+            return response.aggregations()
+                    .get("services")
+                    .sterms()
+                    .buckets()
+                    .array()
+                    .stream()
+                    .map(bucket -> bucket.key().stringValue())
+                    .toList();
+        }
+        catch (IOException ex) {
+            log.error("Failed to analyze services due to Elasticsearch communication error", ex);
+            return Collections.emptyList();
+        }
     }
 
-    public List<String> getRecentErrorLogs(Long projectId, String serviceName, int minutes) throws IOException {
+    public List<String> getRecentErrorLogs(Long projectId, String serviceName, int minutes) {
         Instant now = Instant.now();
         Instant past = now.minus(minutes, ChronoUnit.MINUTES);
 
@@ -71,20 +78,26 @@ public class LogMonitoringService {
                 )
         );
 
-        SearchResponse<Map> response = esClient.search(s -> s
-                .index("project-" + projectId + "-logs-*")
-                .query(query)
-                .size(100),
-                Map.class
-        );
+        try {
+            SearchResponse<Map> response = esClient.search(s -> s
+                            .index("project-" + projectId + "-logs-*")
+                            .query(query)
+                            .size(100),
+                    Map.class
+            );
 
-        return response
-                .hits()
-                .hits()
-                .stream()
-                .map(Hit::source)
-                .filter(source -> source != null && source.containsKey("log_message"))
-                .map(source -> source.get("log_message").toString())
-                .toList();
+            return response
+                    .hits()
+                    .hits()
+                    .stream()
+                    .map(Hit::source)
+                    .filter(source -> source != null && source.containsKey("log_message"))
+                    .map(source -> source.get("log_message").toString())
+                    .toList();
+        }
+        catch (IOException ex) {
+            log.error("Failed to analyze logs due to Elasticsearch communication error", ex);
+            return Collections.emptyList();
+        }
     }
 }

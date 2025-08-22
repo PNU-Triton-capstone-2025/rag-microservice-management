@@ -19,7 +19,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class LogAnalysisScheduler {
 
-    private final LogMonitoringClient logMonitoringService;
+    private final LogMonitoringClient logMonitoringClient;
     private final RagHistoryService ragHistoryService;
     private final ProjectService projectService;
     private final WebClient webClient;
@@ -36,11 +36,11 @@ public class LogAnalysisScheduler {
     }
 
     private void analyzeProjectErrorLogs(Long projectId) {
-        List<String> services = logMonitoringService.getServices(projectId);
+        List<String> services = logMonitoringClient.getServices(projectId);
 
         List<Map<String, String>> projectErrorLogs = new ArrayList<>();
         for(String service : services) {
-            List<String> errorLogList = logMonitoringService.getRecentErrorLogs(projectId, service, 3);
+            List<String> errorLogList = logMonitoringClient.getRecentErrorLogs(projectId, service, 3);
             if(!errorLogList.isEmpty()) {
                 Map<String, String> serviceLogs = new HashMap<>();
                 String errorLogs = String.join("\n", errorLogList);

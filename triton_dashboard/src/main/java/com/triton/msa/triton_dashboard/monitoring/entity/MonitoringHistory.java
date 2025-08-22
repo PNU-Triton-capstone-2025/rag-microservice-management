@@ -39,5 +39,4 @@ public class MonitoringHistory {
         this.monitoringReport = monitoringReport;
         this.createdAt = createdAt;
     }
-
 }

@@ -44,7 +44,8 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public Project getProject(Long projectId) {
-        return projectRepository.findById(projectId).orElseThrow(() -> new IllegalArgumentException("Invalid project ID: " + projectId));
+        return projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid project ID: " + projectId));
     }
 
     @Transactional(readOnly = true)

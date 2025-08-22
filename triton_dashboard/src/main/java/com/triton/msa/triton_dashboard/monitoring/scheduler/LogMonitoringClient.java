@@ -1,4 +1,4 @@
-package com.triton.msa.triton_dashboard.monitoring.service;
+package com.triton.msa.triton_dashboard.monitoring.scheduler;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
@@ -19,7 +19,7 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class LogMonitoringService {
+public class LogMonitoringClient {
     private final ElasticsearchClient esClient;
 
     public List<String> getServices(Long projectId) {

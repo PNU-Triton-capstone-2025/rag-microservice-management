@@ -1,5 +1,6 @@
 package com.triton.msa.triton_dashboard.monitoring.scheduler;
 
+import com.triton.msa.triton_dashboard.monitoring.service.MonitoringHistoryService;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
 import com.triton.msa.triton_dashboard.rag_history.service.RagHistoryService;
@@ -20,7 +21,7 @@ import java.util.Map;
 public class LogAnalysisScheduler {
 
     private final LogMonitoringClient logMonitoringClient;
-    private final RagHistoryService ragHistoryService;
+    private final MonitoringHistoryService monitoringHistoryService;
     private final ProjectService projectService;
     private final WebClient webClient;
 

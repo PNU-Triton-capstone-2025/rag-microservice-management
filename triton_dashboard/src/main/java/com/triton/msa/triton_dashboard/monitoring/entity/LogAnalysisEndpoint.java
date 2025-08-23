@@ -21,6 +21,14 @@ public class LogAnalysisEndpoint {
         this.model = model;
     }
 
+    public LlmProvider fetchProvider() {
+        return this.provider;
+    }
+
+    public LlmModel fetchModel() {
+        return this.model;
+    }
+
     protected LogAnalysisEndpoint() {
 
     }

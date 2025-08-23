@@ -1,6 +1,6 @@
 package com.triton.msa.triton_dashboard.monitoring.controller;
 
-import com.triton.msa.triton_dashboard.monitoring.dto.MonitoringResponseDto;
+import com.triton.msa.triton_dashboard.monitoring.dto.MonitoringHistoryResponseDto;
 import com.triton.msa.triton_dashboard.monitoring.service.MonitoringHistoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,12 +21,12 @@ public class MonitoringHistoryApiController {
     private final MonitoringHistoryService monitoringHistoryService;
 
     @GetMapping
-    public ResponseEntity<Page<MonitoringResponseDto>> getMonitoringHistories(
+    public ResponseEntity<Page<MonitoringHistoryResponseDto>> getMonitoringHistories(
             @PathVariable Long projectId,
             @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<MonitoringResponseDto> responses = monitoringHistoryService.getMonitoringHistories(projectId, pageable)
-                .map(MonitoringResponseDto::from);
+        Page<MonitoringHistoryResponseDto> responses = monitoringHistoryService.getMonitoringHistories(projectId, pageable)
+                .map(MonitoringHistoryResponseDto::from);
 
         return ResponseEntity.ok(responses);
     }

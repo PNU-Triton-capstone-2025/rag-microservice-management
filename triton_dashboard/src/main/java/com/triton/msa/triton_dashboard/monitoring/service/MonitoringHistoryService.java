@@ -20,7 +20,7 @@ public class MonitoringHistoryService {
     private ProjectRepository projectRepository;
 
     @Transactional
-    public void saveHistory(MonitoringAnalysisResponseDto analysisDto, Long projectId) {
+    public void saveHistory(Long projectId, MonitoringAnalysisResponseDto analysisDto) {
          Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid project ID: " + projectId));
 

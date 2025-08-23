@@ -25,7 +25,6 @@ public class LogAnalysisEndpointService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid project ID: " + projectId));
 
         LogAnalysisEndpoint endpoint = project.fetchEndpoint();
-
         if(endpoint != null) {
             endpoint.update(requestDto.provider(), requestDto.model());
         }

@@ -1,14 +1,15 @@
 package com.triton.msa.triton_dashboard.monitoring.scheduler;
 
-import com.triton.msa.triton_dashboard.monitoring.service.MonitoringHistoryService;
+import com.triton.msa.triton_dashboard.monitoring.dto.MonitoringLogAnalysisRequestDto;
+import com.triton.msa.triton_dashboard.monitoring.entity.LogAnalysisEndpoint;
+import com.triton.msa.triton_dashboard.monitoring.service.LogAnalysisEndpointService;
+import com.triton.msa.triton_dashboard.monitoring.service.LogAnalysisService;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
-import com.triton.msa.triton_dashboard.rag_history.service.RagHistoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,9 +22,9 @@ import java.util.Map;
 public class LogAnalysisScheduler {
 
     private final LogMonitoringClient logMonitoringClient;
-    private final MonitoringHistoryService monitoringHistoryService;
+    private final LogAnalysisEndpointService logAnalysisEndpointService;
+    private final LogAnalysisService logAnalysisService;
     private final ProjectService projectService;
-    private final WebClient webClient;
 
     @Scheduled(fixedRate = 180000)
     public void analyzeErrorLogs() {
@@ -34,10 +35,16 @@ public class LogAnalysisScheduler {
         for(Project project : projects) {
             analyzeProjectErrorLogs(project.fetchId());
         }
+
+        log.info("finished triggering log analysis for all projects.");
     }
 
     private void analyzeProjectErrorLogs(Long projectId) {
         List<String> services = logMonitoringClient.getServices(projectId);
+
+        if(services.isEmpty()) {
+            return;
+        }
 
         List<Map<String, String>> projectErrorLogs = new ArrayList<>();
         for(String service : services) {
@@ -53,6 +60,16 @@ public class LogAnalysisScheduler {
         }
         if(!projectErrorLogs.isEmpty()) {
             String prompt = buildPrompt(projectErrorLogs);
+
+            LogAnalysisEndpoint endpoint = logAnalysisEndpointService.getEndpoint(projectId);
+
+            MonitoringLogAnalysisRequestDto requestDto = new MonitoringLogAnalysisRequestDto(
+                    endpoint.fetchProvider().toString(),
+                    endpoint.fetchModel().toString(),
+                    prompt
+            );
+
+            logAnalysisService.processLogAnalysisAsync(projectId, requestDto);
         }
     }
 
@@ -62,8 +79,8 @@ public class LogAnalysisScheduler {
         for(Map<String, String> serviceErrorLogs : errorLogs) {
             String serviceName = serviceErrorLogs.get("serviceName");
             String logs = serviceErrorLogs.get("logs");
-            sb.append("서비스 '").append(serviceName).append("'에서 최근 3분 동안 다음 에러 로그들이 발생했습니다:\n");
-            sb.append(logs);
+            sb.append("### 서비스 '").append(serviceName).append("'의 최근 3분간 에러 로그 ###\n");
+            sb.append("```\n").append(logs).append("\n```\n\n");
         }
         sb.append("\n이 로그들의 핵심 원인은 무엇이며, 어떤 해결 방안을 제안할 수 있나요?");
 

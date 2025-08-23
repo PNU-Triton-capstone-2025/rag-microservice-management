@@ -5,7 +5,7 @@ import com.triton.msa.triton_dashboard.monitoring.entity.MonitoringHistory;
 
 import java.time.LocalDateTime;
 
-public record MonitoringResponseDto(
+public record MonitoringHistoryResponseDto(
         Long id,
         String title,
         @JsonProperty("monitoring_report")
@@ -13,8 +13,8 @@ public record MonitoringResponseDto(
         @JsonProperty("created_at")
         LocalDateTime createdAt
 ) {
-    public static MonitoringResponseDto from(MonitoringHistory monitoringHistory) {
-        return new MonitoringResponseDto(
+    public static MonitoringHistoryResponseDto from(MonitoringHistory monitoringHistory) {
+        return new MonitoringHistoryResponseDto(
                 monitoringHistory.getId(),
                 monitoringHistory.getTitle(),
                 monitoringHistory.getMonitoringReport(),

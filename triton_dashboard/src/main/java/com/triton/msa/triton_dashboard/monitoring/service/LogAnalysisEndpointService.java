@@ -4,12 +4,14 @@ import com.triton.msa.triton_dashboard.monitoring.dto.LogAnalysisEndpointUpdateR
 import com.triton.msa.triton_dashboard.monitoring.entity.LogAnalysisEndpoint;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.repository.ProjectRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class LogAnalysisEndpointService {
-    ProjectRepository projectRepository;
+    private final ProjectRepository projectRepository;
 
     @Transactional(readOnly = true)
     public LogAnalysisEndpoint getEndpoint(Long projectId) {

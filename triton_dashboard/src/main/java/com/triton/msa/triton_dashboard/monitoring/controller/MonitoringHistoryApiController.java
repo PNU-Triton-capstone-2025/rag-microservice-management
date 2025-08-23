@@ -23,7 +23,7 @@ public class MonitoringHistoryApiController {
     @GetMapping
     public ResponseEntity<Page<MonitoringHistoryResponseDto>> getMonitoringHistories(
             @PathVariable Long projectId,
-            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<MonitoringHistoryResponseDto> responses = monitoringHistoryService.getMonitoringHistories(projectId, pageable)
                 .map(MonitoringHistoryResponseDto::from);

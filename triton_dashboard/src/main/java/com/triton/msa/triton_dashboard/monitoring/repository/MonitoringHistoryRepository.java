@@ -6,5 +6,5 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MonitoringHistoryRepository extends JpaRepository<MonitoringHistory, Long> {
-    Page<MonitoringHistory> findByProjectIdOrderByCreatedAtDesc(Long projectId, Pageable pageable);
+    Page<MonitoringHistory> findByProjectId(Long projectId, Pageable pageable);
 }

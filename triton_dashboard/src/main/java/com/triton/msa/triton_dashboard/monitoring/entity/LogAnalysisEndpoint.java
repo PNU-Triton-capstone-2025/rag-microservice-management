@@ -2,18 +2,15 @@ package com.triton.msa.triton_dashboard.monitoring.entity;
 
 import com.triton.msa.triton_dashboard.user.entity.LlmModel;
 import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
-@Entity
+@Embeddable
 public class LogAnalysisEndpoint {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+    @Enumerated(EnumType.STRING)
     private LlmProvider provider;
+    @Enumerated(EnumType.STRING)
     private LlmModel model;
 
     public void update(LlmProvider provider, LlmModel model) {

@@ -16,8 +16,8 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 public class MonitoringHistoryService {
-    private MonitoringHistoryRepository monitoringHistoryRepository;
-    private ProjectRepository projectRepository;
+    private final MonitoringHistoryRepository monitoringHistoryRepository;
+    private final ProjectRepository projectRepository;
 
     @Transactional
     public void saveHistory(Long projectId, MonitoringAnalysisResponseDto analysisDto) {
@@ -40,6 +40,6 @@ public class MonitoringHistoryService {
 
     @Transactional(readOnly = true)
     public Page<MonitoringHistory> getMonitoringHistories(Long projectId, Pageable pageable) {
-        return monitoringHistoryRepository.findByProjectIdOrderByCreatedAtDesc(projectId, pageable);
+        return monitoringHistoryRepository.findByProjectId(projectId, pageable);
     }
 }

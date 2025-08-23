@@ -30,8 +30,7 @@ public class Project {
     @Embedded
     private SshInfo sshInfo;
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "log_analysis_endpoint_id")
+    @Embedded
     private LogAnalysisEndpoint logAnalysisEndpoint;
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)

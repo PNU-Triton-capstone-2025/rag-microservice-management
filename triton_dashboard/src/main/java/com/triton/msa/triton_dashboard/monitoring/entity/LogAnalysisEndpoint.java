@@ -24,4 +24,9 @@ public class LogAnalysisEndpoint {
     protected LogAnalysisEndpoint() {
 
     }
+
+    public LogAnalysisEndpoint(LlmProvider provider, LlmModel model) {
+        this.provider = provider;
+        this.model = model;
+    }
 }

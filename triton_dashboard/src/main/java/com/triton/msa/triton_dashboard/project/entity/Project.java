@@ -66,6 +66,9 @@ public class Project {
     public SshInfo fetchSshInfo() {
         return sshInfo;
     }
+    public LogAnalysisEndpoint fetchEndpoint() {
+        return logAnalysisEndpoint;
+    }
 
     public LocalDateTime fetchCreatedAt() {
         return this.createdAt;

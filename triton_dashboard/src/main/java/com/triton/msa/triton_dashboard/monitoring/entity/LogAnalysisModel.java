@@ -7,7 +7,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 
 @Embeddable
-public class LogAnalysisEndpoint {
+public class LogAnalysisModel {
     @Enumerated(EnumType.STRING)
     private LlmProvider provider;
     @Enumerated(EnumType.STRING)
@@ -26,11 +26,11 @@ public class LogAnalysisEndpoint {
         return this.model;
     }
 
-    protected LogAnalysisEndpoint() {
+    protected LogAnalysisModel() {
 
     }
 
-    public LogAnalysisEndpoint(LlmProvider provider, LlmModel model) {
+    public LogAnalysisModel(LlmProvider provider, LlmModel model) {
         this.provider = provider;
         this.model = model;
     }

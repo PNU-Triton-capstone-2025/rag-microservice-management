@@ -69,7 +69,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	// web client test
 	testImplementation 'io.projectreactor:reactor-test'
-	testImplementation 'com.squareup.okhttp3:mockwebserver'
+	testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

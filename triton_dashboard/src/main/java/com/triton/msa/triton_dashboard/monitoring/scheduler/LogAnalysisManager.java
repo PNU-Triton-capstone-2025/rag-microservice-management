@@ -3,9 +3,9 @@ package com.triton.msa.triton_dashboard.monitoring.scheduler;
 import com.triton.msa.triton_dashboard.monitoring.client.RagLogClient;
 import com.triton.msa.triton_dashboard.monitoring.dto.RagLogResponseDto;
 import com.triton.msa.triton_dashboard.monitoring.dto.RagLogRequestDto;
-import com.triton.msa.triton_dashboard.monitoring.entity.LogAnalysisEndpoint;
+import com.triton.msa.triton_dashboard.monitoring.entity.LogAnalysisModel;
 import com.triton.msa.triton_dashboard.monitoring.client.ElasticSearchLogClient;
-import com.triton.msa.triton_dashboard.monitoring.service.LogAnalysisEndpointService;
+import com.triton.msa.triton_dashboard.monitoring.service.LogAnalysisModelService;
 import com.triton.msa.triton_dashboard.monitoring.service.MonitoringHistoryService;
 import com.triton.msa.triton_dashboard.monitoring.util.LogAnalysisPromptBuilder;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ import java.util.Map;
 public class LogAnalysisManager {
     private final MonitoringHistoryService monitoringHistoryService;
     private final ElasticSearchLogClient logMonitoringClient;
-    private final LogAnalysisEndpointService endpointService;
+    private final LogAnalysisModelService endpointService;
     private final RagLogClient logAnalysisClient;
 
     @Async("logAnalysisTaskExecutor")
@@ -54,12 +54,12 @@ public class LogAnalysisManager {
     private RagLogRequestDto makeLogAnalysisTemplate(Long projectId, List<Map<String, String>> projectErrorLogs) {
         String prompt = LogAnalysisPromptBuilder.buildPrompt(projectErrorLogs);
 
-        LogAnalysisEndpoint endpoint = endpointService.getEndpoint(projectId);
+        LogAnalysisModel model = endpointService.getAnalysisModel(projectId);
 
         return new RagLogRequestDto(
                 "project-" + projectId,
-                endpoint.fetchProvider().toString(),
-                endpoint.fetchModel().toString(),
+                model.fetchProvider().toString(),
+                model.fetchModel().toString(),
                 prompt
         );
     }

@@ -1,8 +1,9 @@
 package com.triton.msa.triton_dashboard.monitoring.controller;
 
-import com.triton.msa.triton_dashboard.monitoring.dto.LogAnalysisEndpointUpdateRequestDto;
-import com.triton.msa.triton_dashboard.monitoring.entity.LogAnalysisEndpoint;
-import com.triton.msa.triton_dashboard.monitoring.service.LogAnalysisEndpointService;
+import com.triton.msa.triton_dashboard.monitoring.dto.LogAnalysisModelResponseDto;
+import com.triton.msa.triton_dashboard.monitoring.dto.LogAnalysisModelUpdateRequestDto;
+import com.triton.msa.triton_dashboard.monitoring.entity.LogAnalysisModel;
+import com.triton.msa.triton_dashboard.monitoring.service.LogAnalysisModelService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,22 +17,22 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 @RequestMapping("/api/projects/{projectId}/monitoring/endpoint")
 @RequiredArgsConstructor
-public class LogAnalysisEndpointController {
-    private final LogAnalysisEndpointService endpointService;
+public class LogAnalysisModelController {
+    private final LogAnalysisModelService endpointService;
 
     @GetMapping
-    public ResponseEntity<LogAnalysisEndpoint> getEndpoint(@PathVariable Long projectid) {
-        LogAnalysisEndpoint endpoint = endpointService.getEndpoint(projectid);
+    public ResponseEntity<LogAnalysisModelResponseDto> getEndpoint(@PathVariable Long projectId) {
+        LogAnalysisModel endpoint = endpointService.getAnalysisModel(projectId);
 
-        return ResponseEntity.ok(endpoint);
+        return ResponseEntity.ok(LogAnalysisModelResponseDto.from(endpoint));
     }
 
     @PutMapping
     public ResponseEntity<Void> updateEndpoint(
             @PathVariable Long projectId,
-            @Valid @RequestBody LogAnalysisEndpointUpdateRequestDto requestDto
+            @Valid @RequestBody LogAnalysisModelUpdateRequestDto requestDto
     ) {
-        endpointService.updateEndpoint(projectId, requestDto);
+        endpointService.updateAnalysisModel(projectId, requestDto);
 
         return ResponseEntity.noContent().build();
     }

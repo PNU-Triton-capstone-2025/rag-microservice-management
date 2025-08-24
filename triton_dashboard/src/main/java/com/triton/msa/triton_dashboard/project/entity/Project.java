@@ -1,5 +1,6 @@
 package com.triton.msa.triton_dashboard.project.entity;
 
+import com.triton.msa.triton_dashboard.monitoring.entity.LogAnalysisModel;
 import com.triton.msa.triton_dashboard.rag_history.entity.RagHistory;
 import com.triton.msa.triton_dashboard.private_data.entity.PrivateData;
 import com.triton.msa.triton_dashboard.ssh.entity.SshInfo;
@@ -29,6 +30,9 @@ public class Project {
     @Embedded
     private SshInfo sshInfo;
 
+    @Embedded
+    private LogAnalysisModel logAnalysisEndpoint;
+
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RagHistory> ragHistoryList = new ArrayList<>();
 
@@ -41,6 +45,9 @@ public class Project {
 
     public void updateSshInfo(SshInfo sshInfo) {
         this.sshInfo = sshInfo;
+    }
+    public void updateLogAnalysisEndpoint(LogAnalysisModel logAnalysisEndpoint) {
+        this.logAnalysisEndpoint = logAnalysisEndpoint;
     }
 
     public void linkUser(User user) {
@@ -57,6 +64,9 @@ public class Project {
 
     public SshInfo fetchSshInfo() {
         return sshInfo;
+    }
+    public LogAnalysisModel fetchEndpoint() {
+        return logAnalysisEndpoint;
     }
 
     public LocalDateTime fetchCreatedAt() {

@@ -23,6 +23,10 @@ repositories {
 	mavenCentral()
 }
 
+ext {
+	elasticsearchVersion = '8.14.1'
+}
+
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -50,6 +54,10 @@ dependencies {
 	// 응답 생성 렌더링을 위함
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
+	// Elasticsearch
+	implementation "co.elastic.clients:elasticsearch-java:${elasticsearchVersion}"
+	implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+
 	// jwt
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
@@ -59,6 +67,9 @@ dependencies {
 	runtimeOnly 'com.h2database:h2'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	// web client test
+	testImplementation 'io.projectreactor:reactor-test'
+	testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

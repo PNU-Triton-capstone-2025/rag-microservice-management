@@ -1,15 +1,12 @@
 package com.triton.msa.triton_dashboard.rag.util;
 
 import com.triton.msa.triton_dashboard.rag_history.service.RagHistoryService;
-import com.triton.msa.triton_dashboard.rag.dto.RagRequestDto;
-import com.triton.msa.triton_dashboard.rag.dto.RagResponseDto;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
 import com.triton.msa.triton_dashboard.user.entity.ApiKeyInfo;
 import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
 import com.triton.msa.triton_dashboard.user.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;

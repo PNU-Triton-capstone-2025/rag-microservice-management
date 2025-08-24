@@ -1,5 +1,6 @@
 package com.triton.msa.triton_dashboard.log_deployer.service;
 
+import com.triton.msa.triton_dashboard.common.jwt.JwtTokenProvider;
 import com.triton.msa.triton_dashboard.log_deployer.controller.DeployController;
 import com.triton.msa.triton_dashboard.log_deployer.dto.LogDeployerCustomDto;
 import org.apache.tika.metadata.HttpHeaders;
@@ -27,6 +28,9 @@ class DeployControllerTest {
 
     @MockitoBean
     private LogDeployerService logDeployerService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
 
     @Test
     @WithMockUser

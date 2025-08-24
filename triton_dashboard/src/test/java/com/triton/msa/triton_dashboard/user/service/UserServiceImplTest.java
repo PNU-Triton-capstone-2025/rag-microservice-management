@@ -115,7 +115,7 @@ class UserServiceImplTest {
         assertThat(userDetails.getPassword())
                 .isEqualTo("encodedPassword");
         assertThat(userDetails.getAuthorities())
-                .anyMatch(a -> a.getAuthority().equals("Role_USER"));
+                .anyMatch(a -> a.getAuthority().equals("ROLE_USER"));
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.triton.msa.triton_dashboard.user.service;
 
+import com.triton.msa.triton_dashboard.user.dto.UserApiKeyRequestDto;
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
 import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
 import com.triton.msa.triton_dashboard.user.entity.User;
@@ -13,5 +14,5 @@ public interface UserService extends UserDetailsService {
     void deleteCurrentUser(String username, String rawPassword);
     void updatePassword(String username, String rawPassword, String newPassword);
     void updateApiKey(String username, LlmProvider provider, String newApiKey);
-    String getCurrentUserApiKey(String username, LlmProvider provider);
+    String getCurrentUserApiKey(String username, UserApiKeyRequestDto apiKeyRequestDto);
 }

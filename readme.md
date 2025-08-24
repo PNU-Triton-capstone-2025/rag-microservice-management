@@ -78,6 +78,26 @@
 | :--- | :---: | :--- | :--- | :--- |
 | 설정 파일 다운로드 | `POST` | `/download-config` | ```json{  "namespace": "logging",  "logstash_port": 5044}``` | **200 OK** Body: ZIP 파일 |
 
+### **모니터링(Monitoring) API**
+
+**베이스 경로**: `/api/projects/{projectId}/monitoring`
+
+| 기능 | HTTP Method | 엔드포인트 | 요청 | 응답 |
+| :--- | :---: | :--- | :--- | :--- |
+| 로그 분석 모델 조회 | `GET` | `/endpoint` | **Path**: `projectId` | **200 OK** Body: `{ "provider": "OPENAI", "model": "GPT_4" }` |
+| 로그 분석 모델 수정 | `PUT` | `/endpoint` | **Path**: `projectId`\<br\>**Body**: `{ "provider": "GOOGLE", "model": "GEMINI_PRO" }` | **204 No Content** |
+| 모니터링 이력 조회 | `GET` | `/` | **Path**: `projectId`\<br\>**Query**: `page`, `size`, `sort` | **200 OK** Body: (페이지네이션된 MonitoringHistoryResponseDto 목록) |
+| 모니터링 이력 삭제 | `DELETE` | `/{monitoringHistoryId}` | **Path**: `projectId`, `monitoringHistoryId` | **204 No Content** |
+
+
+### **RAG 서버 로그 분석 요청 API 형태**
+
+**베이스 경로**: (RAG 서버 주소)
+
+| 기능 | HTTP Method | 엔드포인트 | 요청 JSON 예시 | 응답 |
+| :--- | :---: | :--- | :--- | :--- |
+| 로그 분석 및 리포트 생성 | `POST` | `/api/get-rag-response` | **Body**:`json { "es_index": "project-1-logs-*", "provider": "OPENAI", "model": "GPT_4", "query": "분석할 로그 프롬프트..." }` | **200 OK** **Body**:`json { "title": "로그 분석 리포트 제목", "llm_response": "LLM이 생성한 분석 결과..." }` |
+
 ## RAG server 구동 방법
 
 ### 1. .env에 API_KEY 입력

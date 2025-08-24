@@ -1,4 +1,4 @@
-package com.triton.msa.triton_dashboard.monitoring.scheduler;
+package com.triton.msa.triton_dashboard.monitoring.client;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;

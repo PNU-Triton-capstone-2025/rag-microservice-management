@@ -1,6 +1,6 @@
 package com.triton.msa.triton_dashboard.monitoring.service;
 
-import com.triton.msa.triton_dashboard.monitoring.dto.MonitoringAnalysisResponseDto;
+import com.triton.msa.triton_dashboard.monitoring.dto.RagLogResponseDto;
 import com.triton.msa.triton_dashboard.monitoring.entity.MonitoringHistory;
 import com.triton.msa.triton_dashboard.monitoring.repository.MonitoringHistoryRepository;
 import com.triton.msa.triton_dashboard.project.entity.Project;
@@ -20,7 +20,7 @@ public class MonitoringHistoryService {
     private final ProjectRepository projectRepository;
 
     @Transactional
-    public void saveHistory(Long projectId, MonitoringAnalysisResponseDto analysisDto) {
+    public void saveHistory(Long projectId, RagLogResponseDto analysisDto) {
          Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid project ID: " + projectId));
 

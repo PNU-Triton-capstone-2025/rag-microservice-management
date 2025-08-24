@@ -1,7 +1,7 @@
 package com.triton.msa.triton_dashboard.monitoring.scheduler;
 
 import com.triton.msa.triton_dashboard.monitoring.client.RagLogClient;
-import com.triton.msa.triton_dashboard.monitoring.dto.MonitoringAnalysisResponseDto;
+import com.triton.msa.triton_dashboard.monitoring.dto.RagLogResponseDto;
 import com.triton.msa.triton_dashboard.monitoring.dto.RagLogRequestDto;
 import com.triton.msa.triton_dashboard.monitoring.entity.LogAnalysisEndpoint;
 import com.triton.msa.triton_dashboard.monitoring.client.ElasticSearchLogClient;
@@ -90,7 +90,7 @@ public class LogAnalysisManager {
         }
     }
 
-    private Mono<Void> saveHistoryAsync(Long projectId, MonitoringAnalysisResponseDto responseDto) {
+    private Mono<Void> saveHistoryAsync(Long projectId, RagLogResponseDto responseDto) {
         return Mono.fromRunnable(() -> monitoringHistoryService.saveHistory(projectId, responseDto))
                 .subscribeOn(Schedulers.boundedElastic())
                 .then();

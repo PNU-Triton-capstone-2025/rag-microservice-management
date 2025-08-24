@@ -1,6 +1,6 @@
 package com.triton.msa.triton_dashboard.monitoring.client;
 
-import com.triton.msa.triton_dashboard.monitoring.dto.MonitoringAnalysisResponseDto;
+import com.triton.msa.triton_dashboard.monitoring.dto.RagLogResponseDto;
 import com.triton.msa.triton_dashboard.monitoring.dto.RagLogRequestDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,12 +19,12 @@ public class RagLogClient {
     @Value("${rag.server.url.monitoring}")
     private String ragServerUrl;
 
-    public Mono<MonitoringAnalysisResponseDto> analyzeLogs(Long projectId, RagLogRequestDto requestDto) {
+    public Mono<RagLogResponseDto> analyzeLogs(Long projectId, RagLogRequestDto requestDto) {
         return webClient.post()
                 .uri(ragServerUrl)
                 .bodyValue(requestDto)
                 .retrieve()
-                .bodyToMono(MonitoringAnalysisResponseDto.class)
+                .bodyToMono(RagLogResponseDto.class)
                 .doOnError(WebClientResponseException.class, ex ->
                     log.error("[Async] Failed to analyze logs. Status: {}, Body: {}",
                             ex.getStatusCode(), ex.getResponseBodyAsByteArray()))

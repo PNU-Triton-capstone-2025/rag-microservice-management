@@ -90,14 +90,6 @@ public class LogAnalysisManagerTest {
         logAnalysisManager.analyzeProjectErrorLogs(projectId);
 
         // then
-        // 비동기 호출이 없으므로 잠시 대기 후 검증
-        try {
-            Thread.sleep(500);
-        }
-        catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-
         verify(logClient).getServices(projectId);
         verify(logClient).getRecentErrorLogs(projectId, "service-C", 3);
 

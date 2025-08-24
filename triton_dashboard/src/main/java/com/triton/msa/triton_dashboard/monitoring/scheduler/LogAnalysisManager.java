@@ -2,11 +2,12 @@ package com.triton.msa.triton_dashboard.monitoring.scheduler;
 
 import com.triton.msa.triton_dashboard.monitoring.client.RagLogClient;
 import com.triton.msa.triton_dashboard.monitoring.dto.MonitoringAnalysisResponseDto;
-import com.triton.msa.triton_dashboard.monitoring.dto.MonitoringLogAnalysisRequestDto;
+import com.triton.msa.triton_dashboard.monitoring.dto.RagLogRequestDto;
 import com.triton.msa.triton_dashboard.monitoring.entity.LogAnalysisEndpoint;
 import com.triton.msa.triton_dashboard.monitoring.client.ElasticSearchLogClient;
 import com.triton.msa.triton_dashboard.monitoring.service.LogAnalysisEndpointService;
 import com.triton.msa.triton_dashboard.monitoring.service.MonitoringHistoryService;
+import com.triton.msa.triton_dashboard.monitoring.util.LogAnalysisPromptBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -30,48 +31,62 @@ public class LogAnalysisManager {
 
     @Async("logAnalysisTaskExecutor")
     public void analyzeProjectErrorLogs(Long projectId) {
+        List<Map<String, String>> projectErrorLogs = fetchProjectErrorLogs(projectId);
+        if (projectErrorLogs == null || projectErrorLogs.isEmpty()) {
+            return;
+        }
+        RagLogRequestDto requestDto = makeLogAnalysisTemplate(projectId, projectErrorLogs);
+
+        logAnalysisClient.analyzeLogs(projectId, requestDto)
+                .flatMap(response -> {
+                    if (response == null) {
+                        log.warn("Received null response, skipping save for project ID: {}", projectId);
+                    }
+                    return saveHistoryAsync(projectId, response);
+                })
+                .subscribe(
+                        null,
+                        error -> log.error("[LogAnalysis] Failed to analyze error logs for project ID: {}", projectId, error),
+                        () -> log.info("[LogAnalysis] Successfully analyzed error logs for project ID: {}", projectId)
+                );
+    }
+
+    private RagLogRequestDto makeLogAnalysisTemplate(Long projectId, List<Map<String, String>> projectErrorLogs) {
+        String prompt = LogAnalysisPromptBuilder.buildPrompt(projectErrorLogs);
+
+        LogAnalysisEndpoint endpoint = endpointService.getEndpoint(projectId);
+
+        return new RagLogRequestDto(
+                "project-" + projectId,
+                endpoint.fetchProvider().toString(),
+                endpoint.fetchModel().toString(),
+                prompt
+        );
+    }
+
+    private List<Map<String, String>> fetchProjectErrorLogs(Long projectId) {
         List<String> services = logMonitoringClient.getServices(projectId);
 
         if(services.isEmpty()) {
-            return;
+            return null;
         }
 
         List<Map<String, String>> projectErrorLogs = new ArrayList<>();
         for(String service : services) {
-            List<String> errorLogList = logMonitoringClient.getRecentErrorLogs(projectId, service, 3);
-            if(!errorLogList.isEmpty()) {
-                Map<String, String> serviceLogs = new HashMap<>();
-                String errorLogs = String.join("\n", errorLogList);
-                serviceLogs.put("serviceName", service);
-                serviceLogs.put("logs", errorLogs);
-
-                projectErrorLogs.add(serviceLogs);
-            }
+            fetchServiceErrorLogs(projectId, service, projectErrorLogs);
         }
-        if(!projectErrorLogs.isEmpty()) {
-            String prompt = buildPrompt(projectErrorLogs);
+        return projectErrorLogs;
+    }
 
-            LogAnalysisEndpoint endpoint = endpointService.getEndpoint(projectId);
+    private void fetchServiceErrorLogs(Long projectId, String service, List<Map<String, String>> projectErrorLogs) {
+        List<String> errorLogList = logMonitoringClient.getRecentErrorLogs(projectId, service, 3);
+        if(!errorLogList.isEmpty()) {
+            Map<String, String> serviceLogs = new HashMap<>();
+            String errorLogs = String.join("\n", errorLogList);
+            serviceLogs.put("serviceName", service);
+            serviceLogs.put("logs", errorLogs);
 
-            MonitoringLogAnalysisRequestDto requestDto = new MonitoringLogAnalysisRequestDto(
-                    "project-" + projectId,
-                    endpoint.fetchProvider().toString(),
-                    endpoint.fetchModel().toString(),
-                    prompt
-            );
-
-            logAnalysisClient.analyzeLogs(projectId, requestDto)
-                    .flatMap(response -> {
-                        if (response == null) {
-                            log.warn("Received null response, skipping save for project ID: {}", projectId);
-                        }
-                        return saveHistoryAsync(projectId, response);
-                    })
-                    .subscribe(
-                            null,
-                            error -> log.error("[LogAnalysis] Failed to analyze error logs for project ID: {}", projectId, error),
-                            () -> log.info("[LogAnalysis] Successfully analyzed error logs for project ID: {}", projectId)
-                    );
+            projectErrorLogs.add(serviceLogs);
         }
     }
 
@@ -79,19 +94,5 @@ public class LogAnalysisManager {
         return Mono.fromRunnable(() -> monitoringHistoryService.saveHistory(projectId, responseDto))
                 .subscribeOn(Schedulers.boundedElastic())
                 .then();
-    }
-
-    private String buildPrompt(List<Map<String, String>> errorLogs) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("다음은 컨테이너 기반 마이크로서비스로 구성된 각 서비스의 에러 로그들입니다.");
-        for(Map<String, String> serviceErrorLogs : errorLogs) {
-            String serviceName = serviceErrorLogs.get("serviceName");
-            String logs = serviceErrorLogs.get("logs");
-            sb.append("### 서비스 '").append(serviceName).append("'의 최근 3분간 에러 로그 ###\n");
-            sb.append("```\n").append(logs).append("\n```\n\n");
-        }
-        sb.append("\n이 로그들의 핵심 원인은 무엇이며, 어떤 해결 방안을 제안할 수 있나요?");
-
-        return sb.toString();
     }
 }

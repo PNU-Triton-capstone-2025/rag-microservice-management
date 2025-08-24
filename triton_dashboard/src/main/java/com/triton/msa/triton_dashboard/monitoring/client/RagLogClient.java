@@ -1,7 +1,7 @@
 package com.triton.msa.triton_dashboard.monitoring.client;
 
 import com.triton.msa.triton_dashboard.monitoring.dto.MonitoringAnalysisResponseDto;
-import com.triton.msa.triton_dashboard.monitoring.dto.MonitoringLogAnalysisRequestDto;
+import com.triton.msa.triton_dashboard.monitoring.dto.RagLogRequestDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,7 +19,7 @@ public class RagLogClient {
     @Value("${rag.server.url.monitoring}")
     private String ragServerUrl;
 
-    public Mono<MonitoringAnalysisResponseDto> analyzeLogs(Long projectId, MonitoringLogAnalysisRequestDto requestDto) {
+    public Mono<MonitoringAnalysisResponseDto> analyzeLogs(Long projectId, RagLogRequestDto requestDto) {
         return webClient.post()
                 .uri(ragServerUrl)
                 .bodyValue(requestDto)

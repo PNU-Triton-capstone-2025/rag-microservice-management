@@ -8,7 +8,6 @@ import co.elastic.clients.json.JsonData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -20,7 +19,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class LogMonitoringClient {
+public class ElasticSearchLogClient {
     private final ElasticsearchClient esClient;
 
     public List<String> getServices(Long projectId) {

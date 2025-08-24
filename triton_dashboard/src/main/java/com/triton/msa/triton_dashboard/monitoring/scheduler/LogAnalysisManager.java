@@ -1,18 +1,16 @@
 package com.triton.msa.triton_dashboard.monitoring.scheduler;
 
-import com.triton.msa.triton_dashboard.monitoring.client.LogAnalysisClient;
+import com.triton.msa.triton_dashboard.monitoring.client.RagLogClient;
 import com.triton.msa.triton_dashboard.monitoring.dto.MonitoringAnalysisResponseDto;
 import com.triton.msa.triton_dashboard.monitoring.dto.MonitoringLogAnalysisRequestDto;
 import com.triton.msa.triton_dashboard.monitoring.entity.LogAnalysisEndpoint;
-import com.triton.msa.triton_dashboard.monitoring.client.LogMonitoringClient;
+import com.triton.msa.triton_dashboard.monitoring.client.ElasticSearchLogClient;
 import com.triton.msa.triton_dashboard.monitoring.service.LogAnalysisEndpointService;
 import com.triton.msa.triton_dashboard.monitoring.service.MonitoringHistoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -26,9 +24,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class LogAnalysisManager {
     private final MonitoringHistoryService monitoringHistoryService;
-    private final LogMonitoringClient logMonitoringClient;
+    private final ElasticSearchLogClient logMonitoringClient;
     private final LogAnalysisEndpointService endpointService;
-    private final LogAnalysisClient logAnalysisClient;
+    private final RagLogClient logAnalysisClient;
 
     @Async("logAnalysisTaskExecutor")
     public void analyzeProjectErrorLogs(Long projectId) {
@@ -63,18 +61,21 @@ public class LogAnalysisManager {
             );
 
             logAnalysisClient.analyzeLogs(projectId, requestDto)
-                    .flatMap(response -> saveHistoryAsync(projectId, response))
+                    .flatMap(response -> {
+                        if (response == null) {
+                            log.warn("Received null response, skipping save for project ID: {}", projectId);
+                        }
+                        return saveHistoryAsync(projectId, response);
+                    })
                     .subscribe(
-                            v -> log.info("Successfully analyzed error logs for project ID: {}", projectId),
-                            error -> log.info("Failed to analyze error logs for project ID: {}", projectId)
+                            null,
+                            error -> log.error("[LogAnalysis] Failed to analyze error logs for project ID: {}", projectId, error),
+                            () -> log.info("[LogAnalysis] Successfully analyzed error logs for project ID: {}", projectId)
                     );
         }
     }
 
     private Mono<Void> saveHistoryAsync(Long projectId, MonitoringAnalysisResponseDto responseDto) {
-        if (responseDto == null) {
-            log.warn("Received null response, skipping save for project ID: {}", projectId);
-        }
         return Mono.fromRunnable(() -> monitoringHistoryService.saveHistory(projectId, responseDto))
                 .subscribeOn(Schedulers.boundedElastic())
                 .then();

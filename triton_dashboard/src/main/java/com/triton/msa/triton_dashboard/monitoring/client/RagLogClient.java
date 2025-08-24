@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class LogAnalysisClient {
+public class RagLogClient {
     private final WebClient webClient;
 
     @Value("${rag.server.url.monitoring}")

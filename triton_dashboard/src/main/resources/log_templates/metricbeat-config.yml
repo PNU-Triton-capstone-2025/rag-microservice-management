@@ -11,7 +11,7 @@ data:
       path: ${path.config}/modules.d/*.yml
       reload.enabled: false
     processors:
-      - add_kubernetes_metadata:
+      - add_kubernetes_metadata: {}
     output.elasticsearch:
       hosts: ['http://host.docker.internal:9200']
       index: "project-${PROJECT_ID}-metrics-%{+YYYY.MM.dd}"

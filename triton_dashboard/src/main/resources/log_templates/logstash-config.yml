@@ -68,7 +68,7 @@ data:
     output {
       elasticsearch {
         hosts => ["http://host.docker.internal:9200"]
-        index => "project-1-logs-%{+YYYY.MM.dd}"
+        index => "project-${PROJECT_ID}-logs-%{+YYYY.MM.dd}"
       }
     }
 ---
@@ -76,7 +76,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: logstash-yml-config
-  namespace: logging
+  namespace: ${NAMESPACE}
 data:
   logstash.yml: |
     http.host: "0.0.0.0"

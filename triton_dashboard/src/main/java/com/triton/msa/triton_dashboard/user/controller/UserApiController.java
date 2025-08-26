@@ -5,6 +5,7 @@ import com.triton.msa.triton_dashboard.user.dto.ChangeApiKeyRequest;
 import com.triton.msa.triton_dashboard.user.dto.ChangePasswordRequestDto;
 import com.triton.msa.triton_dashboard.user.dto.JwtAuthenticationResponseDto;
 import com.triton.msa.triton_dashboard.user.dto.TokenRefreshRequest;
+import com.triton.msa.triton_dashboard.user.dto.UserApiKeyRequestDto;
 import com.triton.msa.triton_dashboard.user.dto.UserDeleteRequestDto;
 import com.triton.msa.triton_dashboard.user.dto.UserLoginRequest;
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
@@ -118,9 +119,9 @@ public class UserApiController {
     }
 
     @GetMapping("/me/api-key")
-    public ResponseEntity<Map<LlmProvider, String>> getApiKey(@AuthenticationPrincipal UserDetails userDetails, LlmProvider provider) {
-        String userApiKey = userService.getCurrentUserApiKey(userDetails.getUsername(), provider);
-        return ResponseEntity.ok(Map.of(provider, userApiKey));
+    public ResponseEntity<Map<LlmProvider, String>> getApiKey(@AuthenticationPrincipal UserDetails userDetails, UserApiKeyRequestDto apiKeyRequestDto) {
+        String userApiKey = userService.getCurrentUserApiKey(userDetails.getUsername(), apiKeyRequestDto);
+        return ResponseEntity.ok(Map.of(apiKeyRequestDto.provider(), userApiKey));
     }
 
     @PatchMapping("/me/api-key")

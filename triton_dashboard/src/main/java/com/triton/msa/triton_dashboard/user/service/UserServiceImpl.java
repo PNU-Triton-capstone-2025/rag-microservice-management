@@ -1,5 +1,6 @@
 package com.triton.msa.triton_dashboard.user.service;
 
+import com.triton.msa.triton_dashboard.user.dto.UserApiKeyRequestDto;
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
 import com.triton.msa.triton_dashboard.user.entity.ApiKeyInfo;
 import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
@@ -121,13 +122,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public String getCurrentUserApiKey(String username, LlmProvider provider) {
+    public String getCurrentUserApiKey(String username, UserApiKeyRequestDto apiKeyRequestDto) {
         User me = getUser(username);
 
         return me.getApiKeys().stream()
-                .filter(apiKeyInfo -> apiKeyInfo.getProvider() == provider)
+                .filter(apiKeyInfo -> apiKeyInfo.getProvider() == apiKeyRequestDto.provider())
                 .map(ApiKeyInfo::getApiKey)
                 .findFirst()
-                .orElseThrow(() -> new InvalidApiKeyException(provider.toValue() + " 에 해당하는 API KEY가 없습니다."));
+                .orElseThrow(() -> new InvalidApiKeyException(apiKeyRequestDto.provider().toValue() + " 에 해당하는 API KEY가 없습니다."));
     }
 }

@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metricbeat-config
+  namespace: ${NAMESPACE}
+  labels:
+    k8s-app: metricbeat
+data:
+  metricbeat.yml: |
+    metricbeat.config.modules:
+      path: ${path.config}/modules.d/*.yml
+      reload.enabled: false
+    processors:
+      - add_kubernetes_metadata:
+    output.elasticsearch:
+      hosts: ['http://host.docker.internal:9200']
+      index: "project-${PROJECT_ID}-metrics-%{+YYYY.MM.dd}"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metricbeat-modules
+  namespace: ${NAMESPACE}
+  labels:
+    k8s-app: metricbeat
+data:
+  system.yml: |
+    - module: system
+      period: 10s
+      metricsets:
+        - cpu
+        - load
+        - memory
+        - network
+        - process
+        - process_summary
+        - uptime
+        - socket_summary
+      process.include_top_n:
+        by_cpu: 5
+        by_memory: 5
+  kubernetes.yml: |
+    - module: kubernetes
+      period: 10s
+      metricsets:
+        - node
+        - system
+        - pod
+        - container
+        - volume
+      host: ${NODE_NAME}

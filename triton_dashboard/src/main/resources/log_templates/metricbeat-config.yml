@@ -15,6 +15,10 @@ data:
     output.elasticsearch:
       hosts: ['http://host.docker.internal:9200']
       index: "project-${PROJECT_ID}-metrics-%{+YYYY.MM.dd}"
+      
+    setup.template:
+      name: "project-${PROJECT_ID}-metrics-*"
+      pattern: "project-${PROJECT_ID}-metrics-*"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -48,4 +52,6 @@ data:
         - pod
         - container
         - volume
-      host: ${NODE_NAME}
+      hosts: ["https://${NODE_NAME}:10250"]
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      ssl.verification_mode: "none"

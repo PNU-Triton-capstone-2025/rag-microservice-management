@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from datetime import datetime, timezone
 
 from embedding import embed_and_store
+from embedding import delete_by_file_name
 from chain_query import query_rag, query_rag_stream
 from settings import settings
 
@@ -77,6 +78,23 @@ def embedding():
         return jsonify({
             "message": f"{chunk_count} chunks stored successfully in '{es_index}'"
         }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ES에서 문서 삭제 API
+@app.route("/api/embedding/delete", methods=["POST"])
+def delete_embedding():
+    data = request.get_json(force=True) or {}
+    es_index = data.get("es_index")
+    file_name = data.get("file_name")
+
+    if not es_index or not file_name:
+        return jsonify({"error": "es_index and file_name are required"}), 400
+
+    try:
+        deleted = delete_by_file_name(es_index, file_name)
+        return jsonify({"deleted": deleted}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

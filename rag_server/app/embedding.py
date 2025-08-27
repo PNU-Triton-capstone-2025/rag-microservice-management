@@ -28,3 +28,13 @@ def embed_and_store(text, es_index, metadata):
     es_client.indices.refresh(index=es_index)
     
     return len(documents)
+
+def delete_by_file_name(es_index, file_name: str) -> int:
+    body = {"query": {"term": {"metadata.file_name.keyword": file_name}}}
+    res = es_client.delete_by_query(
+        index=es_index,
+        body=body,
+        conflicts="proceed",
+        refresh=True
+    )
+    return res.get("deleted", 0)

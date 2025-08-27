@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metricbeat
+  namespace: ${NAMESPACE}
+  labels:
+    k8s-app: metricbeat
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metricbeat
+  labels:
+    k8s-app: metricbeat
+rules:
+  - apiGroups: [""]
+    resources:
+    - nodes
+    - namespaces
+    - events
+    - pods
+    - services
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["extensions", "apps"]
+    resources:
+    - replicasets
+    - deployments
+    - daemonsets
+    - statefulsets
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources:
+      - leases
+    verbs: ["get", "create", "update"]
+  - apiGroups: [""]
+    resources:
+    - nodes/stats
+    - nodes/metrics
+    verbs: ["get"]
+  - nonResourceURLs:
+    - "/metrics"
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: metricbeat
+subjects:
+- kind: ServiceAccount
+  name: metricbeat
+  namespace: ${NAMESPACE}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: metricbeat

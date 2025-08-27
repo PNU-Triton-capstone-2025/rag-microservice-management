@@ -42,6 +42,9 @@ public class LogDeployerService {
         templates.put("04-filebeat-daemonset.yml", "log_templates/filebeat-daemonset.yml");
         templates.put("05-logstash-config.yml", "log_templates/logstash-config.yml");
         templates.put("06-logstash-deployment.yml", "log_templates/logstash-deployment.yml");
+        templates.put("07-metricbeat-rbac.yml", "log_templates/metricbeat-rbac.yml");
+        templates.put("08-metricbeat-config.yml", "log_templates/metricbeat-config.yml");
+        templates.put("09-metricbeat-daemonset.yml", "log_templates/metricbeat-daemonset.yml");
         return templates;
     }
 

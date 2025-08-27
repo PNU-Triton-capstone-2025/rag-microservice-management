@@ -38,10 +38,17 @@ def get_rag_response():
         response_data = query_rag(query, es_index, query_type, provider, model)
         return jsonify(response_data), 200
     except Exception as e:
+        # 오류 발생 시, 터미널에 상세 로그를 출력합니다.
+        print("="*80)
+        print(f"!!! [/api/get-rag-response-stream] 실행 중 심각한 오류 발생: {e}")
+        import traceback
+        traceback.print_exc()
+        print("="*80)
+        # 클라이언트에게도 에러 메시지를 포함한 500 응답을 보냅니다.
         return jsonify({"error": str(e)}), 500
 
 @app.route("/api/get-rag-response-stream", methods=["POST"])
-def get_rag_response_stream():
+def get_rag_response_stream():    
     data = request.json or {}
     query = data.get("query")
     es_index = data.get("es_index", "default")

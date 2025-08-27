@@ -22,8 +22,8 @@
     <div class="container-fluid p-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
-                <h1 class="mt-2">서비스 배포 관리</h1>
-                <p class="text-muted">배포 명세 생성을 요청하세요.</p>
+                <h1 class="mt-2" th:text="${project.name} + ' - RAG Chat'">RAG Chat</h1>
+                <p class="text-muted">아래 옵션을 선택하고 질문하세요.</p>
             </div>
             <a th:href="@{/projects/{id}/deploy/download-config(id=${project.id})}" class="btn btn-info">
                 Log Deployer 다운로드
@@ -35,9 +35,39 @@
 
         <!-- 입력창 -->
         <form id="chat-form">
+            <div class="row g-2 mb-2">
+                <div class="col-md">
+                    <div class="form-floating">
+                        <select class="form-select" id="provider" name="provider">
+                            <option value="openai" selected>OpenAI</option>
+                            <option value="anthropic">Anthropic</option>
+                            <option value="gemini">Google Gemini</option>
+                        </select>
+                        <label for="provider">Provider</label>
+                    </div>
+                </div>
+                <div class="col-md">
+                    <div class="form-floating">
+                        <select class="form-select" id="model" name="model">
+                        </select>
+                        <label for="model">Model</label>
+                    </div>
+                </div>
+                <div class="col-md">
+                    <div class="form-floating">
+                        <select class="form-select" id="queryType" name="queryType">
+                            <option value="default" selected>Default</option>
+                            <option value="resource">Resource</option>
+                            <option value="log">Log</option>
+                        </select>
+                        <label for="queryType">Query Type</label>
+                    </div>
+                </div>
+            </div>
+
             <div class="input-group">
                 <input type="text" id="query" name="query" class="form-control"
-                       placeholder="예: '프로젝트 배포 명세 파일 생성해줘'" required>
+                       placeholder="질문을 입력하세요..." required>
                 <button class="btn btn-primary" type="submit">전송</button>
             </div>
         </form>
@@ -46,22 +76,52 @@
 <th:block layout:fragment="page-scripts">
     <script th:inline="javascript">
         document.addEventListener("DOMContentLoaded", function () {
-            let projectId = /*[[${project.id}]]*/ 0;
-            if (!projectId) {
-                const match = window.location.pathname.match(/\/projects\/(\d+)\/rag/);
-                if (match) projectId = parseInt(match[1], 10);
+            const projectId = /*[[${project.id}]]*/ 0;
+            const chatWindow = document.getElementById("chat-window");
+            const chatForm = document.getElementById("chat-form");
+
+            // UI 요소 가져오기
+            const queryInput = document.getElementById("query");
+            const providerSelect = document.getElementById("provider");
+            const modelSelect = document.getElementById("model");
+            const queryTypeSelect = document.getElementById("queryType");
+
+            let eventSource = null;
+
+            // rag-server의 모델 목록을 기반으로 Provider-Model 맵 생성
+            const modelOptions = {
+                openai: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
+                anthropic: ["claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"],
+                gemini: ["gemini-1.5-pro-latest", "gemini-1.5-flash-latest"]
+            };
+
+            // Provider 변경 시 Model 옵션 업데이트하는 함수
+            function updateModelOptions() {
+                const selectedProvider = providerSelect.value;
+                modelSelect.innerHTML = ""; // 기존 옵션 삭제
+                modelOptions[selectedProvider].forEach(modelName => {
+                    const option = document.createElement("option");
+                    option.value = modelName;
+                    option.textContent = modelName;
+                    modelSelect.appendChild(option);
+                });
             }
 
-            const chatWindow = document.getElementById("chat-window");
-            let eventSource = null;
+            // Provider 선택 시 이벤트 리스너 추가
+            providerSelect.addEventListener("change", updateModelOptions);
+
+            // 페이지 로드 시 초기 모델 옵션 설정
+            updateModelOptions();
 
             // 사용자 메시지 DOM 추가
             function appendUserMessage(message) {
-                chatWindow.innerHTML += `
-                    <div class="d-flex justify-content-end mb-2">
-                        <div class="chat-bubble-user">${message}</div>
-                    </div>
-                `;
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('d-flex', 'justify-content-end', 'mb-2');
+                const bubbleDiv = document.createElement('div');
+                bubbleDiv.classList.add('chat-bubble-user');
+                bubbleDiv.textContent = message; // innerHTML 대신 textContent 사용 (보안 강화)
+                messageDiv.appendChild(bubbleDiv);
+                chatWindow.appendChild(messageDiv);
                 chatWindow.scrollTop = chatWindow.scrollHeight;
             }
 
@@ -81,49 +141,57 @@
             }
 
             // SSE 연결 및 수신 후 렌더링
-            function renderStreamingResponse(prompt, explanationElem, loadingElem) {
+            function renderStreamingResponse(params) {
                 let accumulatedText = "";
-                const url = `/projects/${projectId}/rag/stream?query=${encodeURIComponent(prompt)}`;
+                const url = `/projects/${projectId}/rag/stream?${params.toString()}`;
                 eventSource = new EventSource(url);
 
-                eventSource.onmessage = function (event) {
-                    if (loadingElem) loadingElem.remove();
-                    accumulatedText += event.data;
+                const responsePlaceholder = appendAIResponsePlaceholder();
+                const loadingIndicator = responsePlaceholder.querySelector(".typing-indicator");
 
-                    // markdown 렌더링
-                    renderMarkdownToElement(explanationElem, accumulatedText);
+                eventSource.onmessage = function (event) {
+                    if (loadingIndicator && loadingIndicator.parentNode) {
+                        loadingIndicator.parentNode.removeChild(loadingIndicator);
+                    }
+                    accumulatedText += event.data;
+                    renderMarkdownToElement(responsePlaceholder, accumulatedText);
                     chatWindow.scrollTop = chatWindow.scrollHeight;
                 };
 
                 eventSource.onerror = function () {
-                    clearTypingIndicator();
-                    if (loadingElem) loadingElem.innerText = "⚠️ 응답 불가";
+                    if (loadingIndicator) loadingIndicator.innerText = "⚠️ 응답 불가";
                     eventSource.close();
                     eventSource = null;
                 };
             }
 
             // 폼 전송 이벤트
-            document.getElementById("chat-form").addEventListener("submit", function (e) {
+            chatForm.addEventListener("submit", function (e) {
                 e.preventDefault();
-                const queryInput = document.getElementById("query");
-                const prompt = queryInput.value.trim();
-                if (!prompt) return;
+                const query = queryInput.value.trim();
+                if (!query) return;
 
-                // 기존 SSE 닫기
                 if (eventSource) {
                     eventSource.close();
-                    eventSource = null;
                 }
-                clearTypingIndicator();
 
-                appendUserMessage(prompt);
+                // 선택된 옵션 값들 가져오기
+                const provider = providerSelect.value;
+                const model = modelSelect.value;
+                const queryType = queryTypeSelect.value;
+
+                appendUserMessage(query);
                 queryInput.value = "";
 
-                const explanationElem = appendAIResponsePlaceholder();
-                const loadingElem = explanationElem.querySelector(".typing-indicator");
+                // URL 쿼리 파라미터 생성
+                const params = new URLSearchParams({
+                    query: query,
+                    provider: provider,
+                    model: model,
+                    queryType: queryType
+                });
 
-                renderStreamingResponse(prompt, explanationElem, loadingElem);
+                renderStreamingResponse(params);
             });
         });
     </script>

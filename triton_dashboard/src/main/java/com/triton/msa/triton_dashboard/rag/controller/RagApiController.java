@@ -2,6 +2,7 @@ package com.triton.msa.triton_dashboard.rag.controller;
 
 import com.triton.msa.triton_dashboard.rag.dto.ChatPageResponseDto;
 import com.triton.msa.triton_dashboard.project.dto.ProjectResponseDto;
+import com.triton.msa.triton_dashboard.rag.dto.RagRequestDto;
 import com.triton.msa.triton_dashboard.rag_history.dto.RagHistoryResponseDto;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
@@ -41,7 +42,7 @@ public class RagApiController {
     }
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> streamChatResponse(@PathVariable Long projectId, @RequestParam String query) {
-        return ragExecutor.streamChatResponse(projectId, query);
+    public Flux<String> streamChatResponse(@PathVariable Long projectId, @RequestBody RagRequestDto ragRequestDto) {
+        return ragExecutor.streamChatResponse(projectId, ragRequestDto);
     }
 }

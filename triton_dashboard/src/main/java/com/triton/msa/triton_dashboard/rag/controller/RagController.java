@@ -3,6 +3,7 @@ package com.triton.msa.triton_dashboard.rag.controller;
 import com.triton.msa.triton_dashboard.project.dto.ProjectResponseDto;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
+import com.triton.msa.triton_dashboard.rag.dto.RagRequestDto;
 import com.triton.msa.triton_dashboard.rag.util.RagExecutor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -29,7 +30,11 @@ public class RagController {
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @ResponseBody
-    public Flux<String> streamChatResponse(@PathVariable Long projectId, @RequestParam String query) {
-        return ragExecutor.streamChatResponse(projectId, query);
+    public Flux<String> streamChatResponse(@PathVariable Long projectId,
+                                           @RequestParam("query") String query,
+                                           @RequestParam("queryType") String queryType,
+                                           @RequestParam("provider") String provider,
+                                           @RequestParam("model") String model) {
+        return ragExecutor.streamChatResponse(projectId, new RagRequestDto(query, queryType, provider, model));
     }
 }

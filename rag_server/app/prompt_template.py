@@ -1,4 +1,5 @@
 from langchain.prompts import PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 
 yaml_generation_prompt = PromptTemplate(
     input_variables=["context", "question"],
@@ -64,8 +65,58 @@ msa_k8s_prompt = PromptTemplate(
     """
 )
 
+log_analyze_prompt = PromptTemplate(
+    input_variables=["context", "question"],
+    template="""
+        당신은 클라우드 네이티브 아키텍처 전문가이며, 특히 마이크로서비스 아키텍처(MSA)와 Kubernetes에 정통합니다.
+        아래 문맥은 MSA에서 발생한 에러에 관한 로그입니다. 사용자의 질문에 대해 전문적인 기술 지식을 바탕으로 **정확하고 간결하게** 에러의 해결 방안을 설명하세요. 필요 시 예시도 포함하세요.
+
+        문맥:
+        {context}
+
+        질문:
+        {question}
+
+        답변:
+    """
+)
+
+resource_setting_prompt = PromptTemplate(
+    input_variables=["context", "question"],
+    template="""
+        당신은 클라우드 네이티브 아키텍처 전문가이며, 특히 마이크로서비스 아키텍처(MSA)와 Kubernetes에 정통합니다.
+        아래 문맥은 MSA의 리소스 사용량입니다. 사용자의 질문에 대해 전문적인 기술 지식을 바탕으로 **정확하고 간결하게** 권장 리소스 사용량을 설명해세요.
+
+        문맥:
+        {context}
+
+        질문:
+        {question}
+
+        답변:
+    """
+)
+
+test = chat_prompt = ChatPromptTemplate.from_messages([
+    ("system", "너는 주어진 문맥을 바탕으로만 답하는 도우미야."),
+    ("human", """
+        아래 문맥은 질문에 관련된 문서에서 발췌한 정보입니다. 아래 질문에 대한 답변을 생성하세요.
+        
+        문맥:
+        {context}
+        
+        질문:
+        {question}
+
+        답변:
+    """),
+])
+
 prompts = {
     "yaml_generation": yaml_generation_prompt,
     "yaml_edit": yaml_edit_prompt,
-    "msa_k8s": msa_k8s_prompt  
+    "msa_k8s": msa_k8s_prompt,
+    "log_analyze": log_analyze_prompt,
+    "resource_setting": resource_setting_prompt,
+    "test": test
 }

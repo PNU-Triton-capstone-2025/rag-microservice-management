@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from datetime import datetime, timezone
 
 from embedding import embed_and_store
-from chain_query import query_rag
+from chain_query import query_rag, query_rag_stream
 from settings import settings
 
 app = Flask(__name__)
@@ -38,6 +38,23 @@ def get_rag_response():
         return jsonify(response_data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route("/api/get-rag-response-stream", methods=["POST"])
+def get_rag_response_stream():
+    data = request.json or {}
+    query = data.get("query")
+    es_index = data.get("es_index", "default")
+    query_type = data.get("query_type", "default")
+    provider = data.get("provider", "openai")
+    model = data.get("model", "gpt-4o-mini")
+
+    if not query:
+        return jsonify({"error": "query is empty."}), 400
+    
+    try:
+        return query_rag_stream(query, es_index, query_type, provider, model)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     
 # 문서 embedding 후 ElasticSearch에 저장하는 API
 @app.route("/api/embedding", methods=["POST"])
@@ -63,7 +80,44 @@ def embedding():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/api/log-analyze", methods=["POST"])
+def log_analyze():
+    data = request.json
+    query = "오류 로그에 대한 해결 방안을 설명해주세요"
+    query_type = data.get("query_type", "default")
+    err_log = data.get("err_log")
+    es_index = data.get("es_index")
+    provider = data.get("provider")
+    model = data.get("model")
+
+    if not err_log:
+        return jsonify({"error": "error log is empty."}), 400
+
+    try:
+        response_data = query_rag(query, es_index, query_type, provider, model)
+        return jsonify(response_data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/resource-setting", methods=["POST"])
+def resource_setting():
+    data = request.json
+    query = "현재 리소스 사용량을 바탕으로 리소스 권장 사용량을 도출해주세요"
+    query_type = data.get("query_type", "default")
+    resource_usage = data.get("resource_usage")
+    es_index = data.get("es_index")
+    provider = data.get("provider")
+    model = data.get("model")
+
+    if not resource_usage:
+        return jsonify({"error": " is empty."}), 400
+
+    try:
+        response_data = query_rag(query, es_index, query_type, provider, model)
+        return jsonify(response_data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
-    #init_indices()
     app.run(host="0.0.0.0", port=8000, debug=True)
-    

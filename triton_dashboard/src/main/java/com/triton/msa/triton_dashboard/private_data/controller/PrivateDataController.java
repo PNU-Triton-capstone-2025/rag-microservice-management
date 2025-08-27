@@ -45,7 +45,7 @@ public class PrivateDataController {
     ) {
         PrivateDataUploadResultDto result;
         result = privateDataService.unzipAndSaveFiles(projectId, file);
-        redirectAttributes.addFlashAttribute("uploadResult", result);
+        redirectAttributes.addFlashAttribute("uploadMessage", result.message());
         return "redirect:/projects/" + projectId + "/private-data";
     }
 

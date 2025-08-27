@@ -1,10 +1,10 @@
 package com.triton.msa.triton_dashboard.rag.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
 public record RagResponseDto(
-        @JsonProperty("user_query")
-        String userQuery,
-        String response
-) {
-}
+        String questing,
+        String answer,
+        List<String> sources,
+        String log
+) {}

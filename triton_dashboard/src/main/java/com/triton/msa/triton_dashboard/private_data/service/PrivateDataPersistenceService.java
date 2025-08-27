@@ -9,6 +9,7 @@ import com.triton.msa.triton_dashboard.private_data.util.FileTypeUtil;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -26,7 +27,7 @@ public class PrivateDataPersistenceService {
 
     private final PrivateDataRepository privateDataRepository;
     private final ProjectService projectService;
-    private final WebClient webClient;
+    @Qualifier("ragWebClient") private final WebClient ragWebClient;
 
     @Transactional
     public boolean saveFile(Long projectId, ExtractedFile file, List<UploadedFileResultDto> skipped) {
@@ -43,21 +44,21 @@ public class PrivateDataPersistenceService {
     }
 
     private boolean saveToElasticsearch(Long projectId, ExtractedFile file, String contentType, List<UploadedFileResultDto> skipped) {
-        String url = "http://localhost:30920/project-" + projectId + "/_doc";
+        String indexName = "project-" + projectId;
+
         Map<String, Object> document = Map.of(
-                "filename", file.filename(),
-                "contentType", contentType,
-                "content", file.content(),
-                "timestamp", file.timestamp().toString()
+                "text", file.content(),
+                "file_name", file.filename(),
+                "content_type", contentType,
+                "es_index", indexName
         );
 
         try {
-            webClient.post()
-                    .uri(url)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            ragWebClient.post()
+                    .uri("/api/embedding")
                     .bodyValue(document)
                     .retrieve()
-                    .bodyToMono(Void.class)
+                    .toBodilessEntity()
                     .block();
 
             return true;
@@ -93,21 +94,16 @@ public class PrivateDataPersistenceService {
     }
 
     private void deleteFromElasticsearch(Long projectId, String filename) {
-        String url = "http://localhost:30920/project-" + projectId + "/_delete_by_query";
-        String deleteQuery = """
-            {
-                "query": {
-                    "term": {
-                        "filename.keyword": "%s"
-                    }
-                }
-            }
-        """.formatted(filename);
+        String indexName = "project-" + projectId;
 
-        webClient.post()
-            .uri(url)
-            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .bodyValue(deleteQuery)
+        Map<String, Object> payload = Map.of(
+                "es_index", indexName,
+                "file_name", filename
+        );
+
+        ragWebClient.post()
+            .uri("/api/embedding/delete")
+            .bodyValue(payload)
             .retrieve()
             .onStatus(HttpStatusCode::isError, resp -> resp.bodyToMono(String.class)
                     .defaultIfEmpty("")

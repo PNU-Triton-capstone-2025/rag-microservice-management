@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from datetime import datetime, timezone
 
 from embedding import embed_and_store
+from embedding import delete_by_file_name
 from chain_query import query_rag, query_rag_stream
 from settings import settings
 
@@ -37,10 +38,17 @@ def get_rag_response():
         response_data = query_rag(query, es_index, query_type, provider, model)
         return jsonify(response_data), 200
     except Exception as e:
+        # 오류 발생 시, 터미널에 상세 로그를 출력합니다.
+        print("="*80)
+        print(f"!!! [/api/get-rag-response-stream] 실행 중 심각한 오류 발생: {e}")
+        import traceback
+        traceback.print_exc()
+        print("="*80)
+        # 클라이언트에게도 에러 메시지를 포함한 500 응답을 보냅니다.
         return jsonify({"error": str(e)}), 500
 
 @app.route("/api/get-rag-response-stream", methods=["POST"])
-def get_rag_response_stream():
+def get_rag_response_stream():    
     data = request.json or {}
     query = data.get("query")
     es_index = data.get("es_index", "default")
@@ -77,6 +85,23 @@ def embedding():
         return jsonify({
             "message": f"{chunk_count} chunks stored successfully in '{es_index}'"
         }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ES에서 문서 삭제 API
+@app.route("/api/embedding/delete", methods=["POST"])
+def delete_embedding():
+    data = request.get_json(force=True) or {}
+    es_index = data.get("es_index")
+    file_name = data.get("file_name")
+
+    if not es_index or not file_name:
+        return jsonify({"error": "es_index and file_name are required"}), 400
+
+    try:
+        deleted = delete_by_file_name(es_index, file_name)
+        return jsonify({"deleted": deleted}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

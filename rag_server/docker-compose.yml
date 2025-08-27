@@ -6,7 +6,7 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      # - ES_JAVA_OPTS=-Xms512m -Xmx512m   # 메모리 타이트하면 주석 해제
+      - ES_JAVA_OPTS=-Xms1024m -Xmx1024m   # 메모리 타이트하면 주석 해제
     ports:
       - "9200:9200"
     volumes:
@@ -27,6 +27,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: rag-flask
+    mem_limit: 4g
     environment:
       - ELASTICSEARCH_URL=http://elasticsearch:9200   # ← RAG에서 사용할 ES 주소(스킴 포함)
     env_file:

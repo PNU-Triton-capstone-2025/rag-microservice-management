@@ -43,9 +43,9 @@ public class LlmApiKeyValidator {
         }
         try {
             switch (provider) {
-                case OPENAI -> pingOpenAI(apiKey);
-                case CLAUDE -> pingAnthropic(apiKey);
-                case GEMINI -> pingGoogle(apiKey);
+                case OPENAI -> pingOpenAI(apiKey).block();
+                case CLAUDE -> pingAnthropic(apiKey).block();
+                case GEMINI -> pingGoogle(apiKey).block();
             }
             results.put(provider.name(), "valid");
         } catch (Exception e) {

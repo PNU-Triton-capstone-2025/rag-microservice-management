@@ -71,6 +71,8 @@ public class UserController {
             return "register";
         }
 
+        apiKeyValidator.validateAll(registrationDto);
+
         userService.registerNewUser(registrationDto);
         return "redirect:/";
     }

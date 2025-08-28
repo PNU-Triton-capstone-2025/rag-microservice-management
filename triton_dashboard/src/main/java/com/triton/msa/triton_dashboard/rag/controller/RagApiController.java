@@ -16,6 +16,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
+import java.security.Principal;
 import java.util.List;
 
 @Controller
@@ -42,7 +43,11 @@ public class RagApiController {
     }
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> streamChatResponse(@PathVariable Long projectId, @RequestBody RagRequestDto ragRequestDto) {
+    public Flux<String> streamChatResponse(
+            @PathVariable Long projectId,
+            @RequestBody RagRequestDto ragRequestDto
+    ) {
+
         return ragExecutor.streamChatResponse(projectId, ragRequestDto);
     }
 }

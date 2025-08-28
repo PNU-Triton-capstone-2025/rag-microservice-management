@@ -26,8 +26,8 @@ def _jline(obj: dict) -> bytes:
     # 혹시 남아 있는 비직렬 타입이 있어도 막아주기
     return (json.dumps(_json_safe(obj), ensure_ascii=False) + "\n").encode("utf-8")
 
-def query_rag(query: str, index_name: str, query_type: str, provider: str, llm: str) -> dict:
-    rag_chain = create_rag_chain(index_name, query_type, provider, llm)
+def query_rag(query: str, index_name: str, query_type: str, provider: str, llm: str, api_key: str) -> dict:
+    rag_chain = create_rag_chain(index_name, query_type, provider, llm, api_key)
     
     result = rag_chain.invoke(
         {"query": query},
@@ -42,8 +42,8 @@ def query_rag(query: str, index_name: str, query_type: str, provider: str, llm: 
         "log": f"response was created by {llm} of {provider} using {query_type} template"
     }
 
-def query_rag_stream(query: str, index_name: str, query_type: str, provider: str, llm: str) -> Response:
-    rag_chain = create_rag_chain_stream(index_name, query_type, provider, llm)
+def query_rag_stream(query: str, index_name: str, query_type: str, provider: str, llm: str, api_key: str) -> Response:
+    rag_chain = create_rag_chain_stream(index_name, query_type, provider, llm, api_key)
     started_at = time.time()
     
     embedding_model = chain_components.get_embedding_model()
@@ -90,7 +90,7 @@ def query_rag_stream(query: str, index_name: str, query_type: str, provider: str
     return Response(stream_with_context(generate()), headers=headers, status=200)
 
 #해당 index를 참조하는 chain 생성
-def create_rag_chain(index_name: str, query_type: str, provider: str, llm: str):
+def create_rag_chain(index_name: str, query_type: str, provider: str, llm: str, api_key: str):
     
     # 1. 임베딩(OpenAI 고정)
     embedding_model = chain_components.get_embedding_model()
@@ -100,7 +100,7 @@ def create_rag_chain(index_name: str, query_type: str, provider: str, llm: str):
     retriever = vectorstore.as_retriever()
     
     # 3. LLM 선택
-    chat_llm = chain_components.get_chat_llm(provider, llm)
+    chat_llm = chain_components.get_chat_llm(provider, llm, api_key)
     
     # 4. 프롬프트
     prompt_tmpl = chain_components.get_prompt_tmpl(query_type)
@@ -116,7 +116,7 @@ def create_rag_chain(index_name: str, query_type: str, provider: str, llm: str):
     return rag_chain
 
 # 스트리밍용
-def create_rag_chain_stream(index_name: str, query_type: str, provider: str, llm: str):
+def create_rag_chain_stream(index_name: str, query_type: str, provider: str, llm: str, api_key: str):
     
     # 1. 임베딩(OpenAI 고정)
     embedding_model = chain_components.get_embedding_model()
@@ -126,7 +126,7 @@ def create_rag_chain_stream(index_name: str, query_type: str, provider: str, llm
     retriever = vectorstore.as_retriever()
     
     # 3. LLM 선택
-    chat_llm = chain_components.get_chat_llm(provider, llm)
+    chat_llm = chain_components.get_chat_llm(provider, llm, api_key)
     
     # 4. 프롬프트
     prompt_tmpl = chain_components.get_prompt_tmpl(query_type)

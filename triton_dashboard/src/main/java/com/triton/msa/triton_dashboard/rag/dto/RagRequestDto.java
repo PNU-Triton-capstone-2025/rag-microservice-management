@@ -7,5 +7,7 @@ public record RagRequestDto(
         @JsonProperty("query_type")
         String queryType,
         String provider,
-        String model
+        String model,
+        @JsonProperty("api_key")
+        String apiKey
 ) {}

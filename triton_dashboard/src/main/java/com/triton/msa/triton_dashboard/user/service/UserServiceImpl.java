@@ -1,5 +1,7 @@
 package com.triton.msa.triton_dashboard.user.service;
 
+import com.triton.msa.triton_dashboard.project.entity.Project;
+import com.triton.msa.triton_dashboard.project.repository.ProjectRepository;
 import com.triton.msa.triton_dashboard.user.dto.UserApiKeyRequestDto;
 import com.triton.msa.triton_dashboard.user.dto.UserRegistrationDto;
 import com.triton.msa.triton_dashboard.user.entity.ApiKeyInfo;
@@ -32,6 +34,7 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final ProjectRepository projectRepository;
     private final PasswordEncoder passwordEncoder;
     private final LlmApiKeyValidator llmApiKeyValidator;
 
@@ -130,5 +133,14 @@ public class UserServiceImpl implements UserService {
                 .map(ApiKeyInfo::getApiKey)
                 .findFirst()
                 .orElseThrow(() -> new InvalidApiKeyException(apiKeyRequestDto.provider().toValue() + " 에 해당하는 API KEY가 없습니다."));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public User getUserByProjectId(Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid project ID: " + projectId));
+
+        return project.fetchUser();
     }
 }

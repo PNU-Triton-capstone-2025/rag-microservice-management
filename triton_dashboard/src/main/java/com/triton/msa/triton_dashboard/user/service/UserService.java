@@ -15,4 +15,5 @@ public interface UserService extends UserDetailsService {
     void updatePassword(String username, String rawPassword, String newPassword);
     void updateApiKey(String username, LlmProvider provider, String newApiKey);
     String getCurrentUserApiKey(String username, UserApiKeyRequestDto apiKeyRequestDto);
+    User getUserByProjectId(Long projectId);
 }

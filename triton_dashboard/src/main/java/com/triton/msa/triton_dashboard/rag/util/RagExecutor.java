@@ -4,6 +4,9 @@ import com.triton.msa.triton_dashboard.rag.dto.RagRequestDto;
 import com.triton.msa.triton_dashboard.rag_history.service.RagHistoryService;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
+import com.triton.msa.triton_dashboard.user.dto.UserApiKeyRequestDto;
+import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
+import com.triton.msa.triton_dashboard.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -19,6 +22,7 @@ import java.util.Map;
 public class RagExecutor {
 
     private final RagHistoryService ragHistoryService;
+    private final UserService userService;
     private final ProjectService projectService;
     @Qualifier("ragWebClient") private final WebClient ragWebClient;
   
@@ -26,12 +30,16 @@ public class RagExecutor {
         Project project = projectService.getProject(projectId);
         String indexName = "project-" + projectId;
 
+        String username = userService.getUserByProjectId(projectId).getUsername();
+        String userApiKey = userService.getCurrentUserApiKey(username, new UserApiKeyRequestDto(LlmProvider.valueOf(requestDto.provider())));
+
         Map<String, Object> payload = Map.of(
                 "query", requestDto.query(),
                 "es_index", indexName,
                 "query_type", requestDto.queryType(),
                 "provider", requestDto.provider(),
-                "model", requestDto.model()
+                "model", requestDto.model(),
+                "api_key", userApiKey
         );
 
         return ragWebClient.post()

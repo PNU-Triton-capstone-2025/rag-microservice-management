@@ -65,6 +65,10 @@ public class Project {
     public SshInfo fetchSshInfo() {
         return sshInfo;
     }
+
+    public User fetchUser() {
+        return user;
+    }
     public LogAnalysisModel fetchEndpoint() {
         return logAnalysisEndpoint;
     }

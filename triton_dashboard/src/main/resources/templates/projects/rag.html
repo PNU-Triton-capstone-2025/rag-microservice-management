@@ -56,9 +56,11 @@
                 <div class="col-md">
                     <div class="form-floating">
                         <select class="form-select" id="queryType" name="queryType">
-                            <option value="default" selected>Default</option>
-                            <option value="resource">Resource</option>
-                            <option value="log">Log</option>
+                            <option value="msa_k8s">MSA/k8s 질의응답</option>
+                            <option value="yaml_generation">배포명세 YAML 생성</option>
+                            <option value="yaml_edit">배포명세 YAML 수정</option>
+                            <option value="log_analyze">로그 분석</option>
+                            <option value="resource_setting">리소스 분석</option>
                         </select>
                         <label for="queryType">Query Type</label>
                     </div>

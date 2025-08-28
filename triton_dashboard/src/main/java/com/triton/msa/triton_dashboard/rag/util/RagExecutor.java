@@ -29,7 +29,6 @@ public class RagExecutor {
     public Flux<String> streamChatResponse(Long projectId, RagRequestDto requestDto) {
         Project project = projectService.getProject(projectId);
         String indexName = "project-" + projectId;
-
         String username = userService.getUserByProjectId(projectId).getUsername();
         String userApiKey = userService.getCurrentUserApiKey(username, new UserApiKeyRequestDto(LlmProvider.valueOf(requestDto.provider())));
 

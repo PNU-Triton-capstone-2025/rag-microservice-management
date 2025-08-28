@@ -30,7 +30,7 @@ public class RagExecutor {
         Project project = projectService.getProject(projectId);
         String indexName = "project-" + projectId;
         String username = userService.getUserByProjectId(projectId).getUsername();
-        String userApiKey = userService.getCurrentUserApiKey(username, new UserApiKeyRequestDto(LlmProvider.valueOf(requestDto.provider())));
+        String userApiKey = userService.getCurrentUserApiKey(username, new UserApiKeyRequestDto(LlmProvider.valueOf(requestDto.provider().toUpperCase())));
 
         Map<String, Object> payload = Map.of(
                 "query", requestDto.query(),

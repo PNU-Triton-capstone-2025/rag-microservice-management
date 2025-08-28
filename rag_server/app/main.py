@@ -30,12 +30,13 @@ def get_rag_response():
     query_type = data.get("query_type")
     provider = data.get("provider")
     model = data.get("model")
+    api_key = data.get("api_key")
 
     if not query:
         return jsonify({"error": "query is empty."}), 400
 
     try:
-        response_data = query_rag(query, es_index, query_type, provider, model)
+        response_data = query_rag(query, es_index, query_type, provider, model, api_key)
         return jsonify(response_data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

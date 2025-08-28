@@ -2,6 +2,7 @@ package com.triton.msa.triton_dashboard.private_data.service;
 
 import com.triton.msa.triton_dashboard.private_data.ExtractedFile;
 import com.triton.msa.triton_dashboard.private_data.dto.UploadedFileResultDto;
+import com.triton.msa.triton_dashboard.private_data.entity.PrivateData;
 import com.triton.msa.triton_dashboard.private_data.repository.PrivateDataRepository;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
@@ -56,15 +57,16 @@ class PrivateDataPersistenceServiceTest {
 
         when(privateDataRepository.existsByProjectIdAndFilename(projectId, file.filename())).thenReturn(false);
 
-        // WebClient Mocking 설정: webClient.post().uri(...).body(...).retrieve().bodyToMono() 호출 시 성공(빈 Mono)을 반환하도록 설정
+        // WebClient Mocking: ES 저장 성공 시 빈 Mono 반환
         when(webClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.header(any(), any())).thenReturn(requestBodySpec);
         when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.bodyToMono(Void.class)).thenReturn(Mono.empty());
+        when(responseSpec.toBodilessEntity()).thenReturn(Mono.empty());
 
+        // Project, DB Mocking
         when(projectService.getProject(projectId)).thenReturn(mock(Project.class));
+        when(privateDataRepository.save(any())).thenReturn(mock(PrivateData.class));
 
         // when
         boolean result = privateDataPersistenceService.saveFile(projectId, file, skipped);
@@ -85,19 +87,17 @@ class PrivateDataPersistenceServiceTest {
 
         when(privateDataRepository.existsByProjectIdAndFilename(projectId, file.filename())).thenReturn(false);
 
+        // WebClient Mocking: ES 저장과 삭제 둘 다 성공 응답 반환
         when(webClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.header(any(), any())).thenReturn(requestBodySpec);
         when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-
-        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
-        // ES 저장과 삭제 모두 bodyToMono/toBodilessEntity를 사용하므로 한번에 설정
-        when(responseSpec.bodyToMono(any(Class.class))).thenReturn(Mono.empty());
         when(responseSpec.toBodilessEntity()).thenReturn(Mono.empty());
+        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
 
         when(projectService.getProject(projectId)).thenReturn(mock(Project.class));
 
+        // DB 저장에서 예외 발생
         doThrow(new RuntimeException("DB save Error")).when(privateDataRepository).save(any());
 
         // when
@@ -106,10 +106,10 @@ class PrivateDataPersistenceServiceTest {
         // then
         assertThat(result).isFalse();
         assertThat(skipped).hasSize(1);
-        verify(privateDataRepository, times(1)).save(any());
         assertThat(skipped.get(0).reason()).isEqualTo("시스템 오류로 저장되지 않았습니다.");
+        verify(privateDataRepository, times(1)).save(any());
 
-        // ES 저장 -> DB 저장 실패 -> ES 삭제. ES 요청이 총 2번 이뤄졌는지
+        // ES 저장 -> DB 실패 -> ES 삭제, 총 2번 호출 확인
         verify(webClient, times(2)).post();
     }
 }

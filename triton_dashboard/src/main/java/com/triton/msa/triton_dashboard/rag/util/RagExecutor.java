@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import lombok.extern.slf4j.Slf4j;
-
 import java.time.Duration;
 import java.util.Map;
 
@@ -22,7 +21,7 @@ public class RagExecutor {
     private final RagHistoryService ragHistoryService;
     private final ProjectService projectService;
     @Qualifier("ragWebClient") private final WebClient ragWebClient;
-
+  
     public Flux<String> streamChatResponse(Long projectId, RagRequestDto requestDto) {
         Project project = projectService.getProject(projectId);
         String indexName = "project-" + projectId;

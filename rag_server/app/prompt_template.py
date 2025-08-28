@@ -18,7 +18,7 @@ yaml_generation_prompt = PromptTemplate(
         - 기본적인 리소스 설정을 포함하세요:
         - `replicas`, `containerPort`, `resources.limits/requests` 등
         - 필요한 경우 다음과 같은 리소스도 함께 생성하세요:
-        - `Service`, `Deployment`, `ConfigMap`, `Ingress`, `PersistentVolumeClaim`
+        - `Service`, `Deployment`, `ConfigMap`, `PersistentVolumeClaim`
         - 생성된 YAML은 실제 배포 가능한 형식이어야 합니다.
         - 하나의 YAML 안에 여러 리소스가 필요한 경우 `---` 로 구분해서 함께 정의하세요.
     """

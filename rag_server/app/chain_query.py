@@ -97,7 +97,7 @@ def create_rag_chain(index_name: str, query_type: str, provider: str, llm: str, 
     
     # 2. 벡터스토어
     vectorstore = chain_components.get_vectorstore(index_name, embedding_model)
-    retriever = vectorstore.as_retriever()
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 20})
     
     # 3. LLM 선택
     chat_llm = chain_components.get_chat_llm(provider, llm, api_key)

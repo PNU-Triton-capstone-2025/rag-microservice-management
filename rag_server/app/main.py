@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from embedding import embed_and_store
 from embedding import delete_by_file_name
-from chain_query import query_rag, query_rag_stream
+from chain_query import query_rag
 from settings import settings
 
 app = Flask(__name__)
@@ -39,24 +39,7 @@ def get_rag_response():
         response_data = query_rag(query, es_index, query_type, provider, model, api_key)
         return jsonify(response_data), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/api/get-rag-response-stream", methods=["POST"])
-def get_rag_response_stream():    
-    data = request.json or {}
-    query = data.get("query")
-    es_index = data.get("es_index", "default")
-    query_type = data.get("query_type", "default")
-    provider = data.get("provider", "openai")
-    model = data.get("model", "gpt-4o-mini")
-
-    if not query:
-        return jsonify({"error": "query is empty."}), 400
-    
-    try:
-        # query_rag_stream 함수가 스트리밍 응답을 생성합니다.
-        return query_rag_stream(query, es_index, query_type, provider, model)
-    except Exception as e:
+        print(f"An error occurred: {e}")
         return jsonify({"error": str(e)}), 500
     
 # 문서 embedding 후 ElasticSearch에 저장하는 API

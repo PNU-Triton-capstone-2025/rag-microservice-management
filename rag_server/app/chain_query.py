@@ -60,11 +60,9 @@ def answer_query(query: str, index_name: str, query_type: str, provider: str, ll
 # 해당 index를 참조하는 chain 생성(attribution 추가)
 def create_rag_chain_with_attribution(index_name: str, query_type: str, provider: str, llm: str, api_key: str):
     
-    embedding_model = chain_components.get_embedding_model()
-    vectorstore = chain_components.get_vectorstore(index_name, embedding_model)
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 20})
-    chat_llm = chain_components.get_chat_llm(provider, llm, api_key)
-    prompt_tmpl = chain_components.get_prompt_tmpl(query_type)
+    retriever, chat_llm, prompt_tmpl = setup_rag_components(
+        index_name, query_type, provider, llm, api_key, 20
+    )
     
     # 2. 메인 생성 체인 정의
     # 이 체인은 'source_documents'와 'question'을 입력받아 JSON을 출력합니다.
@@ -98,18 +96,9 @@ def create_rag_chain_with_attribution(index_name: str, query_type: str, provider
 # 해당 index를 참조하는 chain 생성
 def create_rag_chain(index_name: str, query_type: str, provider: str, llm: str, api_key: str):
     
-    # 1. 임베딩(OpenAI 고정)
-    embedding_model = chain_components.get_embedding_model()
-    
-    # 2. 벡터스토어
-    vectorstore = chain_components.get_vectorstore(index_name, embedding_model)
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 20})
-    
-    # 3. LLM 선택
-    chat_llm = chain_components.get_chat_llm(provider, llm, api_key)
-    
-    # 4. 프롬프트
-    prompt_tmpl = chain_components.get_prompt_tmpl(query_type)
+    retriever, chat_llm, prompt_tmpl = setup_rag_components(
+        index_name, query_type, provider, llm, api_key, 20
+    )
     
     # 5. 체인
     rag_chain = RetrievalQA.from_chain_type(
@@ -121,6 +110,14 @@ def create_rag_chain(index_name: str, query_type: str, provider: str, llm: str, 
     )
     return rag_chain
 
+def setup_rag_components(index_name: str, query_type: str, provider: str, llm: str, api_key: str, k: int):
+    embedding_model = chain_components.get_embedding_model()
+    vectorstore = chain_components.get_vectorstore(index_name, embedding_model)
+    retriever = vectorstore.as_retriever(search_kwargs={"k": k})
+    chat_llm = chain_components.get_chat_llm(provider, llm, api_key)
+    prompt_tmpl = chain_components.get_prompt_tmpl(query_type)
+
+    return retriever, chat_llm, prompt_tmpl
 
 # 검색된 Document 리스트를 LLM 프롬프트에 넣을 문자열로 변환
 def format_docs(docs):

@@ -7,13 +7,14 @@ yaml_generation_prompt = PromptTemplate(
         당신은 클라우드 애플리케이션 배포에 능숙한 Kubernetes 전문가입니다.
         당신의 주요 목표는 '문맥'에 설명된 모든 마이크로서비스에 대한 완전하고 배포 가능한 Kubernetes YAML 명세 세트를 생성하는 것입니다.
         '문맥'의 내용을 반드시 준수해서 사용자 요구사항에 맞는 Kubernetes YAML 명세와 그 출처를 JSON 형식으로 생성하세요.  
+        당신의 답변에 포함된 각 정보 조각에 대해, 반드시 [From source_N] 형식을 사용하여 출처를 인용해야 합니다. 최종 출력은 YAML 문자열과 인용한 출처들의 목록이 포함된 단일 JSON 객체여야 합니다.
 
         ### 절대 규칙 ###
         1. '문맥'은 유일한 신뢰 가능한 정보 출처입니다. 사전 지식과 문맥이 충돌하는 경우, 반드시 문맥의 내용을 우선해야 합니다.
         2. '문맥'에 명시된 리소스 종류, 포트, 이미지 버전, 레이블 규칙, 리소스 할당량 등 모든 세부 사항을 정확하게 반영해야 합니다.
         3. '문맥'에 설명된 민감 정보를 바탕으로 단일 `apiVersion: v1, kind: Secret` 리소스를 먼저 생성해야 합니다.
         4. 이 민감 정보가 필요한 다른 모든 리소스(예: Deployment)는 생성된 Secret을 `secretKeyRef` 또는 `envFrom`을 사용하여 참조해야 합니다. Deployment에 Secret 값을 직접 포함하지 마세요.
-        5. '문맥'에 언급된 모든 마이크로서비스(예: api-gateway, user-service, product-service 등)에 대해 Deployment와 Service를 반드시 생성해야 합니다. 하나도 빠뜨리면 안 됩니다.
+        5. '문맥'에 언급된 모든 마이크로서비스에 대해 Deployment와 Service를 반드시 생성해야 합니다. 하나도 빠뜨리면 안 됩니다.
 
         문맥:
         {context}
@@ -33,7 +34,7 @@ yaml_generation_prompt = PromptTemplate(
 
         JSON 출력 예시:
         {{
-            "yaml": "```yaml\\napiVersion: apps/v1\\nkind: Deployment\\nmetadata:\\n  name: my-app\\nspec:\\n  replicas: 3 # From source_2\\n...\\n```",
+            "yaml": "```yaml\\napiVersion: apps/v1\\nkind: Deployment\\nmetadata:\\n  name: my-app# From source_4\\nspec:\\n  replicas: 3 # From source_2\\n...\\n```",
             "attributions": {{
                 "source_1": "Deployment의 기본 구조와 metadata 부분을 생성하는 데 사용되었습니다.",
                 "source_2": "replicas 수를 3으로 설정하는 요구사항을 반영하는 데 사용되었습니다."

@@ -4,7 +4,13 @@ yaml_generation_prompt = PromptTemplate(
     input_variables=["context", "question"],
     template="""
         당신은 클라우드 애플리케이션 배포에 능숙한 Kubernetes 전문가입니다.
-        아래의 문맥과 사용자 요구사항을 기반으로 Kubernetes 클러스터에 배포 가능한 YAML 명세와 그 출처를 JSON 형식으로 생성하세요.
+        주어진 '문맥'은 조직의 내부 데이터 명세이며, 이는 절대적인 규칙입니다.
+        '문맥'의 내용을 반드시 준수해서 사용자 요구사항에 맞는 Kubernetes YAML 명세와 그 출처를 JSON 형식으로 생성하세요.  
+
+        ### 절대 규칙 ###
+        1. '문맥'은 유일한 신뢰 가능한 정보 출처입니다. 사전 지식과 문맥이 충돌하는 경우, 반드시 문맥의 내용을 우선해야 합니다.
+        2. '문맥'에 명시된 리소스 종류, 포트, 이미지 버전, 레이블 규칙, 리소스 할당량 등 모든 세부 사항을 정확하게 반영해야 합니다.
+        3. '문맥'에 명시되지 않은 리소스는 생성하면 안 됩니다.
 
         문맥:
         {context}
@@ -36,8 +42,13 @@ yaml_generation_prompt = PromptTemplate(
 yaml_edit_prompt = PromptTemplate(
     input_variables=["context", "question"],
     template="""
-        당신은 클라우드 애플리케이션 배포에 능숙한 Kubernetes 전문가입니다.
-        아래 문맥은 기존에 존재하는 Kubernetes 리소스의 YAML 정의입니다. 사용자의 요청에 따라 해당 YAML을 **정확하고 유효한 형식으로 수정**하세요.
+        당신은 클라우드 애플리케이션 배포에 매우 능숙한 Kubernetes 전문가입니다.
+        '기존 YAML'을 사용자의 '수정 요청'과 '문맥'에 명시된 조직의 정책에 따라 정확하고 유효한 형식으로 수정하세요.
+
+        ### 절대 규칙 ###
+        1. '문맥'은 조직의 정책과 데이터 명세이고, YAML 수정 시 반드시 따라야 할 절대적인 규칙입니다.
+        2. '문맥'의 정책(e.g. Service 타입, 포트, 레이블 규칙 등)에 위배되는 수정은 해서는 안 됩니다.
+        3. '문맥'에 명시적으로 허용되지 않은 리소스를 임의로 추가해서는 안 됩니다.
 
         기존 YAML:
         {context}
@@ -48,12 +59,8 @@ yaml_edit_prompt = PromptTemplate(
         작성 규칙:
         - 전체 결과를 **YAML 형식**으로 출력하세요.
         - 각 필드의 역할을 **간단한 주석** 으로 설명하세요.
-        - 기본적인 리소스 설정을 포함하세요:
-        - `replicas`, `containerPort`, `resources.limits/requests` 등
-        - 필요한 경우 다음과 같은 리소스도 함께 생성하세요:
-        - `Service`, `Deployment`, `ConfigMap`, `Ingress`, `PersistentVolumeClaim`
-        - 생성된 YAML은 실제 배포 가능한 형식이어야 합니다.
         - 하나의 YAML 안에 여러 리소스가 필요한 경우 `---` 로 구분해서 함께 정의하세요.
+        - 수정된 YAML은 조직 정책을 준수하며, 실제 배포 가능한 형식이어야 합니다.
     """
 )
 

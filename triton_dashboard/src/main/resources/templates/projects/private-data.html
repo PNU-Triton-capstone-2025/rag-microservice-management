@@ -55,7 +55,7 @@
         <ul class="list-group list-group-flush">
           <li th:each="file : ${uploadResult.savedFilenames}" class="list-group-item ps-4">
             <i class="bi bi-file-earmark-text me-2 text-secondary"></i>
-            <span th:text="${file}"></span>
+            <span th:text="${file.filename}"></span>
           </li>
         </ul>
       </div>
@@ -68,7 +68,7 @@
         <ul class="list-group list-group-flush">
           <li th:each="file : ${uploadResult.skippedFilenames}" class="list-group-item ps-4">
             <i class="bi bi-x-circle text-danger me-2"></i>
-            <span th:text="${file}"></span>
+            <span th:text="${file.filename} + ' - ' + ${file.reason}"></span>
           </li>
         </ul>
         <p class="text-muted small mt-2">

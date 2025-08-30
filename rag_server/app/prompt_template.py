@@ -4,7 +4,7 @@ yaml_generation_prompt = PromptTemplate(
     input_variables=["context", "question"],
     template="""
         당신은 클라우드 애플리케이션 배포에 능숙한 Kubernetes 전문가입니다.
-        아래의 문맥과 사용자 요구사항을 기반으로 Kubernetes 클러스터에 실제로 배포 가능한 YAML 명세를 생성하세요.
+        아래의 문맥과 사용자 요구사항을 기반으로 Kubernetes 클러스터에 배포 가능한 YAML 명세와 그 출처를 JSON 형식으로 생성하세요.
 
         문맥:
         {context}
@@ -13,14 +13,23 @@ yaml_generation_prompt = PromptTemplate(
         {question}
 
         작성 규칙:
-        - 전체 결과를 **YAML 형식**으로 출력하세요.
-        - 각 필드의 역할을 **간단한 주석** 으로 설명하세요.
-        - 기본적인 리소스 설정을 포함하세요:
-        - `replicas`, `containerPort`, `resources.limits/requests` 등
-        - 필요한 경우 다음과 같은 리소스도 함께 생성하세요:
-        - `Service`, `Deployment`, `ConfigMap`, `PersistentVolumeClaim`
-        - 생성된 YAML은 실제 배포 가능한 형식이어야 합니다.
-        - 하나의 YAML 안에 여러 리소스가 필요한 경우 `---` 로 구분해서 함께 정의하세요.
+        - 반드시 하나의 JSON 객체만을 출력해야 합니다.
+        - JSON 객체는 'yaml'과 'attributions' 두 개의 키를 가져야 합니다.
+        - 'yaml' 키의 값은 전체 Kubernetes YAML 명세를 담은 단일 문자열입니다.
+        
+        - **중요: 'yaml' 문자열의 내용은 반드시 마크다운 YAML 코드 블럭(```yaml)으로 감싸야 합니다.**
+        
+        - 'attributions' 키의 값은 각 소스(e.g., 'source_1')가 YAML 생성에 어떻게 기여했는지를 설명하는 객체입니다.
+        - 각 필드의 역할은 YAML 내에 간단한 주석으로 설명하세요.
+
+        JSON 출력 예시:
+        {{
+            "yaml": "```yaml\\napiVersion: apps/v1\\nkind: Deployment\\nmetadata:\\n  name: my-app\\nspec:\\n  replicas: 3 # From source_2\\n...\\n```",
+            "attributions": {{
+                "source_1": "Deployment의 기본 구조와 metadata 부분을 생성하는 데 사용되었습니다.",
+                "source_2": "replicas 수를 3으로 설정하는 요구사항을 반영하는 데 사용되었습니다."
+            }}
+        }}
     """
 )
 

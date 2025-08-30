@@ -10,7 +10,7 @@ es_client = Elasticsearch(es_url)
 embedding_model = OpenAIEmbeddings()
 text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
     separator="\n",
-    chunk_size = 600,
+    chunk_size = 512,
     chunk_overlap = 100,
 )
 

@@ -5,15 +5,15 @@ yaml_generation_prompt = PromptTemplate(
     input_variables=["context", "question"],
     template="""
         당신은 클라우드 애플리케이션 배포에 능숙한 Kubernetes 전문가입니다.
-        현재 초기 배포 명세 생성 단계이므로, 필요한 리소스를 전부 생성해야 합니다.
-        따라서 '문맥'에 민감 정보가 있다면, 해당 정보를 바탕으로 apiVersion: v1, kind: Secret 타입의 Kubernetes 리소스를 반드시 생성해야 합니다.
-        주어진 '문맥'은 조직의 내부 데이터 명세이며, 이는 절대적인 규칙입니다.
+        당신의 주요 목표는 '문맥'에 설명된 모든 마이크로서비스에 대한 완전하고 배포 가능한 Kubernetes YAML 명세 세트를 생성하는 것입니다.
         '문맥'의 내용을 반드시 준수해서 사용자 요구사항에 맞는 Kubernetes YAML 명세와 그 출처를 JSON 형식으로 생성하세요.  
 
         ### 절대 규칙 ###
         1. '문맥'은 유일한 신뢰 가능한 정보 출처입니다. 사전 지식과 문맥이 충돌하는 경우, 반드시 문맥의 내용을 우선해야 합니다.
         2. '문맥'에 명시된 리소스 종류, 포트, 이미지 버전, 레이블 규칙, 리소스 할당량 등 모든 세부 사항을 정확하게 반영해야 합니다.
-        3. 리소스 생성 시 '문맥'에 명시된 Secret 값을 필드에 그대로 사용해서, 즉시 배포 가능한 YAML을 생성해야 합니다.
+        3. '문맥'에 설명된 민감 정보를 바탕으로 단일 `apiVersion: v1, kind: Secret` 리소스를 먼저 생성해야 합니다.
+        4. 이 민감 정보가 필요한 다른 모든 리소스(예: Deployment)는 생성된 Secret을 `secretKeyRef` 또는 `envFrom`을 사용하여 참조해야 합니다. Deployment에 Secret 값을 직접 포함하지 마세요.
+        5. '문맥'에 언급된 모든 마이크로서비스(예: api-gateway, user-service, product-service 등)에 대해 Deployment와 Service를 반드시 생성해야 합니다. 하나도 빠뜨리면 안 됩니다.
 
         문맥:
         {context}

@@ -4,10 +4,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
 from dotenv import load_dotenv
 
-# .env 파일 경로 설정 및 로드
+# .env 경로 설정 & 로드
 env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
 load_dotenv(dotenv_path=env_path)
 
+# LLM 제공자 사전 정의
 class Provider(str, Enum):
     openai = "openai"
     anthropic = "anthropic"
@@ -30,7 +31,7 @@ class Settings(BaseSettings):
         extra="ignore"
     )
     
-    # os.environ에 LangChain 및 LangSmith용 환경변수 주입
+    # LangChain 라이브러리에서 API 키 인식하도록 환경 변수 등록
     def apply_to_environ(self):
         # OpenAI
         if self.openai_api_key:
@@ -50,6 +51,6 @@ class Settings(BaseSettings):
         os.environ["LANGCHAIN_PROJECT"] = self.langsmith_project
         os.environ["LANGCHAIN_TRACING_V2"] = "true"
 
-# 싱글톤 인스턴스
+# 생성된 인스턴스의 설정 값 실제 환경 변수에 적용
 settings = Settings()
 settings.apply_to_environ()

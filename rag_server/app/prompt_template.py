@@ -1,6 +1,7 @@
 from langchain.prompts import PromptTemplate
 
 yaml_generation_prompt = PromptTemplate(
+    # {context}, {question} 사용
     input_variables=["context", "question"],
     template="""
         당신은 클라우드 애플리케이션 배포에 능숙한 Kubernetes 전문가입니다.

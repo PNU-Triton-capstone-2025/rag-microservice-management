@@ -5,6 +5,7 @@ yaml_generation_prompt = PromptTemplate(
     input_variables=["context", "question"],
     template="""
         당신은 클라우드 애플리케이션 배포에 능숙한 Kubernetes 전문가입니다.
+        현재 초기 배포 명세 생성 단계이므로, 필요한 리소스를 전부 생성해야 합니다.
         주어진 '문맥'은 조직의 내부 데이터 명세이며, 이는 절대적인 규칙입니다.
         '문맥'의 내용을 반드시 준수해서 사용자 요구사항에 맞는 Kubernetes YAML 명세와 그 출처를 JSON 형식으로 생성하세요.  
 

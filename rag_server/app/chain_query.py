@@ -8,6 +8,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.output_parsers import JsonOutputParser
 import chain_components
 
+# 검색된 Document 리스트를 LLM 프롬프트에 넣을 문자열로 변환
 def format_docs(docs):
     return "\n\n".join(
         f"[source_{i+1}]: {d.page_content}" for i, d in enumerate(docs)
@@ -30,9 +31,9 @@ def _jline(obj: dict) -> bytes:
     # 혹시 남아 있는 비직렬 타입이 있어도 막아주기
     return (json.dumps(_json_safe(obj), ensure_ascii=False) + "\n").encode("utf-8")
 
+# RAG 체인을 생성하는 함수 (일반용)
 def create_rag_chain_with_attribution(index_name: str, query_type: str, provider: str, llm: str, api_key: str):
     
-    # 1. 컴포넌트 가져오기 (기존과 동일)
     embedding_model = chain_components.get_embedding_model()
     vectorstore = chain_components.get_vectorstore(index_name, embedding_model)
     retriever = vectorstore.as_retriever(search_kwargs={"k": 20})
@@ -53,13 +54,22 @@ def create_rag_chain_with_attribution(index_name: str, query_type: str, provider
 
     # 3. 최종 체인 정의 (RunnableParallel 사용)
     # retriever를 두 번 사용하여 한 번은 생성 체인으로, 한 번은 최종 출력으로 전달합니다.
-    final_chain = RunnableParallel(
-        llm_output= {"source_documents": retriever, "question": RunnablePassthrough()} | generation_chain,
-        source_documents=retriever,
+    #final_chain = RunnableParallel(
+    #    llm_output= {"source_documents": retriever, "question": RunnablePassthrough()} | generation_chain,
+    #    source_documents=retriever,
+    #)
+
+    final_chain = (
+        {
+            "source_documents": retriever,
+            "question": RunnablePassthrough()
+        }
+        | RunnablePassthrough.assign(llm_output=generation_chain)
     )
     
     return final_chain
 
+# 일반적인 RAG 답변 생성 함수. YML 파일 생성이 아님.
 # def query_rag(query: str, index_name: str, query_type: str, provider: str, llm: str, api_key: str) -> dict:
 #     rag_chain = create_rag_chain(index_name, query_type, provider, llm, api_key)
     

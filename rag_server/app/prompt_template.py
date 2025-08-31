@@ -16,6 +16,13 @@ yaml_generation_prompt = PromptTemplate(
         4. 이 민감 정보가 필요한 다른 모든 리소스(예: Deployment)는 생성된 Secret을 `secretKeyRef` 또는 `envFrom`을 사용하여 참조해야 합니다. Deployment에 Secret 값을 직접 포함하지 마세요.
         5. '문맥'에 언급된 모든 마이크로서비스에 대해 Deployment와 Service를 반드시 생성해야 합니다. 하나도 빠뜨리면 안 됩니다.
 
+        ### YAML 구조 절대 규칙 ###
+        1. `ConfigMap`과 `Secret`의 `data` 필드는 절대로 `metadata` 필드의 하위에 위치해서는 안 됩니다. `apiVersion`, `kind`, `metadata`, `data`는 모두 동일한 레벨의 필드여야 합니다. 이 규칙은 쿠버네티스 문법의 기본이며 `metadata.data` 형태는 문법 오류입니다.
+        
+        ### 컨텍스트 정책 준수 규칙 ###
+        1. '문맥' 내의 '조직 내부 정책'에 명시된 규칙을 **반드시** 준수해야 합니다.
+        2. 예를 들어, 'Secret 관리' 정책에서 `data` 필드를 사용하고 Base64 인코딩을 요구했다면, `절대로 `stringData`를 사용하거나 평문 텍스트를 사용해서는 안 됩니다.`
+
         문맥:
         {context}
 

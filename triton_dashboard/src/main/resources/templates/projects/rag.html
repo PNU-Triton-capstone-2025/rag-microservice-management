@@ -10,7 +10,6 @@
 
     <link rel="stylesheet" th:href="@{/css/style.css}">
 
-    <!-- Markdown + Highlight.js -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -30,10 +29,8 @@
             </a>
         </div>
 
-        <!-- 채팅창 -->
         <div id="chat-window" class="border rounded p-3 mb-3 bg-white" style="height: 500px; overflow-y: auto;"></div>
 
-        <!-- 입력창 -->
         <form id="chat-form">
             <div class="row g-2 mb-2">
                 <div class="col-md">
@@ -67,6 +64,10 @@
                 </div>
             </div>
 
+            <div class="input-group mb-2">
+                <input class="form-control" type="file" id="file" name="file">
+            </div>
+
             <div class="input-group">
                 <input type="text" id="query" name="query" class="form-control"
                        placeholder="질문을 입력하세요..." required>
@@ -82,25 +83,21 @@
             const chatWindow = document.getElementById("chat-window");
             const chatForm = document.getElementById("chat-form");
 
-            // UI 요소 가져오기
             const queryInput = document.getElementById("query");
             const providerSelect = document.getElementById("provider");
             const modelSelect = document.getElementById("model");
             const queryTypeSelect = document.getElementById("queryType");
+            const fileInput = document.getElementById("file");
 
-            let eventSource = null;
-
-            // rag-server의 모델 목록을 기반으로 Provider-Model 맵 생성
             const modelOptions = {
                 openai: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
                 anthropic: ["claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"],
                 gemini: ["gemini-1.5-pro-latest", "gemini-1.5-flash-latest"]
             };
 
-            // Provider 변경 시 Model 옵션 업데이트하는 함수
             function updateModelOptions() {
                 const selectedProvider = providerSelect.value;
-                modelSelect.innerHTML = ""; // 기존 옵션 삭제
+                modelSelect.innerHTML = "";
                 modelOptions[selectedProvider].forEach(modelName => {
                     const option = document.createElement("option");
                     option.value = modelName;
@@ -109,25 +106,20 @@
                 });
             }
 
-            // Provider 선택 시 이벤트 리스너 추가
             providerSelect.addEventListener("change", updateModelOptions);
-
-            // 페이지 로드 시 초기 모델 옵션 설정
             updateModelOptions();
 
-            // 사용자 메시지 DOM 추가
             function appendUserMessage(message) {
                 const messageDiv = document.createElement('div');
                 messageDiv.classList.add('d-flex', 'justify-content-end', 'mb-2');
                 const bubbleDiv = document.createElement('div');
                 bubbleDiv.classList.add('chat-bubble-user');
-                bubbleDiv.textContent = message; // innerHTML 대신 textContent 사용 (보안 강화)
+                bubbleDiv.textContent = message;
                 messageDiv.appendChild(bubbleDiv);
                 chatWindow.appendChild(messageDiv);
                 chatWindow.scrollTop = chatWindow.scrollHeight;
             }
 
-            // LLM 응답 placeholder DOM 추가
             function appendAIResponsePlaceholder() {
                 const wrapper = document.createElement("div");
                 wrapper.classList.add("d-flex", "justify-content-start", "mb-2");
@@ -142,58 +134,107 @@
                 return wrapper.querySelector(".llm-response");
             }
 
-            // SSE 연결 및 수신 후 렌더링
-            function renderStreamingResponse(params) {
-                let accumulatedText = "";
-                const url = `/projects/${projectId}/rag/stream?${params.toString()}`;
-                eventSource = new EventSource(url);
-
+            async function renderStreamingResponse(formData) {
                 const responsePlaceholder = appendAIResponsePlaceholder();
                 const loadingIndicator = responsePlaceholder.querySelector(".typing-indicator");
+                let accumulatedText = "";
 
-                eventSource.onmessage = function (event) {
-                    if (loadingIndicator && loadingIndicator.parentNode) {
-                        loadingIndicator.parentNode.removeChild(loadingIndicator);
-                    }
-                    accumulatedText += event.data;
+                const render = (text) => {
+                    accumulatedText += text;
                     renderMarkdownToElement(responsePlaceholder, accumulatedText);
                     chatWindow.scrollTop = chatWindow.scrollHeight;
                 };
 
-                eventSource.onerror = function () {
-                    if (loadingIndicator) loadingIndicator.innerText = "⚠️ 응답 불가";
-                    eventSource.close();
-                    eventSource = null;
-                };
+                try {
+                    const response = await fetch(`/projects/${projectId}/rag/stream`, {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ error: "알 수 없는 서버 오류" }));
+                        throw new Error(errorData.error || `HTTP 오류! 상태: ${response.status}`);
+                    }
+                    if (loadingIndicator) loadingIndicator.remove();
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder("utf-8");
+                    let buffer = "";
+
+                    // SSE 이벤트 블록(빈 줄 \n\n 로 종료) 처리
+                    const flushEventBlock = (block) => {
+                        // 줄 단위 파싱: 들여쓰기는 그대로 유지
+                        const lines = block.split(/\r?\n/);
+                        const dataLines = [];
+
+                        for (const line of lines) {
+                            if (line.startsWith("data:")) {
+                                // 접두사만 제거, 내용(들여쓰기 포함) 보존
+                                dataLines.push(line.replace(/^data:\s?/, ""));
+                            }
+                        }
+
+                        // 줄 사이에만 개행을 넣고, 마지막엔 개행을 넣지 않음 → 이중 줄바꿈 방지
+                        if (dataLines.length) {
+                            render(dataLines.join("\n"));
+                        }
+                    };
+
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+
+                        buffer += decoder.decode(value, { stream: true });
+
+                        let boundary;
+                        while ((boundary = buffer.indexOf('\n\n')) >= 0) {
+                            const eventBlock = buffer.slice(0, boundary);
+                            buffer = buffer.slice(boundary + 2);
+                            if (eventBlock.trim().length > 0) {
+                                flushEventBlock(eventBlock);
+                            }
+                        }
+                    }
+
+                    // 마지막에 \n\n 없이 종료될 수 있으므로 잔여 버퍼 처리
+                    if (buffer.trim().length > 0) {
+                        flushEventBlock(buffer);
+                    }
+
+                } catch (error) {
+                    console.error("스트리밍 응답 오류:", error.message);
+                    const errorMessage = `⚠️ ${error.message}`;
+                    if (loadingIndicator) loadingIndicator.textContent = errorMessage;
+                    else responsePlaceholder.textContent = errorMessage;
+                } finally {
+                    fileInput.value = "";
+                }
             }
 
-            // 폼 전송 이벤트
             chatForm.addEventListener("submit", function (e) {
                 e.preventDefault();
                 const query = queryInput.value.trim();
                 if (!query) return;
 
-                if (eventSource) {
-                    eventSource.close();
-                }
-
-                // 선택된 옵션 값들 가져오기
-                const provider = providerSelect.value;
-                const model = modelSelect.value;
-                const queryType = queryTypeSelect.value;
-
                 appendUserMessage(query);
                 queryInput.value = "";
 
-                // URL 쿼리 파라미터 생성
-                const params = new URLSearchParams({
+                const requestDto = {
                     query: query,
-                    provider: provider,
-                    model: model,
-                    queryType: queryType
-                });
+                    provider: providerSelect.value,
+                    model: modelSelect.value,
+                    query_type: queryTypeSelect.value
+                };
 
-                renderStreamingResponse(params);
+                const formData = new FormData();
+                formData.append('requestDto', new Blob([JSON.stringify(requestDto)], { type: 'application/json' }));
+
+                if (fileInput.files.length > 0) {
+                    formData.append('file', fileInput.files[0]);
+                }
+
+                renderStreamingResponse(formData);
+                fileInput.value = "";
             });
         });
     </script>

@@ -41,13 +41,4 @@ public class RagApiController {
 
         return ResponseEntity.ok(responseDto);
     }
-
-    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> streamChatResponse(
-            @PathVariable Long projectId,
-            @RequestBody RagRequestDto ragRequestDto
-    ) {
-
-        return ragExecutor.streamChatResponse(projectId, ragRequestDto);
-    }
 }

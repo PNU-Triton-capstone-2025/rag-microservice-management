@@ -6,13 +6,13 @@
 
 <head>
     <meta charset="UTF-8">
-    <title th:text="${project.name} + ' - 작업 이력'">작업 이력</title>
+    <title th:text="${project.name} + ' - 채팅 이력'">채팅 이력</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 <section layout:fragment="page-content">
     <div class="container-fluid p-4">
-        <h2 class="mb-3">📜 작업 이력 - [[${project.name}]]</h2>
+        <h2 class="mb-3">📜 채팅 이력 - [[${project.name}]]</h2>
         <div class="history-table">
             <table class="table table-hover align-middle mb-0">
                 <thead>

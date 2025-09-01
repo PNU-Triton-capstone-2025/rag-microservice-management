@@ -1,5 +1,6 @@
 package com.triton.msa.triton_dashboard.common.advice;
 
+import com.triton.msa.triton_dashboard.monitoring.exception.YamlDeletionException;
 import com.triton.msa.triton_dashboard.private_data.exception.PrivateDataUnzipException;
 import com.triton.msa.triton_dashboard.private_data.exception.UnsupportedFileTypeException;
 import com.triton.msa.triton_dashboard.rag.exception.FileUploadException;
@@ -9,6 +10,7 @@ import com.triton.msa.triton_dashboard.ssh.exception.SshKeyFileException;
 import com.triton.msa.triton_dashboard.user.exception.InvalidApiKeyException;
 import com.triton.msa.triton_dashboard.user.exception.InvalidPasswordException;
 import com.triton.msa.triton_dashboard.user.exception.UnauthorizedException;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +34,12 @@ public class GlobalApiExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleSshConnectionException(SshConnectionException ex) {
         log.error("SSH Connection error: {}", ex.getMessage());
         return makeErrorResponseEntity(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(YamlDeletionException.class)
+    public ResponseEntity<Map<String, Object>> handleYamlDeletionException(YamlDeletionException ex) {
+        log.error("YML Deletion failed: {}", ex.getMessage());
+        return makeErrorResponseEntity(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
 //    @ExceptionHandler(RuntimeException.class)
@@ -80,6 +88,12 @@ public class GlobalApiExceptionHandler {
     public ResponseEntity<Map<String, String>> handleFileUploadException(FileUploadException e) {
         Map<String, String> response = Map.of("error", e.getMessage());
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public  ResponseEntity<Map<String, Object>> handleEntityNotFoundException(EntityNotFoundException ex) {
+        log.error("Entity not found exception: {}", ex.getMessage());
+        return makeErrorResponseEntity(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
     private ResponseEntity<Map<String, Object>> makeErrorResponseEntity(String msg, HttpStatus status) {

@@ -25,7 +25,16 @@ public class ResourceAdvisor {
         return new RecommendedResourcesDto(cpuRequest, cpuLimit, memoryRequest, memoryLimit);
     }
 
-    public String generatePerformancePrompt(String serviceName, RecommendedResourcesDto resourcesDto) {
-        return null;
+    public String generatePerformancePrompt(String serviceName, ResourceMetricDto metricDto) {
+        return String.format(Locale.US,
+                "### 서비스 '%s'의 리소스 사용량 ###\n" +
+                        "- CPU: 평균 %.2fm, 최대 %.2fm\n" +
+                        "- Memory: 평균 %.0fMi, 최대 %.0fMi\n",
+                serviceName,
+                metricDto.avgCpu() * 1000,
+                metricDto.maxCpu() * 1000,
+                metricDto.avgMemoryBytes() / (1024 * 1024),
+                metricDto.maxMemoryBytes() / (1024 * 1024)
+        );
     }
 }

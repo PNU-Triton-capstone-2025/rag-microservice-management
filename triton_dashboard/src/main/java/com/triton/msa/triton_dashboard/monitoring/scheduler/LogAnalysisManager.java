@@ -3,7 +3,6 @@ package com.triton.msa.triton_dashboard.monitoring.scheduler;
 import com.triton.msa.triton_dashboard.monitoring.client.RagLogClient;
 import com.triton.msa.triton_dashboard.monitoring.dto.RagLogResponseDto;
 import com.triton.msa.triton_dashboard.monitoring.dto.RagLogRequestDto;
-import com.triton.msa.triton_dashboard.monitoring.dto.RecommendedResourcesDto;
 import com.triton.msa.triton_dashboard.monitoring.dto.ResourceMetricDto;
 import com.triton.msa.triton_dashboard.monitoring.entity.LogAnalysisModel;
 import com.triton.msa.triton_dashboard.monitoring.client.ElasticSearchLogClient;
@@ -108,9 +107,7 @@ public class LogAnalysisManager {
                         return null;
                     }
 
-                    RecommendedResourcesDto recommended = resourceAdvisor.recommendResources(metricDto);
-
-                    return resourceAdvisor.generatePerformancePrompt(service, recommended);
+                    return resourceAdvisor.generatePerformancePrompt(service, metricDto);
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.joining("\n\n"));

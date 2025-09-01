@@ -1,13 +1,18 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/layout :: layout(~{::title}, ~{::section})}">
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
 <head>
   <title th:text="|${project.name} - 서비스 모니터링|">서비스 모니터링</title>
 </head>
 <body>
-<section>
+<section layout:fragment="page-content">
   <div class="container-fluid p-4">
     <h1 class="h3 mb-4 text-gray-800">서비스 모니터링</h1>
+
+    <div th:if="${successMessage}" class="alert alert-success" role="alert" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" role="alert" th:text="${errorMessage}"></div>
 
     <div class="row">
       <div class="col-lg-6 mb-4">
@@ -19,10 +24,10 @@
             <p>배포에 사용할 YAML 파일을 업로드하여 저장합니다.</p>
             <form th:action="@{/projects/{projectId}/monitoring/upload(projectId=${project.id})}" method="post" enctype="multipart/form-data">
               <div class="input-group">
-                <input type="file" class="form-control" id="yamlFile" name="yamlFile" accept=".yaml,.yml" required>
+                <input type="file" class="form-control" id="yamlFiles" name="yamlFiles" accept=".yaml,.yml" required multiple>
                 <button class="btn btn-primary" type="submit">저장하기</button>
               </div>
-              <div class="form-text mt-2">.yaml 또는 .yml 확장자를 가진 파일만 업로드할 수 있습니다.</div>
+              <div class="form-text mt-2">.yaml 또는 .yml 확장자를 가진 파일만 업로드할 수 있습니다. (Ctrl 또는 Shift 키를 눌러 여러 파일 선택 가능)</div>
             </form>
           </div>
         </div>
@@ -38,9 +43,9 @@
               <p class="text-center text-muted">저장된 배포 명세 파일이 없습니다.</p>
             </div>
             <ul class="list-group" th:unless="${#lists.isEmpty(savedYamls)}">
-              <li th:each="yaml, iterStat : ${savedYamls}" class="list-group-item d-flex justify-content-between align-items-center">
-                <span th:text="${yaml.fileName}">deployment.yaml</span>
-                <form th:action="@{/projects/{projectId}/monitoring/delete/{yamlIndex}(projectId=${project.id}, yamlIndex=${iterStat.index})}" method="post" onsubmit="return confirm('정말로 이 파일을 삭제하시겠습니까?');">
+              <li th:each="yaml : ${savedYamls}" class="list-group-item d-flex justify-content-between align-items-center">
+                <span th:text="${yaml.filename}">deployment.yaml</span>
+                <form th:action="@{/projects/{projectId}/monitoring/delete/{yamlIndex}(projectId=${project.id}, yamlIndex=${yaml.index})}" method="post" onsubmit="return confirm('정말로 이 파일을 삭제하시겠습니까?');">
                   <button type="submit" class="btn btn-sm btn-outline-danger">
                     <i class="bi bi-trash"></i>
                   </button>

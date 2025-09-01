@@ -16,16 +16,16 @@
                 <i class="bi bi-diagram-3 me-2"></i>서비스 배포 관리
             </a>
             <a class="list-group-item list-group-item-action list-group-item-light p-3"
+               th:href="@{/projects/{projectId}/rag/history(projectId=${project.id})}">
+                <i class="bi bi-clock-history me-2"></i>채팅 이력 조회
+            </a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
                th:href="@{/projects/{id}/deploy/download-config(id=${project.id})}">
                 <i class="bi bi-arrow-repeat me-2"></i>로그 수집기 다운로드
             </a>
             <a class="list-group-item list-group-item-action list-group-item-light p-3"
-               th:href="@{/projects/{projectId}/rag/history(projectId=${project.id})}">
-                <i class="bi bi-clock-history me-2"></i>작업 이력 조회
-            </a>
-            <a class="list-group-item list-group-item-action list-group-item-light p-3"
                th:href="@{/projects/{id}/private-data(id=${project.id})}">
-                <i class="bi bi-shield-lock me-2"></i>비공개 데이터 관리
+                <i class="bi bi-shield-lock me-2"></i>조직 내부 데이터 관리
             </a>
             <a class="list-group-item list-group-item-action list-group-item-light p-3"
                th:href="@{/projects/{projectId}/monitoring(projectId=${project.id})}">

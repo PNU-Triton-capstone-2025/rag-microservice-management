@@ -1,6 +1,6 @@
 package com.triton.msa.triton_dashboard.project.entity;
 
-import com.triton.msa.triton_dashboard.common.converter.StringListConverter;
+import com.triton.msa.triton_dashboard.common.converter.SavedYamlListConverter;
 import com.triton.msa.triton_dashboard.monitoring.entity.LogAnalysisModel;
 import com.triton.msa.triton_dashboard.rag_history.entity.RagHistory;
 import com.triton.msa.triton_dashboard.private_data.entity.PrivateData;
@@ -40,9 +40,9 @@ public class Project {
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PrivateData> privateData = new ArrayList<>();
 
-    @Convert(converter = StringListConverter.class)
+    @Convert(converter = SavedYamlListConverter.class)
     @Column(columnDefinition = "TEXT")
-    private List<String> savedYamls = new ArrayList<>();
+    private List<SavedYaml> savedYamls = new ArrayList<>();
 
     @CreatedDate
     @Column(updatable = false, nullable = false)
@@ -80,6 +80,10 @@ public class Project {
 
     public LocalDateTime fetchCreatedAt() {
         return this.createdAt;
+    }
+
+    public List<SavedYaml> fetchSavedYamls() {
+        return this.savedYamls;
     }
 
     protected Project() {

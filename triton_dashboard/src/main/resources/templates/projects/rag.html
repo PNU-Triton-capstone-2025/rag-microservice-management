@@ -238,6 +238,8 @@
                     const errorMessage = `⚠️ ${error.message}`;
                     if (loadingIndicator) loadingIndicator.textContent = errorMessage;
                     else responsePlaceholder.textContent = errorMessage;
+                } finally {
+                    fileInput.value = "";
                 }
             }
 
@@ -248,7 +250,6 @@
 
                 appendUserMessage(query);
                 queryInput.value = "";
-                fileInput.value = "";
                 fileNameDisplay.textContent = "";
 
                 const requestDto = {

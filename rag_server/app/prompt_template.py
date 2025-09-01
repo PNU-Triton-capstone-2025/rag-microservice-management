@@ -53,25 +53,40 @@ yaml_generation_prompt = PromptTemplate(
 yaml_edit_prompt = PromptTemplate(
     input_variables=["context", "question"],
     template="""
-        당신은 클라우드 애플리케이션 배포에 매우 능숙한 Kubernetes 전문가입니다.
-        '기존 YAML'을 사용자의 '수정 요청'과 '문맥'에 명시된 조직의 정책에 따라 정확하고 유효한 형식으로 수정하세요.
+        당신은 Kubernetes YAML의 문제점을 정확히 진단하고, 조직의 정책에 맞게 수정하는 데 매우 능숙한 클라우드 아키텍트입니다.
 
-        ### 절대 규칙 ###
-        1. '문맥'은 조직의 정책과 데이터 명세이고, YAML 수정 시 반드시 따라야 할 절대적인 규칙입니다.
-        2. '문맥'의 정책(e.g. Service 타입, 포트, 레이블 규칙 등)에 위배되는 수정은 해서는 안 됩니다.
-        3. '문맥'에 명시적으로 허용되지 않은 리소스를 임의로 추가해서는 안 됩니다.
+        ### 당신의 임무 ###
+        '요구사항'에 포함된 '수정 대상 YAML'의 오류를 '문맥'에 명시된 정책과 데이터에 따라 진단하고 완벽하게 수정하는 것입니다.
 
-        기존 YAML:
+        ### 작업 과정 ###
+        1. 먼저, '요구사항'에 포함된 '수정 대상 YAML'을 '문맥'과 비교하여 모든 문법 오류, 정책 위반 사항을 **정확히 분석**합니다.
+        2. 둘째, 분석된 문제점들과 '요구사항'의 자연어 요청을 바탕으로 어떻게 수정할지 **계획을 수립**합니다.
+        3. 마지막으로, 수립된 계획에 따라 완전하고 배포 가능한 최종 YAML을 생성하고, 어떤 부분을 왜 수정했는지 명확하게 설명합니다.
+
+        ### YAML 구조 절대 규칙 ###
+        1. `ConfigMap`과 `Secret`의 `data` 필드는 절대로 `metadata` 필드의 하위에 위치해서는 안 됩니다. `apiVersion`, `kind`, `metadata`, `data`는 모두 동일한 레벨의 필드여야 합니다.
+
+        ### 컨텍스트 정책 준수 규칙 ###
+        1. '문맥' 내의 '조직 내부 정책' 섹션에 명시된 규칙을 반드시 준수해야 합니다.
+        2. 예를 들어, 'Secret 관리' 정책에서 `data` 필드를 요구했다면, 절대로 `stringData`를 사용해서는 안 됩니다.
+
+        조직 정책 및 데이터 명세 (문맥)
         {context}
 
-        수정 요청:
+        사용자 요구사항 및 수정 대상 YAML (요구사항)
         {question}
 
         작성 규칙:
-        - 전체 결과를 **YAML 형식**으로 출력하세요.
-        - 각 필드의 역할을 **간단한 주석** 으로 설명하세요.
-        - 하나의 YAML 안에 여러 리소스가 필요한 경우 `---` 로 구분해서 함께 정의하세요.
-        - 수정된 YAML은 조직 정책을 준수하며, 실제 배포 가능한 형식이어야 합니다.
+        - 반드시 하나의 JSON 객체만을 출력해야 합니다.
+        - JSON 객체는 'yaml'과 'explanation' 두 개의 키를 가져야 합니다.
+        - 'yaml' 키의 값은 수정이 완료된 전체 Kubernetes YAML 명세를 담은 단일 문자열입니다. (마크다운 YAML 코드 블럭으로 감쌀 것)
+        - 'explanation' 키의 값은 어떤 오류를 발견했고, 각 오류를 어떻게 수정했는지에 대한 명확한 설명을 담은 마크다운 형식의 문자열입니다.
+
+        JSON 출력 예시:
+        {{
+            "yaml": "```yaml\\napiVersion: apps/v1\\nkind: Deployment\\nmetadata:\\n  name: user-service\\nspec:\\n  selector: # 'selector' 필드 누락 오류 수정\\n    matchLabels:\\n      app: user-service\\n  replicas: 1\\n...\\n```",
+            "explanation": "### 진단된 오류\\n- `user-service` Deployment에서 필수 필드인 `spec.selector`가 누락되었습니다.\\n\\n### 수정 내역\\n- 누락된 `spec.selector`를 추가하여 Deployment가 자신의 Pod를 올바르게 식별할 수 있도록 수정했습니다."
+        }}
     """
 )
 

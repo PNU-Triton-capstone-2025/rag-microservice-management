@@ -12,13 +12,15 @@ data:
       reload.enabled: false
     processors:
       - add_kubernetes_metadata: {}
-    output.elasticsearch:
-      hosts: ['http://host.docker.internal:9200']
-      index: "project-${PROJECT_ID}-metrics-%{+YYYY.MM.dd}"
-      
+    
+    setup.ilm.enabled: false
+    
     setup.template:
       name: "project-${PROJECT_ID}-metrics-*"
       pattern: "project-${PROJECT_ID}-metrics-*"
+    output.elasticsearch:
+      hosts: ['http://host.docker.internal:9200']
+      index: "project-${PROJECT_ID}-metrics-%{+YYYY.MM.dd}"
 ---
 apiVersion: v1
 kind: ConfigMap

@@ -38,8 +38,14 @@ public class ElasticSearchLogClient {
                     Void.class
             );
 
-            return response.aggregations()
-                    .get("services")
+            Aggregate services = response.aggregations().get("services");
+
+            if (services == null || services.sterms() == null) {
+                log.warn("Project ID {}에 대한 'services' 집계를 찾을 수 없습니다. 인덱스에 데이터가 없거나 필드 매핑 문제일 수 있습니다.", projectId);
+                return Collections.emptyList();
+            }
+
+            return services
                     .sterms()
                     .buckets()
                     .array()

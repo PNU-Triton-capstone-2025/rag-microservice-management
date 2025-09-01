@@ -10,7 +10,10 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
+
+import javax.print.attribute.standard.Media;
 
 @Controller
 @RequestMapping("/projects/{projectId}/rag")
@@ -28,13 +31,11 @@ public class RagController {
         return "projects/rag";
     }
 
-    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PostMapping(value = "/stream", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @ResponseBody
     public Flux<String> streamChatResponse(@PathVariable Long projectId,
-                                           @RequestParam("query") String query,
-                                           @RequestParam("queryType") String queryType,
-                                           @RequestParam("provider") String provider,
-                                           @RequestParam("model") String model) {
-        return ragExecutor.streamChatResponse(projectId, new RagRequestDto(query, queryType, provider, model));
+                                           @RequestPart("requestDto") RagRequestDto requestDto,
+                                           @RequestPart(value = "file", required = false)MultipartFile file) {
+        return ragExecutor.streamChatResponse(projectId, requestDto, file);
     }
 }

@@ -2,6 +2,7 @@ package com.triton.msa.triton_dashboard.common.advice;
 
 import com.triton.msa.triton_dashboard.private_data.exception.PrivateDataUnzipException;
 import com.triton.msa.triton_dashboard.private_data.exception.UnsupportedFileTypeException;
+import com.triton.msa.triton_dashboard.rag.exception.FileUploadException;
 import com.triton.msa.triton_dashboard.ssh.exception.SshAuthenticationException;
 import com.triton.msa.triton_dashboard.ssh.exception.SshConnectionException;
 import com.triton.msa.triton_dashboard.ssh.exception.SshKeyFileException;
@@ -73,6 +74,12 @@ public class GlobalApiExceptionHandler {
     public  ResponseEntity<Map<String, Object>> handleUnsupportedFileTypeException(UnsupportedFileTypeException ex) {
         log.error("Unsupported file type exception: {}", ex.getMessage());
         return makeErrorResponseEntity(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(FileUploadException.class)
+    public ResponseEntity<Map<String, String>> handleFileUploadException(FileUploadException e) {
+        Map<String, String> response = Map.of("error", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     private ResponseEntity<Map<String, Object>> makeErrorResponseEntity(String msg, HttpStatus status) {

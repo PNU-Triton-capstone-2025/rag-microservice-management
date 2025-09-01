@@ -43,20 +43,14 @@ body {
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     border: 1px solid #ececec;
 }
-
-/* 문단 간격 */
 .llm-response p {
     margin: 0 0 8px;
 }
-
-/* 헤딩 */
 .llm-response h1, .llm-response h2, .llm-response h3 {
     font-weight: 700;
     margin: 18px 0 8px;
     color: #1a1a1a;
 }
-
-/* 리스트 */
 .llm-response ul, .llm-response ol {
     margin: 10px 0;
     padding-left: 22px;
@@ -64,8 +58,6 @@ body {
 .llm-response li {
     margin-bottom: 4px;
 }
-
-/* 강조 */
 .llm-response strong {
     color: #222;
     font-weight: 600;
@@ -77,7 +69,7 @@ body {
 
 /* ===== 코드 블럭 ===== */
 .llm-response pre {
-    background: #f6f8fa; /* 은은한 회색 */
+    background: #f6f8fa;
     padding: 14px 18px;
     border-radius: 8px;
     overflow-x: auto;
@@ -88,15 +80,11 @@ body {
     color: #2d2d2d;
     border: 1px solid #e1e4e8;
 }
-
-/* 코드 블럭 안의 코드 */
 .llm-response pre code {
     white-space: pre;
     tab-size: 4;
     -moz-tab-size: 4;
 }
-
-/* ===== 인라인 코드 ===== */
 .llm-response code:not(pre code) {
     background: rgba(27,31,35,0.05);
     color: #333;
@@ -140,7 +128,6 @@ body {
     opacity: 1;
     background: rgba(60, 60, 80, 0.95);
 }
-
 .code-block {
     position: relative;
 }
@@ -212,4 +199,38 @@ body {
 .btn-back {
     border-radius: 8px;
     padding: 8px 16px;
+}
+
+/* ===== [NEW] 채팅창 개선 ===== */
+#chat-window {
+    background-color: #f8f9fa;
+}
+#chat-window::-webkit-scrollbar {
+    width: 6px;
+}
+#chat-window::-webkit-scrollbar-track {
+    background: transparent;
+}
+#chat-window::-webkit-scrollbar-thumb {
+    background-color: #ced4da;
+    border-radius: 10px;
+    border: 3px solid transparent;
+}
+
+/* ===== [NEW] 입력 폼 개선 ===== */
+#chat-form .form-control {
+    border-radius: 20px;
+    padding: 10px 18px;
+}
+#chat-form .btn {
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+#chat-form label.btn {
+    height: 45px;
 }

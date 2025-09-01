@@ -14,6 +14,76 @@
     <div th:if="${successMessage}" class="alert alert-success" role="alert" th:text="${successMessage}"></div>
     <div th:if="${errorMessage}" class="alert alert-danger" role="alert" th:text="${errorMessage}"></div>
 
+    <div class="row mt-4">
+      <div class="col-12">
+        <div class="card shadow">
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">모니터링 이력</h6>
+          </div>
+          <div class="card-body">
+            <div th:if="${monitoringHistories.isEmpty()}">
+              <p class="text-center text-muted">모니터링 이력이 없습니다.</p>
+            </div>
+            <div class="table-responsive" th:unless="${monitoringHistories.isEmpty()}">
+              <table class="table table-hover align-middle">
+                <thead>
+                <tr>
+                  <th scope="col">제목</th>
+                  <th scope="col">리포트 요약</th>
+                  <th scope="col">생성 시간</th>
+                  <th scope="col" class="text-end">삭제</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="history : ${monitoringHistories.content}">
+                  <td th:text="${history.title}" class="font-weight-bold">리소스 사용량 분석</td>
+                  <td th:text="${#strings.abbreviate(history.monitoringReport, 100)}">CPU 사용량이 높습니다...</td>
+                  <td th:text="${#temporals.format(history.createdAt, 'yyyy-MM-dd HH:mm')}">2025-09-01 19:45</td>
+                  <td class="text-end">
+                    <form th:action="@{/projects/{projectId}/monitoring/history/delete/{historyId}(projectId=${project.id}, historyId=${history.id})}" method="post" onsubmit="return confirm('이 이력을 정말로 삭제하시겠습니까?');">
+                      <button type="submit" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <nav th:if="${monitoringHistories.totalPages > 1}" aria-label="Page navigation">
+              <ul class="pagination justify-content-center">
+                <li class="page-item" th:classappend="${monitoringHistories.first} ? 'disabled'">
+                  <a class="page-link" th:href="@{/projects/{projectId}/monitoring(projectId=${project.id}, page=0)}">
+                    <span>&laquo;</span>
+                  </a>
+                </li>
+                <li class="page-item" th:classappend="${!monitoringHistories.hasPrevious()} ? 'disabled'">
+                  <a class="page-link" th:href="@{/projects/{projectId}/monitoring(projectId=${project.id}, page=${monitoringHistories.number - 1})}">
+                    <span>&lsaquo;</span>
+                  </a>
+                </li>
+                <li class="page-item" th:each="pageNumber : ${#numbers.sequence(0, monitoringHistories.totalPages - 1)}" th:classappend="${pageNumber == monitoringHistories.number} ? 'active'">
+                  <a class="page-link" th:href="@{/projects/{projectId}/monitoring(projectId=${project.id}, page=${pageNumber})}" th:text="${pageNumber + 1}"></a>
+                </li>
+                <li class="page-item" th:classappend="${!monitoringHistories.hasNext()} ? 'disabled'">
+                  <a class="page-link" th:href="@{/projects/{projectId}/monitoring(projectId=${project.id}, page=${monitoringHistories.number + 1})}">
+                    <span>&rsaquo;</span>
+                  </a>
+                </li>
+                <li class="page-item" th:classappend="${monitoringHistories.last} ? 'disabled'">
+                  <a class="page-link" th:href="@{/projects/{projectId}/monitoring(projectId=${project.id}, page=${monitoringHistories.totalPages - 1})}">
+                    <span>&raquo;</span>
+                  </a>
+                </li>
+              </ul>
+            </nav>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="row">
       <div class="col-lg-6 mb-4">
         <div class="card shadow">

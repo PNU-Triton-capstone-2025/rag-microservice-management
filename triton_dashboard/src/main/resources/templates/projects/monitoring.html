@@ -9,119 +9,109 @@
 <body>
 <section layout:fragment="page-content">
   <div class="container-fluid p-4">
-    <h1 class="h3 mb-4 text-gray-800">서비스 모니터링</h1>
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+      <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-display-fill me-2"></i>서비스 모니터링
+      </h1>
+    </div>
 
-    <div th:if="${successMessage}" class="alert alert-success" role="alert" th:text="${successMessage}"></div>
-    <div th:if="${errorMessage}" class="alert alert-danger" role="alert" th:text="${errorMessage}"></div>
-
-    <div class="row mt-4">
-      <div class="col-12">
-        <div class="card shadow">
-          <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">모니터링 이력</h6>
-          </div>
-          <div class="card-body">
-            <div th:if="${monitoringHistories.isEmpty()}">
-              <p class="text-center text-muted">모니터링 이력이 없습니다.</p>
-            </div>
-            <div class="table-responsive" th:unless="${monitoringHistories.isEmpty()}">
-              <table class="table table-hover align-middle">
-                <thead>
-                <tr>
-                  <th scope="col">제목</th>
-                  <th scope="col">리포트 요약</th>
-                  <th scope="col">생성 시간</th>
-                  <th scope="col" class="text-end">삭제</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="history : ${monitoringHistories.content}">
-                  <td th:text="${history.title}" class="font-weight-bold">리소스 사용량 분석</td>
-                  <td th:text="${#strings.abbreviate(history.monitoringReport, 100)}">CPU 사용량이 높습니다...</td>
-                  <td th:text="${#temporals.format(history.createdAt, 'yyyy-MM-dd HH:mm')}">2025-09-01 19:45</td>
-                  <td class="text-end">
-                    <form th:action="@{/projects/{projectId}/monitoring/history/delete/{historyId}(projectId=${project.id}, historyId=${history.id})}" method="post" onsubmit="return confirm('이 이력을 정말로 삭제하시겠습니까?');">
-                      <button type="submit" class="btn btn-sm btn-outline-danger">
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    </form>
-                  </td>
-                </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <nav th:if="${monitoringHistories.totalPages > 1}" aria-label="Page navigation">
-              <ul class="pagination justify-content-center">
-                <li class="page-item" th:classappend="${monitoringHistories.first} ? 'disabled'">
-                  <a class="page-link" th:href="@{/projects/{projectId}/monitoring(projectId=${project.id}, page=0)}">
-                    <span>&laquo;</span>
-                  </a>
-                </li>
-                <li class="page-item" th:classappend="${!monitoringHistories.hasPrevious()} ? 'disabled'">
-                  <a class="page-link" th:href="@{/projects/{projectId}/monitoring(projectId=${project.id}, page=${monitoringHistories.number - 1})}">
-                    <span>&lsaquo;</span>
-                  </a>
-                </li>
-                <li class="page-item" th:each="pageNumber : ${#numbers.sequence(0, monitoringHistories.totalPages - 1)}" th:classappend="${pageNumber == monitoringHistories.number} ? 'active'">
-                  <a class="page-link" th:href="@{/projects/{projectId}/monitoring(projectId=${project.id}, page=${pageNumber})}" th:text="${pageNumber + 1}"></a>
-                </li>
-                <li class="page-item" th:classappend="${!monitoringHistories.hasNext()} ? 'disabled'">
-                  <a class="page-link" th:href="@{/projects/{projectId}/monitoring(projectId=${project.id}, page=${monitoringHistories.number + 1})}">
-                    <span>&rsaquo;</span>
-                  </a>
-                </li>
-                <li class="page-item" th:classappend="${monitoringHistories.last} ? 'disabled'">
-                  <a class="page-link" th:href="@{/projects/{projectId}/monitoring(projectId=${project.id}, page=${monitoringHistories.totalPages - 1})}">
-                    <span>&raquo;</span>
-                  </a>
-                </li>
-              </ul>
-            </nav>
-
-          </div>
-        </div>
-      </div>
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+      <i class="bi bi-check-circle-fill me-2"></i>
+      <span th:text="${successMessage}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <span th:text="${errorMessage}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 
     <div class="row">
-      <div class="col-lg-6 mb-4">
-        <div class="card shadow">
-          <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">배포 명세 파일 저장</h6>
-          </div>
+      <div class="col-xl-5 col-lg-12 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
           <div class="card-body">
-            <p>배포에 사용할 YAML 파일을 업로드하여 저장합니다.</p>
-            <form th:action="@{/projects/{projectId}/monitoring/upload(projectId=${project.id})}" method="post" enctype="multipart/form-data">
-              <div class="input-group">
-                <input type="file" class="form-control" id="yamlFiles" name="yamlFiles" accept=".yaml,.yml" required multiple>
-                <button class="btn btn-primary" type="submit">저장하기</button>
+            <div class="row no-gutters align-items-center">
+              <div class="col mr-2">
+                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                  배포 명세(YAML) 관리
+                </div>
+                <hr class="mt-0">
+                <form th:action="@{/projects/{projectId}/monitoring/upload(projectId=${project.id})}" method="post" enctype="multipart/form-data" class="mb-4">
+                  <label for="yamlFiles" class="form-label small">
+                    <i class="bi bi-cloud-arrow-up-fill"></i> 신규 파일 업로드
+                  </label>
+                  <div class="input-group">
+                    <input type="file" class="form-control form-control-sm" id="yamlFiles" name="yamlFiles" accept=".yaml,.yml" required multiple>
+                    <button class="btn btn-primary btn-sm" type="submit">저장</button>
+                  </div>
+                  <div class="form-text small mt-1">.yml, .yaml 파일만 선택 가능 (다중 선택 가능)</div>
+                </form>
+
+                <h6 class="small font-weight-bold"><i class="bi bi-list-ul"></i> 저장된 파일</h6>
+                <div class="list-group list-group-flush" style="max-height: 250px; overflow-y: auto;">
+                  <div th:if="${#lists.isEmpty(savedYamls)}" class="text-center text-muted small p-3">
+                    저장된 파일이 없습니다.
+                  </div>
+                  <div th:each="yaml : ${savedYamls}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-2">
+                                        <span>
+                                            <i class="bi bi-filetype-yml me-2"></i>
+                                            <span th:text="${yaml.filename}"></span>
+                                        </span>
+                    <form th:action="@{/projects/{projectId}/monitoring/delete/{yamlIndex}(projectId=${project.id}, yamlIndex=${yaml.index})}" method="post" onsubmit="return confirm('이 파일을 정말로 삭제하시겠습니까?');">
+                      <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </form>
+                  </div>
+                </div>
               </div>
-              <div class="form-text mt-2">.yaml 또는 .yml 확장자를 가진 파일만 업로드할 수 있습니다. (Ctrl 또는 Shift 키를 눌러 여러 파일 선택 가능)</div>
-            </form>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="col-lg-6 mb-4">
-        <div class="card shadow">
-          <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">저장된 배포 명세 목록</h6>
-          </div>
+      <div class="col-xl-7 col-lg-12 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
           <div class="card-body">
-            <div th:if="${#lists.isEmpty(savedYamls)}">
-              <p class="text-center text-muted">저장된 배포 명세 파일이 없습니다.</p>
+            <div class="row no-gutters align-items-center">
+              <div class="col mr-2">
+                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                  모니터링 이력
+                </div>
+                <hr class="mt-0">
+                <div th:if="${monitoringHistories.isEmpty()}" class="text-center text-muted small p-5">
+                  <i class="bi bi-clock-history fs-2"></i>
+                  <p class="mt-2">모니터링 이력이 없습니다.</p>
+                </div>
+                <div class="table-responsive" th:unless="${monitoringHistories.isEmpty()}">
+                  <table class="table table-sm table-borderless">
+                    <tbody>
+                    <tr th:each="history : ${monitoringHistories.content}">
+                      <td class="align-middle">
+                        <div class="fw-bold" th:text="${history.title}"></div>
+                        <div class="small text-muted" th:text="${#strings.abbreviate(history.monitoringReport, 120)}"></div>
+                      </td>
+                      <td class="align-middle text-nowrap text-end">
+                        <div class="small" th:text="${#temporals.format(history.createdAt, 'yyyy-MM-dd')}"></div>
+                        <div class="small text-muted" th:text="${#temporals.format(history.createdAt, 'HH:mm')}"></div>
+                      </td>
+                      <td class="align-middle text-end">
+                        <form th:action="@{/projects/{projectId}/monitoring/history/delete/{historyId}(projectId=${project.id}, historyId=${history.id})}" method="post" onsubmit="return confirm('이 이력을 정말로 삭제하시겠습니까?');">
+                          <button type="submit" class="btn btn-sm btn-outline-secondary border-0">
+                            <i class="bi bi-trash3"></i>
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <nav th:if="${monitoringHistories.totalPages > 1}" aria-label="Page navigation">
+                  <ul class="pagination pagination-sm justify-content-center mb-0 mt-3">
+                  </ul>
+                </nav>
+              </div>
             </div>
-            <ul class="list-group" th:unless="${#lists.isEmpty(savedYamls)}">
-              <li th:each="yaml : ${savedYamls}" class="list-group-item d-flex justify-content-between align-items-center">
-                <span th:text="${yaml.filename}">deployment.yaml</span>
-                <form th:action="@{/projects/{projectId}/monitoring/delete/{yamlIndex}(projectId=${project.id}, yamlIndex=${yaml.index})}" method="post" onsubmit="return confirm('정말로 이 파일을 삭제하시겠습니까?');">
-                  <button type="submit" class="btn btn-sm btn-outline-danger">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </form>
-              </li>
-            </ul>
           </div>
         </div>
       </div>

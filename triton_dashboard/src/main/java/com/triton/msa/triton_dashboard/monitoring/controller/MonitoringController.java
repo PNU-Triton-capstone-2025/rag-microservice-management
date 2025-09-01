@@ -53,29 +53,12 @@ public class MonitoringController {
     }
 
     @PostMapping("/upload")
-    public String uploadYaml(@PathVariable("projectId") Long projectId,
-                             @RequestParam("yamlFiles")MultipartFile[] files,
-                             RedirectAttributes redirectAttributes) {
+    public String uploadYamls(@PathVariable("projectId") Long projectId,
+                              @RequestParam("yamlFiles") MultipartFile[] files,
+                              RedirectAttributes redirectAttributes) {
 
-        if (files.length == 0 || Arrays.stream(files).allMatch(MultipartFile::isEmpty)) {
-            redirectAttributes.addFlashAttribute("errorMessage", "파일을 하나 이상 선택해주세요.");
-            return "redirect:/projects/" + projectId + "/monitoring";
-        }
-
-        try {
-            for (MultipartFile file : files) {
-                if (file.isEmpty()) continue;
-
-                String filename = file.getOriginalFilename();
-                String yamlContent = new String(file.getBytes(), StandardCharsets.UTF_8);
-
-                monitoringService.saveYaml(projectId, new SavedYamlRequestDto(filename, yamlContent));
-            }
-
-            redirectAttributes.addFlashAttribute("successMessage", "파일(총 " + files.length + "개)이 성공적으로 저장되었습니다.");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "파일을 읽는 중 오류가 발생했습니다.");
-        }
+        monitoringService.saveYamls(projectId, files);
+        redirectAttributes.addFlashAttribute("successMessage", "파일(총 " + files.length + "개)이 성공적으로 저장되었습니다.");
 
         return "redirect:/projects/" + projectId + "/monitoring";
     }

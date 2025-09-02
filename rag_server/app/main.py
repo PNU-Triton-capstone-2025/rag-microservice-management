@@ -86,18 +86,21 @@ def delete_embedding():
 @app.route("/api/log-analyze", methods=["POST"])
 def log_analyze():
     data = request.json
-    query = "오류 로그에 대한 해결 방안을 설명해주세요"
-    query_type = data.get("query_type", "default")
     err_log = data.get("err_log")
     es_index = data.get("es_index")
     provider = data.get("provider")
     model = data.get("model")
+    api_key = data.get("api_key")
+    yamls = data.get("yamls")
+
+    query = f"다음 에러 로그를 분석하고 해결 방안을 제시해주세요:\n\n{err_log}\n\n참고 YAML:\n{yamls}"
+    query_type = "log_analyze"
 
     if not err_log:
         return jsonify({"error": "error log is empty."}), 400
 
     try:
-        response_data = query_rag(query, es_index, query_type, provider, model)
+        response_data = query_rag(query, es_index, query_type, provider, model, api_key)
         return jsonify(response_data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -105,18 +108,21 @@ def log_analyze():
 @app.route("/api/resource-setting", methods=["POST"])
 def resource_setting():
     data = request.json
-    query = "현재 리소스 사용량을 바탕으로 리소스 권장 사용량을 도출해주세요"
-    query_type = data.get("query_type", "default")
     resource_usage = data.get("resource_usage")
     es_index = data.get("es_index")
     provider = data.get("provider")
     model = data.get("model")
+    api_key = data.get("api_key")
+    yamls = data.get("yamls")
+
+    query = f"현재 리소스 사용량을 바탕으로 리소스 권장 사용량을 도출해주세요:\n\n{resource_usage}\n\n참고 YAML:\n{yamls}"
+    query_type = "resource_setting"
 
     if not resource_usage:
         return jsonify({"error": " is empty."}), 400
 
     try:
-        response_data = query_rag(query, es_index, query_type, provider, model)
+        response_data = query_rag(query, es_index, query_type, provider, model, api_key)
         return jsonify(response_data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -1,13 +1,18 @@
 package com.triton.msa.triton_dashboard.monitoring.controller;
 
+import com.triton.msa.triton_dashboard.monitoring.dto.LogAnalysisModelResponseDto;
 import com.triton.msa.triton_dashboard.monitoring.dto.SavedYamlRequestDto;
 import com.triton.msa.triton_dashboard.monitoring.dto.SavedYamlResponseDto;
+import com.triton.msa.triton_dashboard.monitoring.entity.LogAnalysisModel;
 import com.triton.msa.triton_dashboard.monitoring.entity.MonitoringHistory;
+import com.triton.msa.triton_dashboard.monitoring.service.LogAnalysisModelService;
 import com.triton.msa.triton_dashboard.monitoring.service.MonitoringHistoryService;
 import com.triton.msa.triton_dashboard.monitoring.service.MonitoringService;
 import com.triton.msa.triton_dashboard.project.dto.ProjectResponseDto;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.service.ProjectService;
+import com.triton.msa.triton_dashboard.user.entity.LlmModel;
+import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +31,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 
 @Controller
@@ -36,6 +43,7 @@ public class MonitoringController {
     private final MonitoringService monitoringService;
     private final MonitoringHistoryService monitoringHistoryService;
     private final ProjectService projectService;
+    private final LogAnalysisModelService logAnalysisModelService;
 
     @GetMapping
     public String monitoringPage(@PathVariable("projectId") Long projectId,
@@ -44,10 +52,19 @@ public class MonitoringController {
         ProjectResponseDto projectDto = ProjectResponseDto.from(projectService.getProject(projectId));
         List<SavedYamlResponseDto> savedYamls = monitoringService.getSavedYamls(projectId);
         Page<MonitoringHistory> monitoringHistories = monitoringHistoryService.getMonitoringHistories(projectId, pageable);
+        LogAnalysisModel analysisModel = logAnalysisModelService.getAnalysisModel(projectId);
 
         model.addAttribute("project", projectDto);
         model.addAttribute("savedYamls", savedYamls);
         model.addAttribute("monitoringHistories", monitoringHistories);
+        model.addAttribute("analysisModel", LogAnalysisModelResponseDto.from(analysisModel));
+        model.addAttribute("llmProviders", LlmProvider.values());
+        //model.addAttribute("llmModels", LlmModel.values());
+
+        model.addAttribute("llmModels",
+                Arrays.stream(LlmModel.values())
+                        .map(m -> Map.of("name", m.name(), "modelName", m.getModelName(), "provider", m.getProvider().name()))
+                        .collect(Collectors.toList()));
 
         return "projects/monitoring";
     }

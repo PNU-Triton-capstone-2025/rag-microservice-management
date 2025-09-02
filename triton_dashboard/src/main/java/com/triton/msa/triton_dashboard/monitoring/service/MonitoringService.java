@@ -53,6 +53,14 @@ public class MonitoringService {
     }
 
     @Transactional(readOnly = true)
+    public List<SavedYaml> getSavedYamlsWithContent(Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new EntityNotFoundException("프로젝트를 찾을 수 없습니다."));
+
+        return project.fetchSavedYamls();
+    }
+
+    @Transactional(readOnly = true)
     public List<SavedYamlResponseDto> getSavedYamls(Long projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new EntityNotFoundException("프로젝트를 찾을 수 없습니다."));

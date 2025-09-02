@@ -138,7 +138,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public User getUserByProjectId(Long projectId) {
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository.findByIdWithUser(projectId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid project ID: " + projectId));
 
         return project.fetchUser();

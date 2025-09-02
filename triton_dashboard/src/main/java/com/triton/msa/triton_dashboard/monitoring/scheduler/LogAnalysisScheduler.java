@@ -24,7 +24,7 @@ public class LogAnalysisScheduler {
         List<Project> projects = projectService.getProjects();
 
         for(Project project : projects) {
-            logAnalysisService.analyzeProjectErrorLogs(project.fetchId());
+            logAnalysisService.analyzeProjectLogs(project.fetchId());
         }
 
         log.info("finished triggering log analysis for all projects.");

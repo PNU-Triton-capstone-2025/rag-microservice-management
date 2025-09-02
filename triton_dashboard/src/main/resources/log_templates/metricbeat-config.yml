@@ -16,7 +16,7 @@ data:
     setup.ilm.enabled: false
     
     setup.template:
-      name: "project-${PROJECT_ID}-metrics-*"
+      name: "project-${PROJECT_ID}-metrics-template"
       pattern: "project-${PROJECT_ID}-metrics-*"
     output.elasticsearch:
       hosts: ['http://host.docker.internal:9200']

@@ -1,17 +1,20 @@
 package com.triton.msa.triton_dashboard.monitoring.scheduler;
 
 import com.triton.msa.triton_dashboard.monitoring.client.RagLogClient;
+import com.triton.msa.triton_dashboard.monitoring.dto.ErrorAnalysisRequestDto;
 import com.triton.msa.triton_dashboard.monitoring.dto.RagLogResponseDto;
-import com.triton.msa.triton_dashboard.monitoring.dto.RagLogRequestDto;
+import com.triton.msa.triton_dashboard.monitoring.dto.ResourceAnalysisRequestDto;
 import com.triton.msa.triton_dashboard.monitoring.dto.ResourceMetricDto;
 import com.triton.msa.triton_dashboard.monitoring.entity.LogAnalysisModel;
 import com.triton.msa.triton_dashboard.monitoring.client.ElasticSearchLogClient;
 import com.triton.msa.triton_dashboard.monitoring.service.LogAnalysisModelService;
 import com.triton.msa.triton_dashboard.monitoring.service.MonitoringHistoryService;
 import com.triton.msa.triton_dashboard.monitoring.service.MonitoringService;
-import com.triton.msa.triton_dashboard.monitoring.util.LogAnalysisPromptBuilder;
 import com.triton.msa.triton_dashboard.monitoring.util.ResourceAdvisor;
 import com.triton.msa.triton_dashboard.project.entity.SavedYaml;
+import com.triton.msa.triton_dashboard.user.dto.UserApiKeyRequestDto;
+import com.triton.msa.triton_dashboard.user.entity.User;
+import com.triton.msa.triton_dashboard.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -19,6 +22,8 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,11 +41,12 @@ public class LogAnalysisManager {
     private final RagLogClient logAnalysisClient;
     private final ResourceAdvisor resourceAdvisor;
     private final MonitoringService monitoringService;
+    private final UserService userService;
 
     private static final int ANALYSIS_PERIOD_MINUTES = 3;
 
     @Async("logAnalysisTaskExecutor")
-    public void analyzeProjectErrorLogs(Long projectId) {
+    public void analyzeProjectLogs(Long projectId) {
         List<String> services = logMonitoringClient.getServices(projectId);
         if(services.isEmpty()) {
             return;
@@ -56,37 +62,90 @@ public class LogAnalysisManager {
         log.info("project-{} 리소스 정보 : {}", projectId, serviceResources);
         List<SavedYaml> savedYamls = monitoringService.getSavedYamlsWithContent(projectId);
 
-        if (projectErrorLogs.isEmpty() && serviceResources.isEmpty() && savedYamls.isEmpty()) {
+        if (projectErrorLogs.isEmpty() && (serviceResources == null || serviceResources.isEmpty()) && savedYamls.isEmpty()) {
             return;
         }
-        RagLogRequestDto requestDto = makeLogAnalysisTemplate(projectId, projectErrorLogs, serviceResources, savedYamls);
 
-        logAnalysisClient.analyzeLogs(projectId, requestDto)
+        LogAnalysisModel model = endpointService.getAnalysisModel(projectId);
+        if(model == null) {
+            log.info("[LogAnalysis] AI model not configured for project ID: {}", projectId);
+            return;
+        }
+
+        User user = userService.getUserByProjectId(projectId);
+        String apiKey = userService.getCurrentUserApiKey(user.getUsername(), new UserApiKeyRequestDto(model.fetchProvider()));
+        String yamlsAsString = savedYamls.stream()
+                .map(y -> "--- \n# Filename: " + y.getFileName() + "\n" + y.getYamlContent())
+                .collect(Collectors.joining("\n"));
+        
+        if(!projectErrorLogs.isEmpty()) {
+            analyzeProjectErrorLogs(projectId, model, apiKey, projectErrorLogs, yamlsAsString);
+        }
+
+        if (serviceResources != null && !serviceResources.isBlank()) {
+            analyzeResourceUsage(projectId, model, apiKey, serviceResources, yamlsAsString);
+        }
+    }
+
+    private void analyzeProjectErrorLogs(Long projectId, LogAnalysisModel model, String apiKey, List<Map<String, String>> projectErrorLogs, String yamlsAsString) {
+        String errorLogsAsString = projectErrorLogs.stream()
+                .map(logMap -> String.format("### Service: %s\n```\n%s\n```", logMap.get("serviceName"), logMap.get("logs")))
+                .collect(Collectors.joining("\n\n"));
+
+        ErrorAnalysisRequestDto requestDto = new ErrorAnalysisRequestDto(
+                "project-" + projectId,
+                model.fetchProvider().toValue(),
+                apiKey,
+                errorLogsAsString,
+                yamlsAsString
+        );
+
+        String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String title = "에러 로그 해결 방안 - " + now;
+
+        log.info("[LogAnalysis] Sending error log analysis request for project ID: {}", projectId);
+        logAnalysisClient.analyzeErrorLogs(requestDto)
                 .flatMap(response -> {
                     if (response == null) {
                         log.warn("Received null response, skipping save for project ID: {}", projectId);
                         return Mono.empty();
                     }
-                    return saveHistoryAsync(projectId, response);
+                    return saveHistoryAsync(projectId, response, title);
                 })
                 .subscribe(
-                        null,
-                        error -> log.error("[LogAnalysis] Failed to analyze error logs for project ID: {}", projectId, error),
-                        () -> log.info("[LogAnalysis] Successfully analyzed error logs for project ID: {}", projectId)
+                null,
+                        error -> log.error("[LogAnalysis] Error processing error log analysis for project ID: {}", projectId, error),
+                        () -> log.info("[LogAnalysis] Successfully completed error log analysis for project ID: {}", projectId)
                 );
     }
 
-    private RagLogRequestDto makeLogAnalysisTemplate(Long projectId, List<Map<String, String>> projectErrorLogs, String resourceSuggestion, List<SavedYaml> savedYamls) {
-        String prompt = LogAnalysisPromptBuilder.buildPrompt(projectErrorLogs, resourceSuggestion, savedYamls);
-
-        LogAnalysisModel model = endpointService.getAnalysisModel(projectId);
-
-        return new RagLogRequestDto(
+    private void analyzeResourceUsage(Long projectId, LogAnalysisModel model, String apiKey, String serviceResources, String yamlsAsString) {
+        ResourceAnalysisRequestDto requestDto = new ResourceAnalysisRequestDto(
                 "project-" + projectId,
-                model.fetchProvider().toString(),
-                model.fetchModel().toString(),
-                prompt
+                model.fetchProvider().toValue(),
+                model.fetchModel().getModelName(),
+                apiKey,
+                serviceResources,
+                yamlsAsString
         );
+
+        String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String title = "리소스 분석 - " + now;
+
+        log.info("[LogAnalysis] Sending resource usage analysis request for project ID: {}", projectId);
+        logAnalysisClient.analyzeResourceSettings(requestDto)
+                .flatMap(response -> {
+                    if (response == null) {
+                        log.warn("Received null response, skipping save for project ID: {}", projectId);
+                        return Mono.empty();
+                    }
+                    return saveHistoryAsync(projectId, response, title);
+                })
+                .subscribe(
+                        null,
+                        error -> log.error("[LogAnalysis] Error processing error log analysis for project ID: {}", projectId, error),
+                        () -> log.info("[LogAnalysis] Successfully completed error log analysis for project ID: {}", projectId)
+                );
     }
 
     private List<Map<String, String>> fetchProjectErrorLogs(Long projectId, List<String> services) {
@@ -124,8 +183,11 @@ public class LogAnalysisManager {
                 .collect(Collectors.joining("\n\n"));
     }
 
-    private Mono<Void> saveHistoryAsync(Long projectId, RagLogResponseDto responseDto) {
-        return Mono.fromRunnable(() -> monitoringHistoryService.saveHistory(projectId, responseDto))
+    private Mono<Void> saveHistoryAsync(Long projectId, RagLogResponseDto responseDto, String defaultTitle) {
+        String title = (responseDto.title() != null && !responseDto.title().isBlank()) ? responseDto.title() : defaultTitle;
+        RagLogResponseDto finalResponse = new RagLogResponseDto(title, responseDto.llmResponse());
+
+        return Mono.fromRunnable(() -> monitoringHistoryService.saveHistory(projectId, finalResponse))
                 .subscribeOn(Schedulers.boundedElastic())
                 .then();
     }

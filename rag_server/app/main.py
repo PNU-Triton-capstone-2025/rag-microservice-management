@@ -91,6 +91,7 @@ def log_analyze():
     provider = data.get("provider")
     model = data.get("model")
     api_key = data.get("api_key")
+    yamls = data.get("yamls")
 
     query = f"다음 에러 로그를 분석하고 해결 방안을 제시해주세요:\n\n{err_log}\n\n참고 YAML:\n{yamls}"
     query_type = "log_analyze"
@@ -112,6 +113,7 @@ def resource_setting():
     provider = data.get("provider")
     model = data.get("model")
     api_key = data.get("api_key")
+    yamls = data.get("yamls")
 
     query = f"현재 리소스 사용량을 바탕으로 리소스 권장 사용량을 도출해주세요:\n\n{resource_usage}\n\n참고 YAML:\n{yamls}"
     query_type = "resource_setting"

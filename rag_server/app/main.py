@@ -92,12 +92,13 @@ def log_analyze():
     es_index = data.get("es_index")
     provider = data.get("provider")
     model = data.get("model")
+    api_key = data.get("api_key")
 
     if not err_log:
         return jsonify({"error": "error log is empty."}), 400
 
     try:
-        response_data = query_rag(query, es_index, query_type, provider, model)
+        response_data = query_rag(query, es_index, query_type, provider, model, api_key)
         return jsonify(response_data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -111,12 +112,13 @@ def resource_setting():
     es_index = data.get("es_index")
     provider = data.get("provider")
     model = data.get("model")
+    api_key = data.get("api_key")
 
     if not resource_usage:
         return jsonify({"error": " is empty."}), 400
 
     try:
-        response_data = query_rag(query, es_index, query_type, provider, model)
+        response_data = query_rag(query, es_index, query_type, provider, model, api_key)
         return jsonify(response_data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

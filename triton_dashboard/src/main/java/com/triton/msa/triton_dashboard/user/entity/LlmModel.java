@@ -20,6 +20,10 @@ public enum LlmModel {
         return modelName;
     }
 
+    public String getName() {
+        return this.name();
+    }
+
     public LlmProvider getProvider() {
         return provider;
     }

@@ -133,7 +133,7 @@ public class ElasticSearchLogClient {
                             .bool(b -> b
                                     .must(m -> m
                                             .term(t -> t
-                                                    .field("kubernetes.container.name.keyword")
+                                                    .field("kubernetes.deployment.name")
                                                     .value(serviceName)
                                             )
                                     )

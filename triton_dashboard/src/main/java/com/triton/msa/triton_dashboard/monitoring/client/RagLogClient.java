@@ -18,21 +18,8 @@ import reactor.core.publisher.Mono;
 public class RagLogClient {
     private final WebClient webClient;
 
-    @Value("${rag.server.url.monitoring}")
+    @Value("${rag.service.url}")
     private String ragServerBaseUrl;
-
-    public Mono<RagLogResponseDto> analyzeLogs(Long projectId, RagLogRequestDto requestDto) {
-        return webClient.post()
-                .uri(ragServerBaseUrl)
-                .bodyValue(requestDto)
-                .retrieve()
-                .bodyToMono(RagLogResponseDto.class)
-                .doOnError(WebClientResponseException.class, ex ->
-                    log.error("[Async] Failed to analyze logs. Status: {}, Body: {}",
-                            ex.getStatusCode(), ex.getResponseBodyAsByteArray()))
-                .doOnError(ex -> log.error("[Async] An unexpected error occurred during log analysis.",  ex))
-                .onErrorResume(ex -> Mono.empty());
-    }
 
     public Mono<RagLogResponseDto> analyzeErrorLogs(ErrorAnalysisRequestDto requestDto) {
         return webClient.post()

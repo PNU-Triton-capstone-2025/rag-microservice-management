@@ -31,6 +31,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 
 @Controller
@@ -57,7 +59,12 @@ public class MonitoringController {
         model.addAttribute("monitoringHistories", monitoringHistories);
         model.addAttribute("analysisModel", LogAnalysisModelResponseDto.from(analysisModel));
         model.addAttribute("llmProviders", LlmProvider.values());
-        model.addAttribute("llmModels", LlmModel.values());
+        //model.addAttribute("llmModels", LlmModel.values());
+
+        model.addAttribute("llmModels",
+                Arrays.stream(LlmModel.values())
+                        .map(m -> Map.of("name", m.name(), "modelName", m.getModelName(), "provider", m.getProvider().name()))
+                        .collect(Collectors.toList()));
 
         return "projects/monitoring";
     }

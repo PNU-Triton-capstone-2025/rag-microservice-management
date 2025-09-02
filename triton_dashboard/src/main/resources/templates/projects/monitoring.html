@@ -82,19 +82,19 @@
             <form id="ai-settings-form">
               <div class="row">
                 <div class="col-md-6 mb-3">
-                  <label for="providerSelect" class="form-label small fw-bold">Provider</label>
+                  <label for="providerSelect" class="form-label small fw-bold">LLM 서비스</label>
                   <select class="form-select form-select-sm" id="providerSelect">
+                    <option value="">선택 없음</option>
                     <option th:each="provider : ${llmProviders}"
                             th:value="${provider.name()}"
                             th:text="${provider.name()}"
-                            th:selected="${provider == analysisModel.provider}">
+                            th:selected="${analysisModel.provider != null and provider == analysisModel.provider}">
                     </option>
                   </select>
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label for="modelSelect" class="form-label small fw-bold">Model</label>
+                  <label for="modelSelect" class="form-label small fw-bold">AI 모델</label>
                   <select class="form-select form-select-sm" id="modelSelect">
-                    <!-- Options will be populated by JavaScript -->
                   </select>
                 </div>
               </div>
@@ -157,7 +157,8 @@
     document.addEventListener("DOMContentLoaded", function() {
       const projectId = /*[[${project.id}]]*/ null;
       const allModels = /*[[${llmModels}]]*/ [];
-      const currentModel = /*[[${analysisModel.model}]]*/ null;
+      const currentProviderName = /*[[${analysisModel.provider?.name()}]]*/ null;
+      const currentModelName = /*[[${analysisModel.model?.name()}]]*/ null;
 
       const providerSelect = document.getElementById('providerSelect');
       const modelSelect = document.getElementById('modelSelect');
@@ -165,16 +166,19 @@
 
       function updateModelOptions() {
         const selectedProvider = providerSelect.value;
-        modelSelect.innerHTML = '';
-        const filteredModels = allModels.filter(m => m.provider === selectedProvider);
+        modelSelect.innerHTML = '<option value="">선택 없음</option>';
 
-        filteredModels.forEach(model => {
-          const option = new Option(model.modelName, model.name);
-          modelSelect.add(option);
-        });
+        if (selectedProvider) {
+          const filteredModels = allModels.filter(m => m.provider === selectedProvider);
+          filteredModels.forEach(model => {
+            const option = new Option(model.modelName, model.name);
+            modelSelect.add(option);
+          });
+        }
 
-        if (currentModel && filteredModels.some(m => m.name === currentModel.name)) {
-          modelSelect.value = currentModel.name;
+        // 현재 설정된 모델이 있으면 선택
+        if (selectedProvider === currentProviderName && currentModelName) {
+          modelSelect.value = currentModelName;
         }
       }
 
@@ -184,33 +188,39 @@
         const provider = providerSelect.value;
         const model = modelSelect.value;
 
-        fetch(`/api/projects/${projectId}/monitoring/endpoint`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            // CSRF token might be needed if you use Spring Security CSRF protection
-          },
-          body: JSON.stringify({ provider: provider, model: model })
-        })
-                .then(response => {
-                  const alertContainer = document.getElementById('alert-container');
-                  alertContainer.innerHTML = ''; // Clear previous alerts
-                  let alertDiv;
-                  if (response.ok) {
-                    alertDiv = createAlert('success', 'AI 모델 설정이 성공적으로 저장되었습니다.');
-
-                  } else {
-                    alertDiv = createAlert('danger', '설정 저장에 실패했습니다.');
-                  }
-                  alertContainer.appendChild(alertDiv);
-                })
-                .catch(error => {
-                  console.error('Error:', error);
-                  const alertContainer = document.getElementById('alert-container');
-                  alertContainer.innerHTML = '';
-                  const alertDiv = createAlert('danger', '오류가 발생했습니다: ' + error);
-                  alertContainer.appendChild(alertDiv);
-                });
+        // 둘 다 비어있거나, 둘 다 채워져 있을 때만 요청
+        if ((!provider && !model) || (provider && model)) {
+          fetch(`/api/projects/${projectId}/monitoring/endpoint`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ provider: provider || null, model: model || null })
+          })
+                  .then(response => {
+                    const alertContainer = document.getElementById('alert-container');
+                    alertContainer.innerHTML = ''; // Clear previous alerts
+                    let alertDiv;
+                    if (response.ok) {
+                      alertDiv = createAlert('success', 'AI 모델 설정이 성공적으로 저장되었습니다.');
+                    } else {
+                      alertDiv = createAlert('danger', '설정 저장에 실패했습니다.');
+                    }
+                    alertContainer.appendChild(alertDiv);
+                  })
+                  .catch(error => {
+                    console.error('Error:', error);
+                    const alertContainer = document.getElementById('alert-container');
+                    alertContainer.innerHTML = '';
+                    const alertDiv = createAlert('danger', '오류가 발생했습니다: ' + error);
+                    alertContainer.appendChild(alertDiv);
+                  });
+        } else {
+          const alertContainer = document.getElementById('alert-container');
+          alertContainer.innerHTML = '';
+          const alertDiv = createAlert('warning', '공급자와 모델을 모두 선택하거나 모두 선택 해제해야 합니다.');
+          alertContainer.appendChild(alertDiv);
+        }
       });
 
       function createAlert(type, message) {
@@ -218,7 +228,7 @@
         wrapper.classList.add('alert', `alert-${type}`, 'alert-dismissible', 'fade', 'show');
         wrapper.setAttribute('role', 'alert');
 
-        const iconClass = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
+        const iconClass = type === 'success' ? 'bi-check-circle-fill' : (type === 'danger' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill');
 
         wrapper.innerHTML = `
               <i class="bi ${iconClass} me-2"></i>

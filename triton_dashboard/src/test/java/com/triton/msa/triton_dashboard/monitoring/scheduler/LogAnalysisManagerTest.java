@@ -9,6 +9,7 @@ import com.triton.msa.triton_dashboard.monitoring.dto.ResourceMetricDto;
 import com.triton.msa.triton_dashboard.monitoring.entity.LogAnalysisModel;
 import com.triton.msa.triton_dashboard.monitoring.service.LogAnalysisModelService;
 import com.triton.msa.triton_dashboard.monitoring.service.MonitoringHistoryService;
+import com.triton.msa.triton_dashboard.monitoring.service.MonitoringService;
 import com.triton.msa.triton_dashboard.monitoring.util.ResourceAdvisor;
 import com.triton.msa.triton_dashboard.user.entity.LlmModel;
 import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
@@ -50,6 +51,9 @@ public class LogAnalysisManagerTest {
     @Mock
     private ResourceAdvisor resourceAdvisor;
 
+    @Mock
+    private MonitoringService monitoringService;
+
     @Test
     @DisplayName("프로젝트 에러 로그 분석 및 저장 전체 흐름 - 200")
     void analyzeProjectErrorLogs() {
@@ -72,8 +76,7 @@ public class LogAnalysisManagerTest {
         when(logClient.getRecentErrorLogs(projectId, "service-B", 3)).thenReturn(serviceBLogs);
 
         when(logClient.getServiceResourceMetrics(anyLong(), anyString(), anyInt())).thenReturn(dummyMetrics);
-        when(resourceAdvisor.recommendResources(any(ResourceMetricDto.class))).thenReturn(dummyRecommended);
-        when(resourceAdvisor.generatePerformancePrompt(anyString(), any(RecommendedResourcesDto.class))).thenReturn(suggestionPrompt);
+        when(resourceAdvisor.generatePerformancePrompt(anyString(), any(ResourceMetricDto.class))).thenReturn(suggestionPrompt);
 
         when(modelService.getAnalysisModel(projectId)).thenReturn(model);
         when(ragLogClient.analyzeLogs(eq(projectId), any(RagLogRequestDto.class))).thenReturn(Mono.just(analysisResponse));

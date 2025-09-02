@@ -24,7 +24,7 @@ public class LogAnalysisPromptBuilderTest {
         List<Map<String, String>> errorLogs = List.of(serviceALogs, serviceBLogs);
 
         // when
-        String prompt = LogAnalysisPromptBuilder.buildPrompt(errorLogs, null);
+        String prompt = LogAnalysisPromptBuilder.buildPrompt(errorLogs, null, null);
 
         // then
         assertThat(prompt).contains("### 서비스 'auth-service'의 에러 로그 ###");

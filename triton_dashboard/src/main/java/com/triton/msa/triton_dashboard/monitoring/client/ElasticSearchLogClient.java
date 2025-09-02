@@ -155,7 +155,6 @@ public class ElasticSearchLogClient {
                     Void.class
             );
 
-            log.info("project-{}-metrics-* 메트릭 분석", projectId);
             Map<String, Aggregate> aggs = response.aggregations();
             return new ResourceMetricDto(
                     Optional.ofNullable(aggs.get("avg_cpu")).map(a -> a.avg().value()).orElse(0.0),

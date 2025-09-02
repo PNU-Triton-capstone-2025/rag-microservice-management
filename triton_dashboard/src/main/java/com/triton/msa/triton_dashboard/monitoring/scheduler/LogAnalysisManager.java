@@ -113,6 +113,7 @@ public class LogAnalysisManager {
         return services.stream()
                 .map(service -> {
                     ResourceMetricDto metricDto = logMonitoringClient.getServiceResourceMetrics(projectId, service, ANALYSIS_PERIOD_MINUTES);
+                    log.info("project-{}-metrics-* 메트릭 분석", projectId);
                     if (metricDto.maxCpu() == 0 && metricDto.maxMemoryBytes() == 0) {
                         return null;
                     }

@@ -45,9 +45,15 @@ public class LogAnalysisManager {
         if(services.isEmpty()) {
             return;
         }
+        log.info("project-{} service 개수 : {}", projectId, services.size());
+        for(int i = 0; i < services.size(); i++) {
+            log.info("service : {}", services.get(i));
+        }
 
         List<Map<String, String>> projectErrorLogs = fetchProjectErrorLogs(projectId, services);
+        log.info("project-{} 에러 로그 개수 : {}", projectId, projectErrorLogs.size());
         String serviceResources = fetchResources(projectId, services);
+        log.info("project-{} 리소스 정보 : {}", projectId, serviceResources);
         List<SavedYaml> savedYamls = monitoringService.getSavedYamlsWithContent(projectId);
 
         if (projectErrorLogs.isEmpty() && serviceResources.isEmpty() && savedYamls.isEmpty()) {

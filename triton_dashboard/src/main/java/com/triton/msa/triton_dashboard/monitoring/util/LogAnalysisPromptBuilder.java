@@ -1,16 +1,19 @@
 package com.triton.msa.triton_dashboard.monitoring.util;
 
 import com.triton.msa.triton_dashboard.project.entity.SavedYaml;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public final class LogAnalysisPromptBuilder {
     private LogAnalysisPromptBuilder() {
 
     }
 
     public static String buildPrompt(List<Map<String, String>> errorLogs, String resourceSuggestion, List<SavedYaml> savedYamls) {
+        log.info("make monitoring prompt...");
         StringBuilder sb = new StringBuilder();
         sb.append("다음은 컨테이너 기반 마이크로서비스 환경의 종합적인 모니터링 분석 요청입니다. 에러 로그와 성능 지표를 검토해서 원인 분석 및 배포 파일 개선 방안을 제시해주세요\n\n");
 
@@ -40,6 +43,7 @@ public final class LogAnalysisPromptBuilder {
             }
         }
 
+        log.info("monitoring prompt completed");
         return sb.toString();
     }
 }

@@ -26,13 +26,23 @@ public class ElasticSearchLogClient {
     private final ElasticsearchClient esClient;
 
     public List<String> getServices(Long projectId) {
+        Instant now = Instant.now();
+        Instant past = now.minus(60, ChronoUnit.MINUTES);
+
         try {
             SearchResponse<Void> response = esClient.search(s -> s
                             .index("project-" + projectId + "-logs-*")
                             .size(0)
+                            .query(q -> q
+                                    .range(r -> r
+                                            .field("@timestamp")
+                                            .gte(JsonData.of(past.toString()))
+                                    )
+                            )
                             .aggregations("services", a -> a
                                     .terms(t -> t
                                             .field("kubernetes.container.name.keyword")
+                                            .size(1000)
                                     )
                             ),
                     Void.class
@@ -44,6 +54,7 @@ public class ElasticSearchLogClient {
                 log.warn("Project ID {}에 대한 'services' 집계를 찾을 수 없습니다. 인덱스에 데이터가 없거나 필드 매핑 문제일 수 있습니다.", projectId);
                 return Collections.emptyList();
             }
+            log.info("Project-{}-logs-* 서비스 조회 완료", projectId);
 
             return services
                     .sterms()
@@ -144,6 +155,7 @@ public class ElasticSearchLogClient {
                     Void.class
             );
 
+            log.info("project-{}-metrics-* 메트릭 분석", projectId);
             Map<String, Aggregate> aggs = response.aggregations();
             return new ResourceMetricDto(
                     Optional.ofNullable(aggs.get("avg_cpu")).map(a -> a.avg().value()).orElse(0.0),

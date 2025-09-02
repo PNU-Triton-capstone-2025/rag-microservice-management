@@ -8,8 +8,10 @@ import com.triton.msa.triton_dashboard.monitoring.entity.LogAnalysisModel;
 import com.triton.msa.triton_dashboard.monitoring.client.ElasticSearchLogClient;
 import com.triton.msa.triton_dashboard.monitoring.service.LogAnalysisModelService;
 import com.triton.msa.triton_dashboard.monitoring.service.MonitoringHistoryService;
+import com.triton.msa.triton_dashboard.monitoring.service.MonitoringService;
 import com.triton.msa.triton_dashboard.monitoring.util.LogAnalysisPromptBuilder;
 import com.triton.msa.triton_dashboard.monitoring.util.ResourceAdvisor;
+import com.triton.msa.triton_dashboard.project.entity.SavedYaml;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -33,6 +35,7 @@ public class LogAnalysisManager {
     private final LogAnalysisModelService endpointService;
     private final RagLogClient logAnalysisClient;
     private final ResourceAdvisor resourceAdvisor;
+    private final MonitoringService monitoringService;
 
     private static final int ANALYSIS_PERIOD_MINUTES = 3;
 
@@ -44,12 +47,13 @@ public class LogAnalysisManager {
         }
 
         List<Map<String, String>> projectErrorLogs = fetchProjectErrorLogs(projectId, services);
-        String resourceSuggestion = fetchResourceSuggestions(projectId, services);
+        String serviceResources = fetchResources(projectId, services);
+        List<SavedYaml> savedYamls = monitoringService.getSavedYamlsWithContent(projectId);
 
-        if (projectErrorLogs.isEmpty() && resourceSuggestion.isEmpty()) {
+        if (projectErrorLogs.isEmpty() && serviceResources.isEmpty() && savedYamls.isEmpty()) {
             return;
         }
-        RagLogRequestDto requestDto = makeLogAnalysisTemplate(projectId, projectErrorLogs, resourceSuggestion);
+        RagLogRequestDto requestDto = makeLogAnalysisTemplate(projectId, projectErrorLogs, serviceResources, savedYamls);
 
         logAnalysisClient.analyzeLogs(projectId, requestDto)
                 .flatMap(response -> {
@@ -66,8 +70,8 @@ public class LogAnalysisManager {
                 );
     }
 
-    private RagLogRequestDto makeLogAnalysisTemplate(Long projectId, List<Map<String, String>> projectErrorLogs, String resourceSuggestion) {
-        String prompt = LogAnalysisPromptBuilder.buildPrompt(projectErrorLogs, resourceSuggestion);
+    private RagLogRequestDto makeLogAnalysisTemplate(Long projectId, List<Map<String, String>> projectErrorLogs, String resourceSuggestion, List<SavedYaml> savedYamls) {
+        String prompt = LogAnalysisPromptBuilder.buildPrompt(projectErrorLogs, resourceSuggestion, savedYamls);
 
         LogAnalysisModel model = endpointService.getAnalysisModel(projectId);
 
@@ -99,7 +103,7 @@ public class LogAnalysisManager {
         }
     }
 
-    private String fetchResourceSuggestions(Long projectId, List<String> services) {
+    private String fetchResources(Long projectId, List<String> services) {
         return services.stream()
                 .map(service -> {
                     ResourceMetricDto metricDto = logMonitoringClient.getServiceResourceMetrics(projectId, service, ANALYSIS_PERIOD_MINUTES);

@@ -1,8 +1,6 @@
 package com.triton.msa.triton_dashboard.common.advice;
 
-import com.triton.msa.triton_dashboard.monitoring.exception.EmptyFileUploadException;
-import com.triton.msa.triton_dashboard.monitoring.exception.InvalidYamlFileException;
-import com.triton.msa.triton_dashboard.monitoring.exception.YamlDeletionException;
+import com.triton.msa.triton_dashboard.monitoring.exception.YamlFileException;
 import com.triton.msa.triton_dashboard.private_data.exception.PrivateDataDeleteException;
 import com.triton.msa.triton_dashboard.private_data.exception.ZipSlipException;
 import com.triton.msa.triton_dashboard.user.dto.ApiKeyValidationResponseDto;
@@ -61,10 +59,10 @@ public class GlobalExceptionHandler {
         return mv;
     }
 
-    @ExceptionHandler({InvalidYamlFileException.class, YamlDeletionException.class, EmptyFileUploadException.class})
-    public String handleMonitoringException(RuntimeException e,
-                                            HttpServletRequest request,
-                                            RedirectAttributes redirectAttributes) {
+    @ExceptionHandler(YamlFileException.class)
+    public String handleYamlFileException(YamlFileException e,
+                                          HttpServletRequest request,
+                                          RedirectAttributes redirectAttributes) {
         String projectId = extractProjectId(request.getRequestURI());
         redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         return "redirect:/projects/" + projectId + "/monitoring";

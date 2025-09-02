@@ -63,17 +63,13 @@ public class MonitoringController {
         return "redirect:/projects/" + projectId + "/monitoring";
     }
 
-    @PostMapping("delete/{yamlIndex}")
+    @PostMapping("/delete/{yamlIndex}")
     public String deleteYaml(@PathVariable("projectId") Long projectId,
                              @PathVariable("yamlIndex") int yamlIndex,
                              RedirectAttributes redirectAttributes) {
 
-        try {
-            monitoringService.deleteYaml(projectId, yamlIndex);
-            redirectAttributes.addFlashAttribute("successMessage", "파일이 성공적으로 삭제되었습니다.");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "파일 삭제 중 오류가 발생했습니다: " + e.getMessage());
-        }
+        monitoringService.deleteYaml(projectId, yamlIndex);
+        redirectAttributes.addFlashAttribute("successMessage", "파일이 성공적으로 삭제되었습니다.");
 
         return "redirect:/projects/" + projectId + "/monitoring";
     }

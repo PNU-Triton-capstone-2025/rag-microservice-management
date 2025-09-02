@@ -1,10 +1,7 @@
 package com.triton.msa.triton_dashboard.monitoring.service;
 
-import com.triton.msa.triton_dashboard.monitoring.dto.SavedYamlRequestDto;
 import com.triton.msa.triton_dashboard.monitoring.dto.SavedYamlResponseDto;
-import com.triton.msa.triton_dashboard.monitoring.exception.EmptyFileUploadException;
-import com.triton.msa.triton_dashboard.monitoring.exception.InvalidYamlFileException;
-import com.triton.msa.triton_dashboard.monitoring.exception.YamlDeletionException;
+import com.triton.msa.triton_dashboard.monitoring.exception.YamlFileException;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.entity.SavedYaml;
 import com.triton.msa.triton_dashboard.project.repository.ProjectRepository;
@@ -30,7 +27,7 @@ public class MonitoringService {
     @Transactional
     public void saveYamls(Long projectId, MultipartFile[] files) {
         if (files == null || files.length == 0 || Arrays.stream(files).allMatch(MultipartFile::isEmpty)) {
-            throw new EmptyFileUploadException("업로드할 파일을 하나 이상 선택해주세요.");
+            throw new YamlFileException("업로드할 파일을 하나 이상 선택해주세요.");
         }
 
         Project project = projectRepository.findById(projectId)
@@ -41,7 +38,7 @@ public class MonitoringService {
 
             String filename = file.getOriginalFilename();
             if (filename == null || (!filename.endsWith(".yaml") && !filename.endsWith(".yml"))) {
-                throw new InvalidYamlFileException("YAML 파일(.yml, .yaml)만 업로드할 수 있습니다. 잘못된 파일: " + filename);
+                throw new YamlFileException("YAML 파일(.yml, .yaml)만 업로드할 수 있습니다. 잘못된 파일: " + filename);
             }
 
             try {
@@ -49,7 +46,7 @@ public class MonitoringService {
                 SavedYaml newYaml = new SavedYaml(filename, yamlContent);
                 project.fetchSavedYamls().add(newYaml);
             } catch (IOException e) {
-                throw new InvalidYamlFileException("YAML 파일의 내용을 읽어올 수 없습니다: " + file.getOriginalFilename());
+                throw new YamlFileException("YAML 파일의 내용을 읽어올 수 없습니다: " + file.getOriginalFilename());
             }
         }
         projectRepository.save(project);
@@ -77,7 +74,7 @@ public class MonitoringService {
             savedYamls.remove(yamlIndex);
             projectRepository.save(project);
         } else {
-            throw new YamlDeletionException("해당 YAML이 존재하지 않아 삭제할 수 없습니다.");
+            throw new YamlFileException("해당 YAML을 삭제할 수 없습니다.");
         }
     }
 }

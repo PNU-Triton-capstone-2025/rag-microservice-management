@@ -1,6 +1,6 @@
 package com.triton.msa.triton_dashboard.common.advice;
 
-import com.triton.msa.triton_dashboard.monitoring.exception.YamlDeletionException;
+import com.triton.msa.triton_dashboard.monitoring.exception.YamlFileException;
 import com.triton.msa.triton_dashboard.private_data.exception.PrivateDataUnzipException;
 import com.triton.msa.triton_dashboard.private_data.exception.UnsupportedFileTypeException;
 import com.triton.msa.triton_dashboard.rag.exception.FileUploadException;
@@ -34,12 +34,6 @@ public class GlobalApiExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleSshConnectionException(SshConnectionException ex) {
         log.error("SSH Connection error: {}", ex.getMessage());
         return makeErrorResponseEntity(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    @ExceptionHandler(YamlDeletionException.class)
-    public ResponseEntity<Map<String, Object>> handleYamlDeletionException(YamlDeletionException ex) {
-        log.error("YML Deletion failed: {}", ex.getMessage());
-        return makeErrorResponseEntity(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
 //    @ExceptionHandler(RuntimeException.class)

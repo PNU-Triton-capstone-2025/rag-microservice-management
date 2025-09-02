@@ -62,7 +62,13 @@ public class LogAnalysisManager {
         log.info("project-{} 리소스 정보 : {}", projectId, serviceResources);
         List<SavedYaml> savedYamls = monitoringService.getSavedYamlsWithContent(projectId);
 
-        if (projectErrorLogs.isEmpty() && (serviceResources == null || serviceResources.isEmpty()) && savedYamls.isEmpty()) {
+        boolean hasErrorLogs = !projectErrorLogs.isEmpty();
+        boolean hasResourceInfo = serviceResources != null && !serviceResources.isBlank();
+        boolean hasYamls = !savedYamls.isEmpty();
+
+        if (!((hasErrorLogs || hasResourceInfo) && hasYamls)) {
+            log.info("[LogAnalysis] Not enough data to analyze for project ID: {}. Skipping. (Errors: {}, Resources: {}, YAMLs: {})",
+                    projectId, hasErrorLogs, hasResourceInfo, hasYamls);
             return;
         }
 

@@ -15,15 +15,17 @@
       </h1>
     </div>
 
-    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
-      <i class="bi bi-check-circle-fill me-2"></i>
-      <span th:text="${successMessage}"></span>
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
-      <i class="bi bi-exclamation-triangle-fill me-2"></i>
-      <span th:text="${errorMessage}"></span>
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <div id="alert-container">
+      <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
     </div>
 
     <div class="row">
@@ -66,6 +68,38 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-7 col-lg-12 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+          <div class="card-body">
+            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+              AI 분석 설정
+            </div>
+            <hr class="mt-0">
+            <form id="ai-settings-form">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="providerSelect" class="form-label small fw-bold">Provider</label>
+                  <select class="form-select form-select-sm" id="providerSelect">
+                    <option th:each="provider : ${llmProviders}"
+                            th:value="${provider.name()}"
+                            th:text="${provider.name()}"
+                            th:selected="${provider == analysisModel.provider}">
+                    </option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="modelSelect" class="form-label small fw-bold">Model</label>
+                  <select class="form-select form-select-sm" id="modelSelect">
+                    <!-- Options will be populated by JavaScript -->
+                  </select>
+                </div>
+              </div>
+              <button type="button" id="save-ai-settings" class="btn btn-success btn-sm w-100">설정 저장</button>
+            </form>
           </div>
         </div>
       </div>
@@ -118,5 +152,86 @@
     </div>
   </div>
 </section>
+<th:block layout:fragment="page-scripts">
+  <script th:inline="javascript">
+    document.addEventListener("DOMContentLoaded", function() {
+      const projectId = /*[[${project.id}]]*/ null;
+      const allModels = /*[[${llmModels}]]*/ [];
+      const currentModel = /*[[${analysisModel.model}]]*/ null;
+
+      const providerSelect = document.getElementById('providerSelect');
+      const modelSelect = document.getElementById('modelSelect');
+      const saveButton = document.getElementById('save-ai-settings');
+
+      function updateModelOptions() {
+        const selectedProvider = providerSelect.value;
+        modelSelect.innerHTML = '';
+        const filteredModels = allModels.filter(m => m.provider === selectedProvider);
+
+        filteredModels.forEach(model => {
+          const option = new Option(model.modelName, model.name);
+          modelSelect.add(option);
+        });
+
+        if (currentModel && filteredModels.some(m => m.name === currentModel.name)) {
+          modelSelect.value = currentModel.name;
+        }
+      }
+
+      providerSelect.addEventListener('change', updateModelOptions);
+
+      saveButton.addEventListener('click', function() {
+        const provider = providerSelect.value;
+        const model = modelSelect.value;
+
+        fetch(`/api/projects/${projectId}/monitoring/endpoint`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            // CSRF token might be needed if you use Spring Security CSRF protection
+          },
+          body: JSON.stringify({ provider: provider, model: model })
+        })
+                .then(response => {
+                  const alertContainer = document.getElementById('alert-container');
+                  alertContainer.innerHTML = ''; // Clear previous alerts
+                  let alertDiv;
+                  if (response.ok) {
+                    alertDiv = createAlert('success', 'AI 모델 설정이 성공적으로 저장되었습니다.');
+
+                  } else {
+                    alertDiv = createAlert('danger', '설정 저장에 실패했습니다.');
+                  }
+                  alertContainer.appendChild(alertDiv);
+                })
+                .catch(error => {
+                  console.error('Error:', error);
+                  const alertContainer = document.getElementById('alert-container');
+                  alertContainer.innerHTML = '';
+                  const alertDiv = createAlert('danger', '오류가 발생했습니다: ' + error);
+                  alertContainer.appendChild(alertDiv);
+                });
+      });
+
+      function createAlert(type, message) {
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('alert', `alert-${type}`, 'alert-dismissible', 'fade', 'show');
+        wrapper.setAttribute('role', 'alert');
+
+        const iconClass = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
+
+        wrapper.innerHTML = `
+              <i class="bi ${iconClass} me-2"></i>
+              <span>${message}</span>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          `;
+        return wrapper;
+      }
+
+      // Initial population
+      updateModelOptions();
+    });
+  </script>
+</th:block>
 </body>
 </html>

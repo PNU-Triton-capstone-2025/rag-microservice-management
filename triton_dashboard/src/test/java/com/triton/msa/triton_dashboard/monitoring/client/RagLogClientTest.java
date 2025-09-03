@@ -57,7 +57,7 @@ public class RagLogClientTest {
         StepVerifier.create(result)
                 .expectNextMatches(response ->
                     response.title().equals("Analysis Result")
-                            && response.llmResponse().equals("Everything is fine"))
+                            && response.answer().equals("Everything is fine"))
                 .verifyComplete();
     }
 

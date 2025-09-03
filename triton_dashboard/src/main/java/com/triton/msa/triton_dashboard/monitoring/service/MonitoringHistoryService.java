@@ -5,6 +5,7 @@ import com.triton.msa.triton_dashboard.monitoring.entity.MonitoringHistory;
 import com.triton.msa.triton_dashboard.monitoring.repository.MonitoringHistoryRepository;
 import com.triton.msa.triton_dashboard.project.entity.Project;
 import com.triton.msa.triton_dashboard.project.repository.ProjectRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,7 +28,7 @@ public class MonitoringHistoryService {
         MonitoringHistory monitoringHistory = new MonitoringHistory(
                 project,
                 analysisDto.title(),
-                analysisDto.llmResponse(),
+                analysisDto.answer(),
                 LocalDateTime.now()
         );
         monitoringHistoryRepository.save(monitoringHistory);
@@ -36,6 +37,12 @@ public class MonitoringHistoryService {
     @Transactional
     public void deleteHistory(Long monitoringHistoryId) {
         monitoringHistoryRepository.deleteById(monitoringHistoryId);
+    }
+
+    @Transactional(readOnly = true)
+    public MonitoringHistory getHistory(Long historyId) {
+        return monitoringHistoryRepository.findById(historyId)
+                .orElseThrow(() -> new EntityNotFoundException("Monitoring history not found with id: " + historyId));
     }
 
     @Transactional(readOnly = true)

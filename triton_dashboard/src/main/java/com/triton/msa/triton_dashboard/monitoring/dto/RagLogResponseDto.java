@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record RagLogResponseDto(
         String title,
-        @JsonProperty("llm_response")
-        String llmResponse
+        @JsonProperty("answer")
+        String answer
 ) {
 
 }

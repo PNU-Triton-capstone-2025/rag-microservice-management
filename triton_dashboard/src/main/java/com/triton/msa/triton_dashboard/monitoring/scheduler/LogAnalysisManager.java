@@ -191,7 +191,7 @@ public class LogAnalysisManager {
 
     private Mono<Void> saveHistoryAsync(Long projectId, RagLogResponseDto responseDto, String defaultTitle) {
         String title = (responseDto.title() != null && !responseDto.title().isBlank()) ? responseDto.title() : defaultTitle;
-        RagLogResponseDto finalResponse = new RagLogResponseDto(title, responseDto.llmResponse());
+        RagLogResponseDto finalResponse = new RagLogResponseDto(title, responseDto.answer());
 
         return Mono.fromRunnable(() -> monitoringHistoryService.saveHistory(projectId, finalResponse))
                 .subscribeOn(Schedulers.boundedElastic())

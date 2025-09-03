@@ -59,7 +59,6 @@ public class MonitoringController {
         model.addAttribute("monitoringHistories", monitoringHistories);
         model.addAttribute("analysisModel", LogAnalysisModelResponseDto.from(analysisModel));
         model.addAttribute("llmProviders", LlmProvider.values());
-        //model.addAttribute("llmModels", LlmModel.values());
 
         model.addAttribute("llmModels",
                 Arrays.stream(LlmModel.values())
@@ -67,6 +66,21 @@ public class MonitoringController {
                         .collect(Collectors.toList()));
 
         return "projects/monitoring";
+    }
+
+    @GetMapping("/history/{historyId}")
+    public String monitoringHistoryDetail(
+            @PathVariable("projectId") Long projectId,
+            @PathVariable("historyId") Long historyId,
+            Model model
+    ) {
+        ProjectResponseDto projectResponseDto = ProjectResponseDto.from(projectService.getProject(projectId));
+        MonitoringHistory history = monitoringHistoryService.getHistory(historyId);
+
+        model.addAttribute("project", projectResponseDto);
+        model.addAttribute("history", history);
+        return "projects/monitoring-history-detail";
+
     }
 
     @PostMapping("/upload")

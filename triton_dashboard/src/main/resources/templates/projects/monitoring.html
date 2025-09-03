@@ -111,9 +111,11 @@
                 <p class="mt-2">모니터링 이력이 없습니다.</p>
               </div>
               <div class="table-responsive" th:unless="${monitoringHistories.isEmpty()}">
-                <table class="table table-sm table-borderless">
+                <table class="table table-sm table-hover table-borderless">
                   <tbody>
-                  <tr th:each="history : ${monitoringHistories.content}">
+                  <tr th:each="history : ${monitoringHistories.content}"
+                      th:onclick="|location.href='@{/projects/{projectId}/monitoring/history/{historyId}(projectId=${project.id}, historyId=${history.id})}'|"
+                      style="cursor:pointer;">
                     <td class="align-middle">
                       <div class="fw-bold" th:text="${history.title}"></div>
                       <div class="small text-muted" th:text="${#strings.abbreviate(history.monitoringReport, 120)}"></div>
@@ -122,7 +124,7 @@
                       <div class="small" th:text="${#temporals.format(history.createdAt, 'yyyy-MM-dd')}"></div>
                       <div class="small text-muted" th:text="${#temporals.format(history.createdAt, 'HH:mm')}"></div>
                     </td>
-                    <td class="align-middle text-end">
+                    <td class="align-middle text-end" th:onclick="|event.stopPropagation()|">
                       <form th:action="@{/projects/{projectId}/monitoring/history/delete/{historyId}(projectId=${project.id}, historyId=${history.id})}" method="post" onsubmit="return confirm('이 이력을 정말로 삭제하시겠습니까?');">
                         <button type="submit" class="btn btn-sm btn-outline-secondary border-0">
                           <i class="bi bi-trash3"></i>

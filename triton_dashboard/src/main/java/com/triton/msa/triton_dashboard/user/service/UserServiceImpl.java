@@ -12,6 +12,7 @@ import com.triton.msa.triton_dashboard.user.exception.InvalidApiKeyException;
 import com.triton.msa.triton_dashboard.user.exception.InvalidPasswordException;
 import com.triton.msa.triton_dashboard.user.exception.UnauthorizedException;
 import com.triton.msa.triton_dashboard.user.repository.UserRepository;
+import com.triton.msa.triton_dashboard.user.util.ApiKeyEncryptor;
 import com.triton.msa.triton_dashboard.user.util.LlmApiKeyValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -37,6 +38,7 @@ public class UserServiceImpl implements UserService {
     private final ProjectRepository projectRepository;
     private final PasswordEncoder passwordEncoder;
     private final LlmApiKeyValidator llmApiKeyValidator;
+    private final ApiKeyEncryptor apiKeyEncryptor;
 
     @Override
     @Transactional
@@ -44,7 +46,8 @@ public class UserServiceImpl implements UserService {
         Set<ApiKeyInfo> keys = new HashSet<>();
         for (LlmProvider p : LlmProvider.values()) {
             if (dto.apiKeyOf(p) != null && !dto.apiKeyOf(p).isBlank()) {
-                keys.add(new ApiKeyInfo(dto.apiKeys().get(p), p));
+                String encryptedApiKey = apiKeyEncryptor.encrypt(dto.apiKeyOf(p));
+                keys.add(new ApiKeyInfo(encryptedApiKey, p));
             }
         }
 
@@ -120,7 +123,7 @@ public class UserServiceImpl implements UserService {
         User me = getUser(username);
 
         me.getApiKeys().removeIf(k -> k.getProvider() == provider);
-        me.getApiKeys().add(new ApiKeyInfo(newApiKey, provider));
+        me.getApiKeys().add(new ApiKeyInfo(apiKeyEncryptor.encrypt(newApiKey), provider));
     }
 
     @Override
@@ -130,7 +133,7 @@ public class UserServiceImpl implements UserService {
 
         return me.getApiKeys().stream()
                 .filter(apiKeyInfo -> apiKeyInfo.getProvider() == apiKeyRequestDto.provider())
-                .map(ApiKeyInfo::getApiKey)
+                .map(apiKeyInfo -> apiKeyEncryptor.decrypt(apiKeyInfo.getApiKey()))
                 .findFirst()
                 .orElseThrow(() -> new InvalidApiKeyException(apiKeyRequestDto.provider().toValue() + " 에 해당하는 API KEY가 없습니다."));
     }

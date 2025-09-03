@@ -2,17 +2,20 @@ package com.triton.msa.triton_dashboard.monitoring.scheduler;
 
 import com.triton.msa.triton_dashboard.monitoring.client.ElasticSearchLogClient;
 import com.triton.msa.triton_dashboard.monitoring.client.RagLogClient;
-import com.triton.msa.triton_dashboard.monitoring.dto.RagLogRequestDto;
+import com.triton.msa.triton_dashboard.monitoring.dto.ErrorAnalysisRequestDto;
 import com.triton.msa.triton_dashboard.monitoring.dto.RagLogResponseDto;
-import com.triton.msa.triton_dashboard.monitoring.dto.RecommendedResourcesDto;
+import com.triton.msa.triton_dashboard.monitoring.dto.ResourceAnalysisRequestDto;
 import com.triton.msa.triton_dashboard.monitoring.dto.ResourceMetricDto;
 import com.triton.msa.triton_dashboard.monitoring.entity.LogAnalysisModel;
 import com.triton.msa.triton_dashboard.monitoring.service.LogAnalysisModelService;
 import com.triton.msa.triton_dashboard.monitoring.service.MonitoringHistoryService;
 import com.triton.msa.triton_dashboard.monitoring.service.MonitoringService;
 import com.triton.msa.triton_dashboard.monitoring.util.ResourceAdvisor;
+import com.triton.msa.triton_dashboard.project.entity.SavedYaml;
 import com.triton.msa.triton_dashboard.user.entity.LlmModel;
 import com.triton.msa.triton_dashboard.user.entity.LlmProvider;
+import com.triton.msa.triton_dashboard.user.entity.User;
+import com.triton.msa.triton_dashboard.user.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,10 +34,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class LogAnalysisManagerTest {
@@ -43,85 +43,90 @@ public class LogAnalysisManagerTest {
     @Mock
     private MonitoringHistoryService monitoringHistoryService;
     @Mock
-    private ElasticSearchLogClient logClient;
+    private ElasticSearchLogClient logMonitoringClient;
     @Mock
     private LogAnalysisModelService modelService;
     @Mock
     private RagLogClient ragLogClient;
     @Mock
     private ResourceAdvisor resourceAdvisor;
-
     @Mock
     private MonitoringService monitoringService;
+    @Mock
+    private UserService userService;
 
     @Test
-    @DisplayName("프로젝트 에러 로그 분석 및 저장 전체 흐름 - 200")
-    void analyzeProjectErrorLogs() {
+    @DisplayName("프로젝트 에러 로그 및 리소스 분석 및 저장 전체 흐름 - 200")
+    void analyzeProjectLogs_Success() {
         // given
         Long projectId = 1L;
-        List<String> services = List.of("service-A", "service-B");
-        List<String> serviceALogs = List.of("Error in A-1", "Error in A-2");
-        List<String> serviceBLogs = List.of("Error in B-1");
+        String username = "testuser";
+        List<String> services = List.of("service-A");
+        List<String> serviceALogs = List.of("Error in A-1");
+        List<SavedYaml> savedYamls = List.of(new SavedYaml("test.yml", "content"));
+        User mockUser = mock(User.class);
 
         LogAnalysisModel model = new LogAnalysisModel(LlmProvider.OPENAI, LlmModel.GPT_4O);
-        RagLogResponseDto analysisResponse = new RagLogResponseDto("Analysis Title", "Analysis Report");
-
-        // Mocking for metrics and resource advisor
+        RagLogResponseDto errorAnalysisResponse = new RagLogResponseDto("Error Analysis", "Error Report");
+        RagLogResponseDto resourceAnalysisResponse = new RagLogResponseDto("Resource Analysis", "Resource Report");
         ResourceMetricDto dummyMetrics = new ResourceMetricDto(0.1, 0.05, 0.2, 100000, 50000, 200000);
-        RecommendedResourcesDto dummyRecommended = new RecommendedResourcesDto("100m", "240m", "95Mi", "234Mi");
-        String suggestionPrompt = "Performance suggestion for service-A";
+        String performancePrompt = "Performance suggestion for service-A";
 
-        when(logClient.getServices(projectId)).thenReturn(services);
-        when(logClient.getRecentErrorLogs(projectId, "service-A", 3)).thenReturn(serviceALogs);
-        when(logClient.getRecentErrorLogs(projectId, "service-B", 3)).thenReturn(serviceBLogs);
-
-        when(logClient.getServiceResourceMetrics(anyLong(), anyString(), anyInt())).thenReturn(dummyMetrics);
-        when(resourceAdvisor.generatePerformancePrompt(anyString(), any(ResourceMetricDto.class))).thenReturn(suggestionPrompt);
-
+        when(logMonitoringClient.getServices(projectId)).thenReturn(services);
+        when(logMonitoringClient.getRecentErrorLogs(projectId, "service-A", 3)).thenReturn(serviceALogs);
+        when(logMonitoringClient.getServiceResourceMetrics(projectId, "service-A", 3)).thenReturn(dummyMetrics);
+        when(monitoringService.getSavedYamlsWithContent(projectId)).thenReturn(savedYamls);
+        when(resourceAdvisor.generatePerformancePrompt(anyString(), any(ResourceMetricDto.class))).thenReturn(performancePrompt);
         when(modelService.getAnalysisModel(projectId)).thenReturn(model);
-        when(ragLogClient.analyzeLogs(eq(projectId), any(RagLogRequestDto.class))).thenReturn(Mono.just(analysisResponse));
+        when(userService.getUserByProjectId(projectId)).thenReturn(mockUser);
+        when(mockUser.getUsername()).thenReturn(username);
+        when(userService.getCurrentUserApiKey(eq(username), any())).thenReturn("test-api-key");
+
+        when(ragLogClient.analyzeErrorLogs(any(ErrorAnalysisRequestDto.class))).thenReturn(Mono.just(errorAnalysisResponse));
+        when(ragLogClient.analyzeResourceSettings(any(ResourceAnalysisRequestDto.class))).thenReturn(Mono.just(resourceAnalysisResponse));
+
         doNothing().when(monitoringHistoryService).saveHistory(eq(projectId), any(RagLogResponseDto.class));
+
         // when
-        logAnalysisManager.analyzeProjectErrorLogs(projectId);
+        logAnalysisManager.analyzeProjectLogs(projectId);
 
         // then
-        // @Async
         await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
-            verify(logClient).getServices(projectId);
-            verify(logClient).getRecentErrorLogs(projectId, "service-A", 3);
-            verify(logClient).getRecentErrorLogs(projectId, "service-B", 3);
-            verify(logClient).getServiceResourceMetrics(projectId, "service-A", 3);
-            verify(logClient).getServiceResourceMetrics(projectId, "service-B", 3);
-            verify(resourceAdvisor).generatePerformancePrompt(eq("service-A"), any());
-            verify(resourceAdvisor).generatePerformancePrompt(eq("service-B"), any());
-            verify(modelService).getAnalysisModel(projectId);
-            verify(ragLogClient).analyzeLogs(eq(projectId), any(RagLogRequestDto.class));
-            verify(monitoringHistoryService).saveHistory(eq(projectId), any(RagLogResponseDto.class));
+            verify(logMonitoringClient).getServices(projectId);
+            verify(logMonitoringClient).getRecentErrorLogs(projectId, "service-A", 3);
+            verify(logMonitoringClient).getServiceResourceMetrics(projectId, "service-A", 3);
+            verify(ragLogClient).analyzeErrorLogs(any(ErrorAnalysisRequestDto.class));
+            verify(ragLogClient).analyzeResourceSettings(any(ResourceAnalysisRequestDto.class));
+            verify(monitoringHistoryService, times(2)).saveHistory(eq(projectId), any(RagLogResponseDto.class));
         });
     }
 
+
     @Test
     @DisplayName("에러 로그, 메트릭 정보가 없는 경우 RAG 서버 호출 및 저장 로직이 실행되지 않음")
-    void analyzeProjectErrorLogsInNoErrors(){
+    void analyzeProjectLogs_NoDataToAnalyze(){
         // given
         Long projectId = 2L;
         List<String> services = List.of("service-C");
+        List<SavedYaml> savedYamls = List.of(new SavedYaml("test.yml", "content"));
 
-        when(logClient.getServices(projectId)).thenReturn(services);
-        when(logClient.getRecentErrorLogs(projectId, "service-C", 3)).thenReturn(Collections.emptyList());
-
+        when(logMonitoringClient.getServices(projectId)).thenReturn(services);
+        when(logMonitoringClient.getRecentErrorLogs(projectId, "service-C", 3)).thenReturn(Collections.emptyList());
+        when(monitoringService.getSavedYamlsWithContent(projectId)).thenReturn(savedYamls);
         ResourceMetricDto emptyMetrics = new ResourceMetricDto(0, 0, 0, 0, 0, 0);
-        when(logClient.getServiceResourceMetrics(projectId, "service-C", 3)).thenReturn(emptyMetrics);
+        when(logMonitoringClient.getServiceResourceMetrics(projectId, "service-C", 3)).thenReturn(emptyMetrics);
 
         // when
-        logAnalysisManager.analyzeProjectErrorLogs(projectId);
+        logAnalysisManager.analyzeProjectLogs(projectId);
 
         // then
-        verify(logClient).getServices(projectId);
-        verify(logClient).getRecentErrorLogs(projectId, "service-C", 3);
-
-        verify(modelService, never()).getAnalysisModel(anyLong());
-        verify(ragLogClient, never()).analyzeLogs(anyLong(), any());
-        verify(monitoringHistoryService, never()).saveHistory(anyLong(), any());
+        await().atMost(1, TimeUnit.SECONDS).untilAsserted(() -> {
+            verify(logMonitoringClient).getServices(projectId);
+            verify(logMonitoringClient).getRecentErrorLogs(projectId, "service-C", 3);
+            verify(modelService, never()).getAnalysisModel(anyLong());
+            verify(ragLogClient, never()).analyzeErrorLogs(any());
+            verify(ragLogClient, never()).analyzeResourceSettings(any());
+            verify(monitoringHistoryService, never()).saveHistory(anyLong(), any());
+        });
     }
 }

@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # 1. Elasticsearch (Data Store for RAG)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - triton-network
+
+  # 2. Kibana (Elasticsearch Dashboard)
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - triton-network
+
+  # 3. RAG Server (Python Flask)
+  rag-flask:
+    build:
+      context: ./rag_server
+      dockerfile: dockerfile
+    container_name: rag-flask
+    mem_limit: 4g
+    env_file:
+      - ./rag_server/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - elasticsearch
+    networks:
+      - triton-network
+
+  # 4. Triton Dashboard (Spring Boot)
+  triton-dashboard:
+    build:
+      context: ./triton_dashboard
+      dockerfile: Dockerfile
+    container_name: triton-dashboard
+    ports:
+      - "8090:8090"
+    depends_on:
+      - rag-flask
+      - elasticsearch
+    env_file:
+      - ./triton_dashboard/.env
+    networks:
+      - triton-network
+
+volumes:
+  esdata:
+
+networks:
+  triton-network:
+    driver: bridge

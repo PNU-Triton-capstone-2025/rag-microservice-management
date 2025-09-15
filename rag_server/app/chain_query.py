@@ -11,6 +11,8 @@ import chain_components
 def query_rag(query: str, index_name: str, query_type: str, provider: str, llm: str, api_key: str) -> dict:
     if query_type == "yaml_generation":
         return create_yaml(query, index_name, query_type, provider, llm, api_key)
+    elif query_type in ["log_analyze", "resource_setting"]:
+        return answer_query_with_attribution(query, index_name, query_type, provider, llm, api_key)
     else:
         return answer_query(query, index_name, query_type, provider, llm, api_key)
     
@@ -38,6 +40,36 @@ def answer_query(query: str, index_name: str, query_type: str, provider: str, ll
             "answer": result.get("result"),
             "sources": [doc.page_content for doc in result.get("source_documents", [])],
             "log": f"response was created by {llm} of {provider} using {query_type} template"
+    }
+
+# answer_query 함수 바로 밑에 아래 함수를 추가하세요.
+
+def answer_query_with_attribution(query: str, index_name: str, query_type: str, provider: str, llm: str, api_key: str):
+    """ 소스 번호를 명시하여 일반 답변을 생성하는 RAG 체인 """
+    retriever, chat_llm, prompt_tmpl = setup_rag_components(
+        index_name, query_type, provider, llm, api_key, 20
+    )
+
+    rag_chain = (
+        {
+            "context": retriever | format_docs, # 검색된 문서를 [source_N] 형식으로 변환
+            "question": RunnablePassthrough()
+        }
+        | prompt_tmpl
+        | chat_llm
+        | StrOutputParser() # LLM의 출력을 문자열로 파싱
+    )
+
+    result = rag_chain.invoke(query)
+    
+    # RetrievalQA와 달리 retriever가 별도로 실행되므로, 소스 문서를 직접 가져와야 합니다.
+    source_documents = retriever.invoke(query)
+
+    return {
+        "question": query,
+        "answer": result, # result 자체가 문자열이 됩니다.
+        "sources": [doc.page_content for doc in source_documents],
+        "log": f"response was created by {llm} of {provider} using {query_type} template with attribution"
     }
 
 # 일반적인 RAG 답변 생성 함수. YML 파일 생성이 아님.

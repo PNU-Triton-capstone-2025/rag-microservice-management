@@ -10,7 +10,8 @@ data:
     filebeat.inputs:
       - type: container
         paths:
-          - /var/lib/docker/containers/*/*.log
+          - /var/log/containers/*.log
+          # - /var/lib/docker/containers/*/*.log
         
         # 범용적인 멀티라인 설정
         multiline.type: pattern
@@ -22,6 +23,7 @@ data:
           host: ${NODE_NAME}
           matchers:
             - logs_path:
-                logs_path: "/var/lib/docker/containers/"    
+                logs_path: "/var/log/containers/"
+                # logs_path: "/var/lib/docker/containers/"  
     output.logstash:
       hosts: ["logstash.logging.svc.cluster.local:${LOGSTASH_PORT}"]

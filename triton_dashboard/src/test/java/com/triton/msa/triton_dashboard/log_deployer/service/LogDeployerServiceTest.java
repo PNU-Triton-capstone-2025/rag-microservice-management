@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class LogDeployerServiceTest {
-    private final LogDeployerService logDeployerService = new LogDeployerService();
+    private final LogDeployerService logDeployerService = new LogDeployerService("localhost", "9200");
 
     @Test
     @DisplayName("프로젝트 ID 기반 배포 명세 파일 생성")

@@ -2,6 +2,7 @@ package com.triton.msa.triton_dashboard.log_deployer.service;
 
 import com.triton.msa.triton_dashboard.log_deployer.dto.LogDeployerCustomDto;
 import com.triton.msa.triton_dashboard.log_deployer.exception.LogDeploymentException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
@@ -16,6 +17,19 @@ import java.util.zip.ZipOutputStream;
 
 @Service
 public class LogDeployerService {
+    private final String elasticsearchHost;
+    private final String elasticsearchPort;
+
+    public LogDeployerService(
+            @Value("${elasticsearch.host}")
+            String elasticsearchHost,
+            @Value("${elasticsearch.port}")
+            String elasticsearchPort
+    ) {
+        this.elasticsearchHost = elasticsearchHost;
+        this.elasticsearchPort = elasticsearchPort;
+    }
+
     public byte[] generateDeploymentZip(LogDeployerCustomDto customDto) {
         try(ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ZipOutputStream zos = new ZipOutputStream(baos)) {
@@ -60,7 +74,9 @@ public class LogDeployerService {
         return template
                 .replace("${NAMESPACE}", customDto.namespace())
                 .replace("${LOGSTASH_PORT}", String.valueOf(customDto.logstashPort()))
-                .replace("${PROJECT_ID}", String.valueOf(customDto.projectId()));
+                .replace("${PROJECT_ID}", String.valueOf(customDto.projectId()))
+                .replace("${ELASTICSEARCH_HOST}", elasticsearchHost)
+                .replace("${ELASTICSEARCH_PORT}", elasticsearchPort);
     }
 
     private void addToZipFromString(ZipOutputStream zos, String fileName, String content) throws IOException {

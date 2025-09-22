@@ -19,7 +19,7 @@ data:
       name: "project-${PROJECT_ID}-metrics-template"
       pattern: "project-${PROJECT_ID}-metrics-*"
     output.elasticsearch:
-      hosts: ['http://56.155.164.88:30920']
+      hosts: ['${ELASTICSEARCH_HOST}:${ELASTICSEARCH_PORT}']
       index: "project-${PROJECT_ID}-metrics-%{+YYYY.MM.dd}"
 ---
 apiVersion: v1

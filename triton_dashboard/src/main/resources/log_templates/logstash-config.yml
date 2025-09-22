@@ -68,7 +68,7 @@ data:
     output {
       elasticsearch {
         # hosts => ["http://host.docker.internal:9200"]
-        hosts => ["56.155.164.88:30920"]
+        hosts => ["${ELASTICSEARCH_HOST}:${ELASTICSEARCH_PORT}"]
         index => "project-${PROJECT_ID}-logs-%{+YYYY.MM.dd}"
       }
     }

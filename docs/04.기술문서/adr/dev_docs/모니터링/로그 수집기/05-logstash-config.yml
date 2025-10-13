@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-config
+  namespace: logging
+data:
+  logstash.conf: |
+    input {
+      beats {
+        port => 5044
+      }
+    }
+    filter {
+      # 1. Spring Boot 로그인지 확인 (컨테이너 이름에 'service'가 포함된 경우)
+      if "service" in [kubernetes][container][name] {
+        grok {
+          match => { "message" => "%{TIMESTAMP_ISO8601:log_timestamp}\s+%{LOGLEVEL:log_level}\s+%{NUMBER:pid}\s+---\s+\[%{DATA:service_name}\]\s+\[\s*%{DATA:thread_name}\]\s+%{JAVACLASS:class_name}\s+:\s+%{GREEDYDATA:log_message}" }
+          # 파싱 성공 시 태그 추가
+          add_tag => [ "grok_parsed_spring" ]
+        }
+        date {
+          match => [ "log_timestamp", "ISO8601" ]
+          target => "@timestamp"
+        }
+      }
+      # 2. 다른 종류의 로그(예: Nginx)를 위한 파싱 규칙을 여기에 추가할 수 있습니다.
+      # else if [kubernetes][container][name] == "nginx" {
+      #   grok {
+      #     match => { "message" => "%{IPORHOST:clientip} %{USER:ident} %{USER:auth} \[%{HTTPDATE:timestamp}\] \"%{WORD:verb} %{URIPATHPARAM:request} HTTP/%{NUMBER:httpversion}\" %{NUMBER:response:int} %{NUMBER:bytes:int}" }
+      #     add_tag => [ "grok_parsed_nginx" ]
+      #   }
+      # }
+      
+      # 3. 위 조건에 맞지 않는 로그는 JSON 형식으로 파싱 시도 (범용적인 처리)
+      else {
+        json {
+          source => "message"
+          # JSON 파싱 성공 시 태그 추가
+          add_tag => [ "json_parsed" ]
+        }
+      }
+
+      # 파싱에 성공했다면(grok 또는 json), 원래의 긴 message 필드는 삭제
+      if "grok_parsed_spring" in [tags] or "grok_parsed_nginx" in [tags] or "json_parsed" in [tags] {
+        mutate {
+          remove_field => ["message"]
+        }
+      }
+    }
+    output {
+      elasticsearch {
+        hosts => ["http://host.docker.internal:9200"]
+        index => "project-1-logs-%%{+YYYY.MM.dd}"
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-yml-config
+  namespace: logging
+data:
+  logstash.yml: |
+    http.host: "0.0.0.0"
+    xpack.monitoring.enabled: false
